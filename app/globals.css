@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 html,
@@ -12,5 +12,12 @@ body {
 }
 
 body {
-  @apply bg-neutral-100 text-neutral-900 antialiased;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  @apply bg-neutral-950 text-neutral-100 antialiased;
+}
+
+/* Scrollbar discreto */
+::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
 }

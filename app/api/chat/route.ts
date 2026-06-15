@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildHenrySystemInstruction } from "@/lib/persona";
 import { chatWithHenry } from "@/lib/gemini";
-import type { ChatTurn, VideoTranscript } from "@/lib/types";
+import { getDemoVideos, getDemoVoiceProfile } from "@/lib/demo-session";
+import type { ChatTurn } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -9,28 +10,19 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as {
-      videos?: VideoTranscript[];
-      voiceProfile?: string;
       message?: string;
       history?: ChatTurn[];
     };
 
-    const videos = Array.isArray(body.videos) ? body.videos : [];
     const message = typeof body.message === "string" ? body.message.trim() : "";
-
     if (!message) {
       return NextResponse.json({ error: "Escribí un mensaje." }, { status: 400 });
     }
-    if (videos.length === 0) {
-      return NextResponse.json(
-        { error: "No hay videos cargados en esta sesión." },
-        { status: 400 }
-      );
-    }
 
+    // Sesión-demo fija: los videos de Tokio ya ingeridos (server-side).
     const systemInstruction = buildHenrySystemInstruction({
-      voiceProfile: body.voiceProfile ?? "",
-      videos,
+      voiceProfile: getDemoVoiceProfile(),
+      videos: getDemoVideos(),
     });
 
     const result = await chatWithHenry({
