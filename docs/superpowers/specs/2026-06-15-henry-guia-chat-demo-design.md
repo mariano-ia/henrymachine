@@ -15,16 +15,19 @@ Henry es un YouTuber latino que vive en New York y produce mucho contenido (vide
 
 **Objetivo de este proyecto:** un **demo para enamorar a Henry** (prioridad: efecto "wow", no robustez). Que vea el potencial de convertir su contenido en una experiencia conversacional con su esencia.
 
+**Qué prueba el demo, en concreto:** que con **un solo video** suyo podemos capturar (a) **su información** y (b) **su voz/tono**, y dejar que cualquiera **chatee libremente** con eso. Escenario canónico: Henry pega su video *"los mejores restaurantes de Brooklyn"* → **sin ninguna otra fuente**, el chat responde sobre esos restaurantes, en su voz. Es una **prueba de captura de info + voz**, no una experiencia guiada (eso es fase 2). El video no tiene que ser un recorrido: cualquier video con contenido rico (listas, recomendaciones) sirve.
+
 ## 2. Decisiones tomadas (locked)
 
 1. **Objetivo:** demo para Henry (wow > robustez).
 2. **Enfoque de build:** app nueva y enfocada en Next.js (camino "B"); robamos los **patrones** de StoryHunt (chat iMessage, disciplina de prompt) pero **no** forkeamos su repo ni arrastramos su maquinaria (pagos, OTAs, crons, anti-spoiler, conector hueco).
-3. **Flujo del demo:** 2 pantallas → **(1)** pegás hasta **3 links** de videos de Henry → **(2)** chateás con un Henry groundeado en esos videos.
+3. **Flujo del demo:** 2 pantallas → **(1)** pegás hasta **3 links** de videos de Henry → **(2)** **chat libre** (sin botones ni prompts predefinidos) con un Henry groundeado en esos videos.
 4. **Arquitectura = "camino rápido":** transcripciones + **Gemini en Vertex** con las transcripciones **en contexto** (long-context) + context caching. **Sin** índice batch de Vertex AI Search, **sin** base vectorial, **sin** DB pesada.
 5. **Conocimiento:** RAG ligero por contexto sobre el contenido de los videos pegados. **Voz = perfil auto-destilado por Gemini desde las transcripciones** + las propias palabras de Henry en contexto (no se escribe la persona a mano).
 6. **Modalidad:** texto **+ clips de audio reales** vía embed de YouTube en el timestamp exacto (sin edición de media).
 7. **Idioma:** español, registro latino de Henry.
 8. **Fuera del demo (fase 2):** caminata guiada con pasos/escenas, motor automático video→experiencia persistente, ABM de experiencias, web pública, pagos, login, multi-creador.
+9. **Grounding estricto = la prueba:** las respuestas salen **solo** de los videos pegados, no del conocimiento general del modelo. Si preguntan algo fuera de ese contenido, Henry lo dice en personaje. Eso es justamente lo que demuestra que capturamos *su* info.
 
 ## 3. Experiencia de usuario
 
@@ -38,10 +41,9 @@ Mobile-first, pantalla completa.
 
 ### Pantalla 2 — Chat con Henry
 - UI estilo iMessage: burbujas del narrador (con foto de Henry) y del usuario; indicador "escribiendo…".
-- **Chips de arranque** sugeridos ("¿dónde como?", "¿qué evito?", "llevame a lo mejor").
-- Henry responde **con sustancia**, en su voz, groundeado en los videos pegados.
+- **Chat libre, sin botones ni prompts predefinidos:** solo un input de texto (placeholder tipo "Preguntale a Henry…"). El usuario conversa con Henry como en cualquier chat.
+- Henry responde **con sustancia**, en su voz, **groundeado estrictamente en los videos pegados** (ver §7).
 - Cuando la respuesta corresponde a un momento del video, aparece **🎧 "escuchá cómo lo cuenta"** → reproduce el fragmento real (embed de YouTube arrancando en ese segundo).
-- El usuario puede preguntar libremente sobre el contenido de los videos.
 
 ## 4. Arquitectura (camino rápido)
 
@@ -78,7 +80,7 @@ Cada unidad con un propósito claro e interfaz definida:
 | Unidad | Tipo | Qué hace | Depende de |
 |---|---|---|---|
 | `IngestScreen` | UI | Pegar ≤3 links, validar, disparar Generar, mostrar loader/errores | `/api/ingest` |
-| `ChatScreen` | UI | Render chat iMessage, chips, envío de mensajes, mostrar clips | `/api/chat`, `ClipPlayer` |
+| `ChatScreen` | UI | Render chat iMessage, input libre, envío de mensajes, mostrar clips | `/api/chat`, `ClipPlayer` |
 | `ClipPlayer` | UI | Embed de YouTube que arranca en `startSec` | — |
 | `transcript-fetcher` | lib server | URL YouTube → `{ videoId, segments:[{text, startSec}] }`; fallback sin captions | librería de transcript / Gemini |
 | `vertex-client` | lib server | Llamadas a Gemini en Vertex; crear/usar context cache; reintentos/timeout | SDK Vertex AI |
@@ -115,7 +117,7 @@ type ChatResponse = {
 - **Lo que el texto SÍ y NO captura:** las transcripciones capturan bien lo *verbal* (palabras, modismos, actitud) pero no la *entonación/energía* — eso lo cubren los **clips de audio reales**. Texto con su estilo + audio real = ilusión fuerte de "es él".
 - **Reglas del system prompt:**
   - Responder **con sustancia** y en su registro (lo opuesto al conector de StoryHunt).
-  - **Grounding estricto:** si algo no está en los videos pegados, decirlo o generalizar con cuidado; **no inventar** datos específicos (lugares, precios, nombres).
+  - **Grounding estricto (es el núcleo de la prueba):** responder **solo** con lo que está en los videos pegados, **no** con conocimiento general del modelo. Si la pregunta cae fuera de ese contenido, decirlo en personaje ("eso no lo toqué en este video") en vez de inventar o tirar data genérica. Cero invención de lugares/precios/nombres.
   - Quedarse en personaje ante input raro/adversario.
   - Si conviene, citar el momento del video → habilita el clip (devolver `{videoId, startSec}`).
 - Config: temperatura media-alta para naturalidad; tope de tokens razonable para respuestas conversacionales (más largas que los 4–15 de StoryHunt).
@@ -135,14 +137,14 @@ type ChatResponse = {
 
 ### Dependencias de input para arrancar
 - **GCP project con Vertex AI habilitado + service account (credenciales).**
-- **Canal de Henry + 2–3 videos candidatos** (tipo recorrido/tour, con subtítulos) para afinar la persona y pre-cachear como red de seguridad.
+- **Canal de Henry + 2–3 videos candidatos** con contenido rico para Q&A (listas/recomendaciones/recorridos — p.ej. *"mejores restaurantes de Brooklyn"*), con subtítulos, para afinar la persona y pre-cachear como red de seguridad.
 
 ## 10. Alcance / YAGNI
 
 **Dentro del demo:**
 - Pantalla de pegar ≤3 links.
 - Ingest por transcripción (con fallback).
-- Chat groundeado en la voz de Henry.
+- **Chat libre** (sin botones predefinidos) groundeado **estrictamente** en los videos pegados, en la voz de Henry.
 - Clips vía timestamp (embed YouTube).
 - 1 persona, idioma español.
 - 1–2 experiencias pre-cacheadas como red para la demo en vivo.
