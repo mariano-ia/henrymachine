@@ -13,6 +13,9 @@ function now(): string {
   });
 }
 
+// Tiempo mínimo que se muestra "escribiendo…" para que el efecto se perciba.
+const MIN_TYPING_MS = 1300;
+
 export default function ChatScreen(_props: {
   videoTitles: string[];
   videoCount: number;
@@ -20,13 +23,14 @@ export default function ChatScreen(_props: {
   const [messages, setMessages] = useState<Message[]>(() => [
     {
       role: "henry",
-      text: "¡Hola! ¿Qué tal? Soy Henry. Te puedo contar todo de mi viaje a Tokio — ¿qué quieres saber?",
+      text: "hola! qué tal? soy Henry. te puedo contar todo de mi viaje a Tokio, qué quieres saber?",
       time: now(),
     },
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
@@ -34,6 +38,14 @@ export default function ChatScreen(_props: {
       behavior: "smooth",
     });
   }, [messages, sending]);
+
+  // Auto-crecer vertical de la caja de mensaje (hasta un máximo, luego scroll).
+  useEffect(() => {
+    const ta = taRef.current;
+    if (!ta) return;
+    ta.style.height = "0px";
+    ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+  }, [input]);
 
   async function send() {
     const text = input.trim();
@@ -47,7 +59,9 @@ export default function ChatScreen(_props: {
 
     setMessages((prev) => [...prev, { role: "user", text, time: now() }]);
     setSending(true);
+    const started = Date.now();
 
+    let reply = "Se me cortó la señal 😅 intenta de nuevo";
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -55,24 +69,21 @@ export default function ChatScreen(_props: {
         body: JSON.stringify({ message: text, history }),
       });
       const data = await res.json();
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "henry",
-          text: res.ok
-            ? data.reply
-            : data.error || "Uff, algo se me trabó. Intenta de nuevo.",
-          time: now(),
-        },
-      ]);
+      reply = res.ok
+        ? data.reply
+        : data.error || "uff, algo se me trabó. intenta de nuevo";
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "henry", text: "Se me cortó la señal 😅 Intenta de nuevo.", time: now() },
-      ]);
-    } finally {
-      setSending(false);
+      /* usa el fallback */
     }
+
+    // Asegura que "escribiendo…" se vea un instante aunque la API responda rápido.
+    const elapsed = Date.now() - started;
+    if (elapsed < MIN_TYPING_MS) {
+      await new Promise((r) => setTimeout(r, MIN_TYPING_MS - elapsed));
+    }
+
+    setMessages((prev) => [...prev, { role: "henry", text: reply, time: now() }]);
+    setSending(false);
   }
 
   return (
@@ -87,14 +98,9 @@ export default function ChatScreen(_props: {
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-semibold leading-tight">Henry</p>
-          <p className="text-xs leading-tight text-white/80">
+          <p className="h-4 text-xs leading-tight text-white/80">
             {sending ? "escribiendo…" : "en línea"}
           </p>
-        </div>
-        <div className="flex items-center gap-4 pr-1">
-          <Icon><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z" /></Icon>
-          <Icon><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .7-.2 1l-2.3 2.2z" /></Icon>
-          <Icon><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></Icon>
         </div>
       </header>
 
@@ -110,9 +116,9 @@ export default function ChatScreen(_props: {
         className="flex items-end gap-2 bg-[#f0f0f0] px-2 py-2"
         style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
       >
-        <div className="flex flex-1 items-center gap-2 rounded-3xl bg-white px-3 py-2">
-          <span className="text-lg opacity-50">😊</span>
+        <div className="flex flex-1 items-end rounded-3xl bg-white px-4 py-2">
           <textarea
+            ref={taRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -123,9 +129,8 @@ export default function ChatScreen(_props: {
             }}
             rows={1}
             placeholder="Escribe un mensaje"
-            className="max-h-28 flex-1 resize-none bg-transparent text-[15px] text-neutral-900 outline-none placeholder:text-neutral-400"
+            className="block w-full resize-none overflow-y-auto bg-transparent py-1 text-[15px] leading-5 text-neutral-900 outline-none placeholder:text-neutral-400"
           />
-          <span className="text-lg opacity-50">📎</span>
         </div>
         <button
           onClick={send}
@@ -160,13 +165,5 @@ function Bubble({ m }: { m: Message }) {
         </span>
       </div>
     </div>
-  );
-}
-
-function Icon({ children }: { children: React.ReactNode }) {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
-      {children}
-    </svg>
   );
 }
