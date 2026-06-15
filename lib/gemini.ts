@@ -76,49 +76,13 @@ export async function chatWithHenry(params: {
         systemInstruction: params.systemInstruction,
         temperature: 0.85,
         maxOutputTokens: 1100,
-        responseMimeType: "application/json",
         ...THINKING,
       },
     })
   );
 
   const text = (res.text ?? "").trim();
-  if (!text) {
-    return { reply: "Perdón, se me cruzaron los cables 😅 Preguntame de nuevo." };
-  }
-  return parseChat(text);
-}
-
-function parseChat(text: string): ChatResponse {
-  const cleaned = text
-    .replace(/^```(?:json)?/i, "")
-    .replace(/```$/, "")
-    .trim();
-  try {
-    const o = JSON.parse(cleaned) as {
-      reply?: unknown;
-      clip?: { videoId?: unknown; startSec?: unknown; label?: unknown };
-    };
-    const reply = typeof o.reply === "string" ? o.reply : cleaned;
-    let clip: ChatResponse["clip"];
-    if (
-      o.clip &&
-      typeof o.clip.videoId === "string" &&
-      o.clip.videoId.length > 0 &&
-      typeof o.clip.startSec === "number" &&
-      Number.isFinite(o.clip.startSec)
-    ) {
-      clip = {
-        videoId: o.clip.videoId,
-        startSec: Math.max(0, Math.floor(o.clip.startSec)),
-        label:
-          typeof o.clip.label === "string" && o.clip.label.trim()
-            ? o.clip.label.trim()
-            : "escuchá cómo lo cuenta",
-      };
-    }
-    return { reply, clip };
-  } catch {
-    return { reply: text };
-  }
+  return {
+    reply: text || "Perdón, se me cruzaron los cables 😅 Pregúntame de nuevo.",
+  };
 }

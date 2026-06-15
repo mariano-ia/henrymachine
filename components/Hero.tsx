@@ -25,7 +25,7 @@ export default function Hero({
         </h1>
 
         <p className="mt-7 max-w-sm text-balance text-[15px] leading-relaxed text-neutral-400">
-          Preguntale lo que quieras. Te responde con su info y su voz, sacadas de
+          Pregúntale lo que quieras. Te responde con su info y su voz, sacadas de
           sus propios videos.
         </p>
 

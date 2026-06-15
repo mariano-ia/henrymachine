@@ -1,21 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ChatTurn, Clip } from "@/lib/types";
-import ClipPlayer from "./ClipPlayer";
+import type { ChatTurn } from "@/lib/types";
 
-type Message = { role: "user" | "henry"; text: string; clip?: Clip };
+type Message = { role: "user" | "henry"; text: string; time: string };
 
-export default function ChatScreen({
-  videoCount,
-}: {
+function now(): string {
+  return new Date().toLocaleTimeString("es", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+export default function ChatScreen(_props: {
   videoTitles: string[];
   videoCount: number;
 }) {
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<Message[]>(() => [
     {
       role: "henry",
-      text: "¡Eh, qué tal! Soy Henry 🙌 Te puedo contar todo de mi viaje a Tokio. ¿Qué querés saber?",
+      text: "¡Hola! ¿Qué tal? Soy Henry. Te puedo contar todo de mi viaje a Tokio — ¿qué quieres saber?",
+      time: now(),
     },
   ]);
   const [input, setInput] = useState("");
@@ -39,7 +45,7 @@ export default function ChatScreen({
       text: m.text,
     }));
 
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessages((prev) => [...prev, { role: "user", text, time: now() }]);
     setSending(true);
 
     try {
@@ -51,17 +57,18 @@ export default function ChatScreen({
       const data = await res.json();
       setMessages((prev) => [
         ...prev,
-        res.ok
-          ? { role: "henry", text: data.reply, clip: data.clip }
-          : {
-              role: "henry",
-              text: data.error || "Uff, algo se me trabó. Probá de nuevo.",
-            },
+        {
+          role: "henry",
+          text: res.ok
+            ? data.reply
+            : data.error || "Uff, algo se me trabó. Intenta de nuevo.",
+          time: now(),
+        },
       ]);
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "henry", text: "Se me cortó la señal 😅 Probá de nuevo." },
+        { role: "henry", text: "Se me cortó la señal 😅 Intenta de nuevo.", time: now() },
       ]);
     } finally {
       setSending(false);
@@ -69,36 +76,42 @@ export default function ChatScreen({
   }
 
   return (
-    <div className="mx-auto flex h-[100dvh] w-full max-w-md flex-col bg-neutral-950">
-      {/* Header */}
-      <header className="flex items-center gap-3 border-b border-white/10 px-4 py-3 backdrop-blur">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-lg font-bold text-white ring-2 ring-white/10">
+    <div className="mx-auto flex h-[100dvh] w-full max-w-md flex-col bg-[#efeae2]">
+      {/* Header WhatsApp */}
+      <header className="flex items-center gap-2.5 bg-[#075e54] px-2 py-2 text-white">
+        <button className="px-0.5 text-2xl leading-none opacity-90" aria-label="Atrás">
+          ‹
+        </button>
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/25 text-base font-semibold">
           H
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold leading-tight text-white">Henry</p>
-          <p className="flex items-center gap-1.5 text-xs text-neutral-400">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            Viaje a Japón · {videoCount} videos
+          <p className="font-semibold leading-tight">Henry</p>
+          <p className="text-xs leading-tight text-white/80">
+            {sending ? "escribiendo…" : "en línea"}
           </p>
         </div>
-        <span className="text-lg">🇯🇵</span>
+        <div className="flex items-center gap-4 pr-1">
+          <Icon><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z" /></Icon>
+          <Icon><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .7-.2 1l-2.3 2.2z" /></Icon>
+          <Icon><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></Icon>
+        </div>
       </header>
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-5">
+      {/* Mensajes */}
+      <div ref={scrollRef} className="flex-1 space-y-1.5 overflow-y-auto px-3 py-3">
         {messages.map((m, i) => (
-          <Bubble key={i} message={m} />
+          <Bubble key={i} m={m} />
         ))}
-        {sending && <TypingBubble />}
       </div>
 
-      {/* Input */}
+      {/* Input WhatsApp */}
       <div
-        className="border-t border-white/10 px-3 py-3"
-        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        className="flex items-end gap-2 bg-[#f0f0f0] px-2 py-2"
+        style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
       >
-        <div className="flex items-end gap-2">
+        <div className="flex flex-1 items-center gap-2 rounded-3xl bg-white px-3 py-2">
+          <span className="text-lg opacity-50">😊</span>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -109,62 +122,51 @@ export default function ChatScreen({
               }
             }}
             rows={1}
-            placeholder="Preguntale a Henry…"
-            className="max-h-32 flex-1 resize-none rounded-3xl border border-white/10 bg-neutral-900 px-4 py-2.5 text-sm text-neutral-100 outline-none placeholder:text-neutral-500 focus:border-indigo-400/60 focus:ring-2 focus:ring-indigo-500/20"
+            placeholder="Escribe un mensaje"
+            className="max-h-28 flex-1 resize-none bg-transparent text-[15px] text-neutral-900 outline-none placeholder:text-neutral-400"
           />
-          <button
-            onClick={send}
-            disabled={sending || !input.trim()}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-lg text-white transition hover:bg-indigo-500 active:scale-95 disabled:opacity-40"
-            aria-label="Enviar"
-          >
-            ↑
-          </button>
+          <span className="text-lg opacity-50">📎</span>
         </div>
+        <button
+          onClick={send}
+          disabled={sending || !input.trim()}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#075e54] text-white transition active:scale-95 disabled:opacity-60"
+          aria-label="Enviar"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+          </svg>
+        </button>
       </div>
     </div>
   );
 }
 
-function Bubble({ message }: { message: Message }) {
-  const isUser = message.role === "user";
+function Bubble({ m }: { m: Message }) {
+  const isUser = m.role === "user";
   return (
     <div className={isUser ? "flex justify-end" : "flex justify-start"}>
-      <div className={isUser ? "max-w-[80%]" : "max-w-[88%]"}>
-        <div
-          className={
-            isUser
-              ? "rounded-3xl rounded-br-md bg-indigo-600 px-4 py-2.5 text-sm leading-relaxed text-white"
-              : "rounded-3xl rounded-bl-md bg-neutral-800 px-4 py-2.5 text-sm leading-relaxed text-neutral-100"
-          }
-        >
-          <p className="whitespace-pre-wrap">{message.text}</p>
-        </div>
-        {message.clip && <ClipPlayer clip={message.clip} />}
+      <div
+        className={`relative max-w-[82%] rounded-lg px-2.5 py-1.5 shadow-sm ${
+          isUser ? "rounded-tr-none bg-[#d9fdd3]" : "rounded-tl-none bg-white"
+        }`}
+      >
+        <p className="whitespace-pre-wrap pb-2 pr-14 text-[15px] leading-snug text-[#111b21]">
+          {m.text}
+        </p>
+        <span className="absolute bottom-1 right-2 flex items-center gap-0.5 text-[11px] text-[#667781]">
+          {m.time}
+          {isUser && <span className="ml-0.5 text-[#53bdeb]">✓✓</span>}
+        </span>
       </div>
     </div>
   );
 }
 
-function TypingBubble() {
+function Icon({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex justify-start">
-      <div className="rounded-3xl rounded-bl-md bg-neutral-800 px-4 py-3.5">
-        <div className="flex gap-1">
-          <Dot delay="0ms" />
-          <Dot delay="150ms" />
-          <Dot delay="300ms" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Dot({ delay }: { delay: string }) {
-  return (
-    <span
-      className="h-2 w-2 animate-bounce rounded-full bg-neutral-500"
-      style={{ animationDelay: delay }}
-    />
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+      {children}
+    </svg>
   );
 }
