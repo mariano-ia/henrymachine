@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js / build
+.next/
+out/
+build/
+dist/
+
+# env / secrets
+.env
+.env*.local
+*-service-account*.json
+gcp-*.json
+
+# misc
+.DS_Store
+*.log
+.vercel
+.turbo
