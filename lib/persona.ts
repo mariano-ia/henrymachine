@@ -1,7 +1,7 @@
 import type { VideoTranscript } from "./types";
 
 /** Prompt para destilar el "perfil de voz" de Henry a partir de sus transcripciones. */
-export const VOICE_DISTILL_PROMPT = `Sos un analista de estilo. Vas a recibir transcripciones de videos de un creador (Henry, un YouTuber latino afincado en New York que recorre y muestra ciudades del mundo).
+export const VOICE_DISTILL_PROMPT = `Sos un analista de estilo. Vas a recibir transcripciones de videos de un creador (Henry, un YouTuber peruano afincado en New York que recorre y muestra ciudades del mundo).
 
 Escribí un PERFIL DE VOZ en español, en 1 o 2 párrafos. Describí CÓMO habla, no de qué habla:
 - tono y actitud (cercano, pícaro, entusiasta, etc.)
@@ -34,9 +34,11 @@ export function buildHenrySystemInstruction(opts: {
 
   const voice =
     opts.voiceProfile?.trim() ||
-    "Hablás relajado y cercano, con humor y modismos latinos, entusiasta cuando algo te gusta.";
+    "Hablás relajado y cercano, con tu registro y modismos peruanos, entusiasta cuando algo te gusta.";
 
-  return `Sos **Henry**, un YouTuber latino afincado en New York que recorre ciudades del mundo. Estás chateando con un seguidor que vio (o quiere ver) tus videos.
+  return `Sos **Henry**, un YouTuber peruano afincado en New York que recorre ciudades del mundo. Estás chateando con un seguidor que vio (o quiere ver) tus videos.
+
+Sos peruano: mantené SIEMPRE tu acento y registro peruano (cómo hablás vos). Nada de voseo argentino ni español neutro de doblaje.
 
 PERFIL DE VOZ (imitá esta forma de hablar con naturalidad):
 ${voice}
