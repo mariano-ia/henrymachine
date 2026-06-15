@@ -21,7 +21,7 @@ Henry es un YouTuber latino que vive en New York y produce mucho contenido (vide
 2. **Enfoque de build:** app nueva y enfocada en Next.js (camino "B"); robamos los **patrones** de StoryHunt (chat iMessage, disciplina de prompt) pero **no** forkeamos su repo ni arrastramos su maquinaria (pagos, OTAs, crons, anti-spoiler, conector hueco).
 3. **Flujo del demo:** 2 pantallas → **(1)** pegás hasta **3 links** de videos de Henry → **(2)** chateás con un Henry groundeado en esos videos.
 4. **Arquitectura = "camino rápido":** transcripciones + **Gemini en Vertex** con las transcripciones **en contexto** (long-context) + context caching. **Sin** índice batch de Vertex AI Search, **sin** base vectorial, **sin** DB pesada.
-5. **Conocimiento:** RAG ligero por contexto sobre el contenido de los videos pegados. Voz = prompt de persona + las propias palabras de Henry (transcripciones).
+5. **Conocimiento:** RAG ligero por contexto sobre el contenido de los videos pegados. **Voz = perfil auto-destilado por Gemini desde las transcripciones** + las propias palabras de Henry en contexto (no se escribe la persona a mano).
 6. **Modalidad:** texto **+ clips de audio reales** vía embed de YouTube en el timestamp exacto (sin edición de media).
 7. **Idioma:** español, registro latino de Henry.
 8. **Fuera del demo (fase 2):** caminata guiada con pasos/escenas, motor automático video→experiencia persistente, ABM de experiencias, web pública, pagos, login, multi-creador.
@@ -52,7 +52,9 @@ Mobile-first, pantalla completa.
 [Server] transcript-fetcher  ──(paralelo, ≤3)──>  transcripción + timestamps por video
         │   (fallback si no hay subtítulos: Gemini sobre la URL / STT)
         ▼
-[Vertex] crear context cache con [persona + transcripciones] → cacheId
+[Vertex] destilar "perfil de voz" de Henry desde las transcripciones (1 call)
+        ▼
+[Vertex] crear context cache con [scaffold persona + perfil de voz + transcripciones] → cacheId
         │  → devuelve { cacheId, videos:[{videoId,url,title}] }   (server NO guarda estado)
         ▼
 [Pantalla 2: chat]  (el cliente tiene cacheId + metadata liviana de videos)
@@ -80,8 +82,8 @@ Cada unidad con un propósito claro e interfaz definida:
 | `ClipPlayer` | UI | Embed de YouTube que arranca en `startSec` | — |
 | `transcript-fetcher` | lib server | URL YouTube → `{ videoId, segments:[{text, startSec}] }`; fallback sin captions | librería de transcript / Gemini |
 | `vertex-client` | lib server | Llamadas a Gemini en Vertex; crear/usar context cache; reintentos/timeout | SDK Vertex AI |
-| `henry-persona` | config | System prompt de Henry (tono, modismos, reglas de grounding) | — |
-| `/api/ingest` | route | Recibe links → fetcher en paralelo → crea context cache → devuelve `{cacheId, videos}` | `transcript-fetcher`, `vertex-client` |
+| `henry-persona` | config + gen | Scaffold fijo del system prompt (rol, reglas de grounding, quedarse en personaje) **+** perfil de voz auto-destilado desde las transcripciones en el ingest | `vertex-client` |
+| `/api/ingest` | route | Recibe links → fetcher en paralelo → destila perfil de voz → crea context cache → devuelve `{cacheId, videos}` | `transcript-fetcher`, `vertex-client`, `henry-persona` |
 | `/api/chat` | route | Recibe `{cacheId, videos, message, history}` → llama vertex-client → `{reply, clip?}` | `vertex-client`, `henry-persona` |
 
 ## 6. Modelo de datos (mínimo, en memoria)
@@ -91,6 +93,7 @@ No hay base de datos para el demo. El estado de sesión vive en el **context cac
 ```ts
 type TranscriptSegment = { text: string; startSec: number };
 type VideoTranscript = { videoId: string; url: string; title?: string; segments: TranscriptSegment[] };
+type VoiceProfile = string; // perfil de voz auto-destilado por Gemini desde las transcripciones (va al system prompt / cache)
 
 // Lo que el cliente recibe del ingest y reenvía en cada chat:
 type VideoMeta = { videoId: string; url: string; title?: string };
@@ -107,8 +110,9 @@ type ChatResponse = {
 
 ## 7. La voz de Henry (persona)
 
-- **Prompt de persona** destilado mirando 1–2 de sus videos: quién es, cómo habla, tono, vocabulario, actitud, muletillas.
-- Las **transcripciones** aportan contenido y refuerzan la voz (son sus palabras textuales).
+- **Perfil de voz auto-destilado por Gemini** a partir de las transcripciones (paso del ingest): quién es, cómo habla, tono, vocabulario, actitud, muletillas, ritmo. **No se escribe a mano** — sale de su propio contenido. (Opcional para el demo: un pulido humano rápido del perfil generado, como red.)
+- Las **transcripciones** quedan además en contexto: aportan el contenido groundeado y refuerzan la voz de forma implícita (son sus palabras textuales = ejemplos de estilo).
+- **Lo que el texto SÍ y NO captura:** las transcripciones capturan bien lo *verbal* (palabras, modismos, actitud) pero no la *entonación/energía* — eso lo cubren los **clips de audio reales**. Texto con su estilo + audio real = ilusión fuerte de "es él".
 - **Reglas del system prompt:**
   - Responder **con sustancia** y en su registro (lo opuesto al conector de StoryHunt).
   - **Grounding estricto:** si algo no está en los videos pegados, decirlo o generalizar con cuidado; **no inventar** datos específicos (lugares, precios, nombres).
@@ -154,6 +158,7 @@ type ChatResponse = {
 | Riesgo | Mitigación |
 |---|---|
 | Video sin subtítulos | Elegir videos con captions; fallback a Gemini sobre la URL / STT; pre-cachear |
+| Subtítulos automáticos sucios (sin puntuación, errores) degradan el perfil de voz | Pase de limpieza/normalización del texto antes de destilar; preferir videos con buenos captions; pulido humano del perfil como red |
 | Fetch de transcript bloqueado desde Vercel (IP de cloud) | Pre-cachear transcripciones de los videos del demo; tener 1–2 experiencias pre-cargadas |
 | Latencia de la 1ª respuesta | Loader con carácter + context caching de Gemini |
 | Alucinación | Grounding estricto + instrucción "si no está en los videos, no inventes" |
