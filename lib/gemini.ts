@@ -2,7 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 import type { ChatTurn, ChatResponse } from "./types";
 import { VOICE_DISTILL_PROMPT } from "./persona";
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+// "thinking" solo existe en los modelos 2.5; en 2.0 pasar thinkingConfig falla.
+const THINKING = /2\.5/.test(MODEL) ? { thinkingConfig: { thinkingBudget: 0 } } : {};
 
 function client(): GoogleGenAI {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -41,8 +43,7 @@ export async function distillVoiceProfile(corpusText: string): Promise<string> {
         systemInstruction: VOICE_DISTILL_PROMPT,
         temperature: 0.4,
         maxOutputTokens: 800,
-        // Sin "thinking": en 2.5 los tokens de pensamiento consumen el budget de salida.
-        thinkingConfig: { thinkingBudget: 0 },
+        ...THINKING,
       },
     })
   );
@@ -76,8 +77,7 @@ export async function chatWithHenry(params: {
         temperature: 0.85,
         maxOutputTokens: 1100,
         responseMimeType: "application/json",
-        // Sin "thinking": en 2.5 los tokens de pensamiento consumen el budget de salida.
-        thinkingConfig: { thinkingBudget: 0 },
+        ...THINKING,
       },
     })
   );
