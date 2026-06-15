@@ -15,18 +15,20 @@ export default function Hero({
       <div className="pointer-events-none absolute -bottom-24 -left-20 h-80 w-80 rounded-full bg-fuchsia-600/10 blur-[130px]" />
 
       <div className="relative z-10 flex max-w-lg flex-col items-center">
-        <div className="mb-9 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-3xl font-bold text-white shadow-2xl shadow-indigo-500/30 ring-4 ring-white/10">
-          H
-        </div>
+        <span className="mb-6 inline-block rounded-full border border-white/15 px-3 py-1 text-xs font-medium uppercase tracking-widest text-neutral-400">
+          Primera prueba
+        </span>
 
         <h1 className="font-display text-[3.25rem] font-bold uppercase leading-[0.92] tracking-tight text-white sm:text-7xl">
           Chatear con Henry sobre su viaje a{" "}
           <span className="text-rose-500">Japón</span>
         </h1>
 
-        <p className="mt-7 max-w-sm text-balance text-[15px] leading-relaxed text-neutral-400">
-          Pregúntale lo que quieras. Te responde con su info y su voz, sacadas de
-          sus propios videos.
+        <p className="mt-7 max-w-md text-balance text-[15px] leading-relaxed text-neutral-400">
+          Es una prueba simple: un chat que responde como Henry a partir de{" "}
+          {videoCount} de sus videos de Tokio. Habla natural, pero solo sabe lo
+          que está en esos videos — si le preguntas algo que no salió ahí, no te
+          lo inventa.
         </p>
 
         <button
@@ -36,10 +38,6 @@ export default function Hero({
           Empezar a chatear
           <span className="transition group-hover:translate-x-1">→</span>
         </button>
-
-        <p className="mt-7 text-xs font-medium uppercase tracking-widest text-neutral-600">
-          🇯🇵 {videoCount} videos de Tokio cargados
-        </p>
       </div>
     </main>
   );
