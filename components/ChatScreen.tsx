@@ -13,8 +13,11 @@ function now(): string {
   });
 }
 
-// Tiempo mínimo que se muestra "escribiendo…" para que el efecto se perciba.
-const MIN_TYPING_MS = 1300;
+// "escribiendo…" dura un rato proporcional al largo de la respuesta (simula tipeo humano).
+const TYPING_BASE_MS = 700;
+const TYPING_PER_CHAR_MS = 22;
+const TYPING_MIN_MS = 1200;
+const TYPING_MAX_MS = 4500;
 
 export default function ChatScreen(_props: {
   videoTitles: string[];
@@ -76,10 +79,14 @@ export default function ChatScreen(_props: {
       /* usa el fallback */
     }
 
-    // Asegura que "escribiendo…" se vea un instante aunque la API responda rápido.
+    // Tiempo de "tipeo" simulado, escalado al largo de la respuesta.
+    const typingMs = Math.min(
+      TYPING_MAX_MS,
+      Math.max(TYPING_MIN_MS, TYPING_BASE_MS + reply.length * TYPING_PER_CHAR_MS)
+    );
     const elapsed = Date.now() - started;
-    if (elapsed < MIN_TYPING_MS) {
-      await new Promise((r) => setTimeout(r, MIN_TYPING_MS - elapsed));
+    if (elapsed < typingMs) {
+      await new Promise((r) => setTimeout(r, typingMs - elapsed));
     }
 
     setMessages((prev) => [...prev, { role: "henry", text: reply, time: now() }]);
