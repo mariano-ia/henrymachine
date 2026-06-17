@@ -19,7 +19,7 @@ export const NYC12: Tour = {
   title: "12 horas en Nueva York desde JFK",
 
   openingMessage:
-    "¡Eyy, bienvenido a Nueva York! 🗽 Soy Henry. Tenemos 12 horas y las vamos a exprimir. Primero lo primero: sácate una MetroCard y cárgale $15. Agarra el AirTrain hasta Howard Beach y de ahí la línea A, 12 paradas hasta High St (son como $10.75). Si andas corto de tiempo un taxi sale $70, pero el subte es la movida. Cuando salgas del subte avísame y te llevo a la primera parada 🤙",
+    "¡Eyy, bienvenido a Nueva York! 🗽 Soy Henry. Tenemos 12 horas y las vamos a exprimir. Lo primero: en la estación sácate una MetroCard y cárgale unos $15 — con eso pagás el AirTrain para salir del aeropuerto y el subte hasta Manhattan, y te queda saldo. Agarra el AirTrain hasta Howard Beach y de ahí la línea A, 12 paradas hasta High St. Si andas corto de tiempo, un taxi sale como $70, pero el subte es la movida. Cuando salgas del subte avísame y arrancamos 🤙",
 
   stops: [
     {
@@ -87,7 +87,7 @@ export const NYC12: Tour = {
 
 1. TRASLADO JFK → DUMBO (aprox. 1 hora)
 - Taxi/Uber/Lyft: $70
-- AirTrain + Subway: $10.75 (recomendado)
+- AirTrain + Subway: en total ronda los $10-11 (el AirTrain para salir del aeropuerto + un viaje de subte); es la opción recomendada. Conviene cargar ~$15 en la MetroCard para tener saldo.
 - Ruta económica: AirTrain desde el terminal de llegada hasta Howard Beach, transbordo a la línea A del Subway por 12 paradas hasta la estación High St.
 - Tarjeta de metro: se recomienda cargar $15.
 
