@@ -86,3 +86,53 @@ export async function chatWithHenry(params: {
     reply: text || "Perdón, se me cruzaron los cables 😅 Pregúntame de nuevo.",
   };
 }
+
+/** Turno de recorrido: devuelve la respuesta de Henry + la intención clasificada. */
+export async function tourReply(params: {
+  systemInstruction: string;
+  history: ChatTurn[];
+  message: string;
+}): Promise<{ reply: string; intent: string }> {
+  const ai = client();
+  const contents = [
+    ...params.history.map(
+      (t): { role: "user" | "model"; parts: { text: string }[] } => ({
+        role: t.role === "henry" ? "model" : "user",
+        parts: [{ text: t.text }],
+      })
+    ),
+    { role: "user" as const, parts: [{ text: params.message }] },
+  ];
+
+  const res = await withRetry(() =>
+    ai.models.generateContent({
+      model: MODEL,
+      contents,
+      config: {
+        systemInstruction: params.systemInstruction,
+        temperature: 0.85,
+        maxOutputTokens: 1100,
+        responseMimeType: "application/json",
+        ...THINKING,
+      },
+    })
+  );
+
+  const text = (res.text ?? "").trim();
+  const cleaned = text
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
+  try {
+    const o = JSON.parse(cleaned) as { reply?: unknown; intent?: unknown };
+    return {
+      reply:
+        typeof o.reply === "string" && o.reply.trim()
+          ? o.reply
+          : "Perdón, se me cruzaron los cables 😅 dale de nuevo.",
+      intent: typeof o.intent === "string" ? o.intent : "none",
+    };
+  } catch {
+    return { reply: text || "Perdón, se me trabó 😅 dale de nuevo.", intent: "none" };
+  }
+}
