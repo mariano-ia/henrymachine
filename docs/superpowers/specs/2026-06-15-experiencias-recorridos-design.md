@@ -313,3 +313,34 @@ El servidor: lee `TourSession` → resuelve `knowledgeScope` de la parada actual
 - Catálogo funcional completo (~100 casos, top 10 espinosos, 13 reglas transversales, estados): [`../2026-06-15-casos-de-uso-recorrido.md`](../2026-06-15-casos-de-uso-recorrido.md)
 - Diseño del demo actual: [`./2026-06-15-henry-guia-chat-demo-design.md`](./2026-06-15-henry-guia-chat-demo-design.md)
 - Workflows usados: `henry-tour-approaches` (panel de enfoques), `henry-tour-casos-uso` (catálogo funcional).
+- **Guía de voz y tono de Henry:** [`../henry-voz-y-tono.md`](../henry-voz-y-tono.md) — el scaffold de personalidad calibrado (reutilizable en la versión definitiva).
+
+---
+
+## 14. Aprendizajes del test `/nyc12horas` (2026-06-17)
+
+Primer recorrido REAL construido: hardcodeado a partir del itinerario de Notion de Henry (12h NYC desde JFK, 9 paradas). En vivo en `henry-demo-zeta.vercel.app/nyc12horas`. Lo que validó / aprendimos para la versión definitiva:
+
+**Runtime que funcionó**
+- **Servidor stateless + estado en el cliente:** el cliente sostiene `{stopIndex, phase, turnsInStop}` y lo manda en cada request; el server no guarda sesión. Mismo patrón que el demo.
+- **Clasificación de intención en el MISMO call:** `/api/tour` devuelve `{reply, intent}` (JSON), con intent ∈ `arrived | next | pause | resume | finish | question | chat | none`. El modelo **sugiere** la intención; el **cliente reduce** el estado (el modelo nunca decide el estado).
+- **Fases:** `CAMINANDO` (yendo a la parada) / `EN_PARADA` / `EN_PAUSA`. El prompt cambia según la fase (en pausa no empuja; tras varios turnos en parada, empuje suave).
+- **Avance por TEXTO LIBRE, sin botones:** el modelo detecta "llegué / seguimos / bancame" bien. Decisión de Mariano: simple, el modelo lo resuelve.
+
+**Navegación (in-situ)**
+- **Deep-link a Google Maps (caminata) por parada**, puesto por el SISTEMA (de la metadata), no por el modelo → nunca inventa direcciones. Resuelve el "sin GPS" sin construir navegación.
+- El **iframe** de mapa sirve para *mostrar* contexto, no para *navegar*; queda opcional para más adelante.
+
+**Presencia / silencio**
+- **Nudge tras silencio:** UN solo toque (~100s, timer del cliente), **nunca en pausa ni terminado**, se resetea cuando el usuario escribe. Limitación: timer client-side (solo si la pestaña está abierta); push real = fase 2.
+- No todos los mensajes de Henry cierran con pregunta (más natural); el nudge es la red para cuando quedan abiertos.
+
+**Cierre**
+- Termina de 3 formas: completar la última parada · el usuario corta antes · (futuro) wind-down por extensión. `TERMINADO` es **visible y cierra el chat** (uso único, no reinicia).
+
+**Lección de producto (importante para el ABM)**
+- Los **datos duros del contenido envejecen y confunden** (caso real: "$10.75" del itinerario, desactualizado y sin desglose). → En el generador, **marcar precios/horarios/direcciones como "verificar"** es lo más crítico del paso "sugiere → humano verifica".
+
+**Pendientes de calibración:** cantidad de "weón"; timing del nudge (~100s); "llegada ansiosa" (a veces toma "salí del subte" como llegada).
+
+**Archivos del test (referencia de implementación):** `lib/tours/nyc12horas.ts`, `lib/tour-prompt.ts`, `tourReply()` en `lib/gemini.ts`, `app/api/tour/route.ts`, `components/TourChat.tsx`, `app/nyc12horas/page.tsx`.
