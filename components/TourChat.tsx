@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatTurn } from "@/lib/types";
-import { NYC12 } from "@/lib/tours/nyc12horas";
+import { NYC12, NYC12_PLACES, mapsDirUrl } from "@/lib/tours/nyc12horas";
 import type { TourPhase } from "@/lib/tour-prompt";
 
 type Message = { role: "user" | "henry"; text: string; time: string };
@@ -24,7 +24,12 @@ function now(): string {
   });
 }
 
+function humanDelayMs(len: number): number {
+  return Math.min(4500, Math.max(1200, 700 + len * 22));
+}
+
 const LAST = NYC12.stops.length - 1;
+const NUDGE_AFTER_MS = 100_000; // ~1m40s de silencio → un toque
 
 function applyIntent(prev: TourState, intent: string): TourState {
   if (prev.status === "TERMINADO") return prev;
@@ -56,7 +61,7 @@ function applyIntent(prev: TourState, intent: string): TourState {
     case "resume":
       s.phase = s.prevPhase || "CAMINANDO";
       break;
-    default: // question / chat / none
+    default:
       if (s.phase === "EN_PARADA") s.turnsInStop++;
   }
   return s;
@@ -75,6 +80,7 @@ export default function TourChat() {
   });
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [nudged, setNudged] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
@@ -92,15 +98,16 @@ export default function TourChat() {
     ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
   }, [input]);
 
+  const historyFrom = (msgs: Message[]): ChatTurn[] =>
+    msgs.map((m) => ({ role: m.role, text: m.text }));
+
   async function send() {
     const text = input.trim();
     if (!text || sending) return;
     setInput("");
+    setNudged(false);
 
-    const history: ChatTurn[] = messages.map((m) => ({
-      role: m.role,
-      text: m.text,
-    }));
+    const history = historyFrom(messages);
     setMessages((prev) => [...prev, { role: "user", text, time: now() }]);
     setSending(true);
     const started = Date.now();
@@ -123,22 +130,62 @@ export default function TourChat() {
       if (res.ok) {
         reply = data.reply;
         intent = data.intent || "none";
-      } else {
-        reply = data.error || "uff, algo se me trabó. dale de nuevo";
-      }
+      } else reply = data.error || "uff, algo se me trabó. dale de nuevo";
     } catch {
       /* fallback */
     }
 
-    // retardo proporcional al largo (tipeo humano)
-    const typingMs = Math.min(4500, Math.max(1200, 700 + reply.length * 22));
-    const elapsed = Date.now() - started;
-    if (elapsed < typingMs) await new Promise((r) => setTimeout(r, typingMs - elapsed));
+    const wait = humanDelayMs(reply.length) - (Date.now() - started);
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
 
     setMessages((prev) => [...prev, { role: "henry", text: reply, time: now() }]);
     setTour((prev) => applyIntent(prev, intent));
     setSending(false);
   }
+
+  // Nudge tras silencio: UN solo toque, nunca en pausa ni terminado.
+  const sendNudge = useCallback(async () => {
+    if (sending || nudged || tour.status !== "EN_CURSO" || tour.phase === "EN_PAUSA") return;
+    setSending(true);
+    setNudged(true);
+    const started = Date.now();
+    let reply = "";
+    try {
+      const res = await fetch("/api/tour", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stopIndex: tour.stopIndex,
+          phase: tour.phase,
+          turnsInStop: tour.turnsInStop,
+          message: "(el usuario no respondió en un rato)",
+          history: historyFrom(messages),
+          nudge: true,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) reply = data.reply || "";
+    } catch {
+      /* silencioso: si falla, no insistimos */
+    }
+    if (reply) {
+      const wait = humanDelayMs(reply.length) - (Date.now() - started);
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+      setMessages((prev) => [...prev, { role: "henry", text: reply, time: now() }]);
+    }
+    setSending(false);
+  }, [sending, nudged, tour, messages]);
+
+  useEffect(() => {
+    if (tour.status !== "EN_CURSO" || tour.phase === "EN_PAUSA" || nudged || sending) {
+      return;
+    }
+    const id = setTimeout(sendNudge, NUDGE_AFTER_MS);
+    return () => clearTimeout(id);
+  }, [messages, tour.phase, tour.status, nudged, sending, sendNudge]);
+
+  const showMapLink = tour.status === "EN_CURSO" && tour.phase !== "EN_PAUSA";
+  const targetName = NYC12.stops[tour.stopIndex]?.name ?? "";
 
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-md flex-col bg-[#efeae2]">
@@ -163,37 +210,57 @@ export default function TourChat() {
         ))}
       </div>
 
-      <div
-        className="flex items-end gap-2 bg-[#f0f0f0] px-2 py-2"
-        style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
-      >
-        <div className="flex flex-1 items-end rounded-3xl bg-white px-4 py-2">
-          <textarea
-            ref={taRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            rows={1}
-            placeholder="Escribe un mensaje"
-            className="block w-full resize-none overflow-y-auto bg-transparent py-1 text-[15px] leading-5 text-neutral-900 outline-none placeholder:text-neutral-400"
-          />
-        </div>
-        <button
-          onClick={send}
-          disabled={sending || !input.trim()}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#075e54] text-white transition active:scale-95 disabled:opacity-60"
-          aria-label="Enviar"
+      {showMapLink && (
+        <a
+          href={mapsDirUrl(NYC12_PLACES[tour.stopIndex])}
+          target="_blank"
+          rel="noreferrer"
+          className="mx-3 mb-1 flex items-center justify-center gap-1.5 rounded-lg bg-white/70 px-3 py-2 text-sm font-medium text-[#075e54] shadow-sm active:scale-[0.99]"
         >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-          </svg>
-        </button>
-      </div>
+          📍 {tour.phase === "CAMINANDO" ? `Cómo llegar a ${targetName}` : `Ver ${targetName} en el mapa`}
+        </a>
+      )}
+
+      {tour.status === "TERMINADO" ? (
+        <div
+          className="bg-[#f0f0f0] px-4 py-5 text-center text-sm text-neutral-500"
+          style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+        >
+          Recorrido finalizado · ¡gracias por recorrer Nueva York con Henry! 🗽
+        </div>
+      ) : (
+        <div
+          className="flex items-end gap-2 bg-[#f0f0f0] px-2 py-2"
+          style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+        >
+          <div className="flex flex-1 items-end rounded-3xl bg-white px-4 py-2">
+            <textarea
+              ref={taRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              rows={1}
+              placeholder="Escribe un mensaje"
+              className="block w-full resize-none overflow-y-auto bg-transparent py-1 text-[15px] leading-5 text-neutral-900 outline-none placeholder:text-neutral-400"
+            />
+          </div>
+          <button
+            onClick={send}
+            disabled={sending || !input.trim()}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#075e54] text-white transition active:scale-95 disabled:opacity-60"
+            aria-label="Enviar"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

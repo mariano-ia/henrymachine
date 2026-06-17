@@ -126,3 +126,23 @@ RECURSOS PRÁCTICOS
 - Tarjeta de metro con $15 cargados.
 - Si pensás entrar a alguna atracción paga, planificá con anticipación para comprar el ingreso.`,
 };
+
+/** Consulta de Google Maps por parada (para el deep-link "Cómo llegar"), alineada por índice con NYC12.stops. */
+export const NYC12_PLACES: string[] = [
+  "DUMBO Washington St & Water St, Brooklyn, New York",
+  "Brooklyn Bridge, New York",
+  "St. Paul's Chapel, Broadway, New York",
+  "9/11 Memorial, World Trade Center, New York",
+  "Charging Bull, Bowling Green, New York",
+  "New York Stock Exchange, Wall St, New York",
+  "Grand Central Terminal, New York",
+  "Times Square, New York",
+  "Upper East Side, Manhattan, New York",
+];
+
+/** Deep-link a Google Maps con caminata desde la ubicación actual del usuario. */
+export function mapsDirUrl(query: string): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    query
+  )}&travelmode=walking`;
+}

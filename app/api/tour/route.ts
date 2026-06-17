@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
       turnsInStop?: number;
       message?: string;
       history?: ChatTurn[];
+      nudge?: boolean;
     };
 
     const message = typeof body.message === "string" ? body.message.trim() : "";
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
       stopIndex,
       phase,
       turnsInStop,
+      nudge: body.nudge === true,
     });
 
     const result = await tourReply({
