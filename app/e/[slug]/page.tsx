@@ -19,7 +19,11 @@ export default async function PlayPage({
       title={exp.title}
       openingMessage={exp.openingMessage}
       closingMessage={exp.closingMessage}
-      stops={exp.stops.map((s) => ({ title: s.title, placeQuery: s.placeQuery }))}
+      stops={exp.stops.map((s) => ({
+        title: s.title,
+        placeQuery: s.placeQuery,
+        media: s.media,
+      }))}
     />
   );
 }

@@ -8,6 +8,7 @@ import {
   unpublishExperience,
   deleteExperience,
 } from "@/app/admin/(app)/e/[id]/actions";
+import MediaSection, { type MediaItem } from "@/components/admin/MediaSection";
 
 type Step = {
   id: string;
@@ -38,9 +39,11 @@ const ta =
 export default function ExperienceEditor({
   experience,
   steps: initialSteps,
+  media,
 }: {
   experience: Experience;
   steps: Step[];
+  media: Record<string, MediaItem[]>;
 }) {
   const published = experience.status === "published";
   const [title, setTitle] = useState(experience.title);
@@ -246,6 +249,13 @@ export default function ExperienceEditor({
                 </div>
               </div>
             )}
+
+            <MediaSection
+              experienceId={experience.id}
+              stepId={s.id}
+              items={media[s.id] ?? []}
+              disabled={ro}
+            />
           </li>
         ))}
       </ol>

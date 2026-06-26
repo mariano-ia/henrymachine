@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import ExperienceEditor from "@/components/admin/ExperienceEditor";
+import type { MediaItem } from "@/components/admin/MediaSection";
 
 export const dynamic = "force-dynamic";
 
@@ -25,5 +27,30 @@ export default async function EditorPage({
     .eq("experience_id", id)
     .order("position");
 
-  return <ExperienceEditor experience={exp} steps={steps ?? []} />;
+  // media por paso, con signed URLs (bucket privado)
+  const { data: media } = await sb
+    .from("step_media")
+    .select("id, step_id, kind, storage_path, caption")
+    .eq("experience_id", id);
+
+  const admin = createAdminClient();
+  const mediaByStep: Record<string, MediaItem[]> = {};
+  for (const m of media ?? []) {
+    let url: string | null = null;
+    if (m.storage_path) {
+      const { data: signed } = await admin.storage
+        .from("experience-media")
+        .createSignedUrl(m.storage_path, 3600);
+      url = signed?.signedUrl ?? null;
+    }
+    (mediaByStep[m.step_id] ??= []).push({
+      id: m.id,
+      kind: m.kind,
+      storagePath: m.storage_path,
+      caption: m.caption,
+      url,
+    });
+  }
+
+  return <ExperienceEditor experience={exp} steps={steps ?? []} media={mediaByStep} />;
 }

@@ -4,9 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatTurn } from "@/lib/types";
 import type { TourPhase } from "@/lib/engine/play-prompt";
 import { mapsDirUrl } from "@/lib/maps";
+import type { PlayMedia } from "@/lib/db/experiences";
 
-type StopMeta = { title: string; placeQuery: string | null };
-type Message = { role: "user" | "henry"; text: string; time: string };
+type StopMeta = { title: string; placeQuery: string | null; media: PlayMedia[] };
+type Message = {
+  role: "user" | "henry";
+  text: string;
+  time: string;
+  media?: PlayMedia[];
+};
 type Status = "EN_CURSO" | "TERMINADO";
 
 type State = {
@@ -149,7 +155,14 @@ export default function PlayerChat({
     const wait = humanDelayMs(shown.length) - (Date.now() - started);
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
 
-    setMessages((prev) => [...prev, { role: "henry", text: shown, time: now() }]);
+    setMessages((prev) => {
+      const out: Message[] = [...prev, { role: "henry", text: shown, time: now() }];
+      if (intent === "arrived") {
+        const m = stops[next.stopIndex]?.media ?? [];
+        if (m.length) out.push({ role: "henry", text: "", time: now(), media: m });
+      }
+      return out;
+    });
     setTour(next);
     setSending(false);
   }
@@ -270,19 +283,41 @@ export default function PlayerChat({
 
 function Bubble({ m }: { m: Message }) {
   const isUser = m.role === "user";
+  const hasMedia = (m.media?.length ?? 0) > 0;
   return (
     <div className={isUser ? "flex justify-end" : "flex justify-start"}>
       <div
-        className={`relative max-w-[82%] rounded-lg px-2.5 py-1.5 shadow-sm ${
-          isUser ? "rounded-tr-none bg-[#d9fdd3]" : "rounded-tl-none bg-white"
-        }`}
+        className={`relative max-w-[82%] rounded-lg shadow-sm ${
+          hasMedia ? "p-1.5" : "px-2.5 py-1.5"
+        } ${isUser ? "rounded-tr-none bg-[#d9fdd3]" : "rounded-tl-none bg-white"}`}
       >
-        <p className="whitespace-pre-wrap pb-2 pr-14 text-[15px] leading-snug text-[#111b21]">{m.text}</p>
-        <span className="absolute bottom-1 right-2 flex items-center gap-0.5 text-[11px] text-[#667781]">
-          {m.time}
-          {isUser && <span className="ml-0.5 text-[#53bdeb]">✓✓</span>}
-        </span>
+        {hasMedia ? (
+          <div className="space-y-1.5">
+            {m.media!.map((md, i) => (
+              <MediaCard key={i} m={md} />
+            ))}
+          </div>
+        ) : (
+          <>
+            <p className="whitespace-pre-wrap pb-2 pr-14 text-[15px] leading-snug text-[#111b21]">
+              {m.text}
+            </p>
+            <span className="absolute bottom-1 right-2 flex items-center gap-0.5 text-[11px] text-[#667781]">
+              {m.time}
+              {isUser && <span className="ml-0.5 text-[#53bdeb]">✓✓</span>}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );
+}
+
+function MediaCard({ m }: { m: PlayMedia }) {
+  if (m.kind === "image")
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={m.url} alt={m.caption ?? ""} className="max-h-72 w-[260px] rounded-md object-cover" />;
+  if (m.kind === "video")
+    return <video src={m.url} controls className="max-h-72 w-[260px] rounded-md" />;
+  return <audio src={m.url} controls className="w-[240px]" />;
 }
