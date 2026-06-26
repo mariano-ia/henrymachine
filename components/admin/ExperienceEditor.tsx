@@ -7,6 +7,7 @@ import {
   publishExperience,
   unpublishExperience,
   deleteExperience,
+  setPricing,
 } from "@/app/admin/(app)/e/[id]/actions";
 import MediaSection, { type MediaItem } from "@/components/admin/MediaSection";
 
@@ -53,6 +54,15 @@ export default function ExperienceEditor({
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [pending, start] = useTransition();
 
+  const paywallStep = initialSteps.find((s) => s.is_paywall) ?? null;
+  const [priceDollars, setPriceDollars] = useState(
+    experience.price_cents ? (experience.price_cents / 100).toString() : ""
+  );
+  const [paywallAfter, setPaywallAfter] = useState<number>(
+    paywallStep ? paywallStep.position - 1 : Math.max(1, Math.ceil(initialSteps.length / 2))
+  );
+  const [paywallMsg, setPaywallMsg] = useState(paywallStep?.paywall_message ?? "");
+
   const ro = published; // read-only mientras está publicada (inmutable)
 
   function patch(id: string, field: keyof Step, value: string) {
@@ -89,6 +99,23 @@ export default function ExperienceEditor({
     start(async () => {
       await unpublishExperience(experience.id);
       setMsg({ kind: "ok", text: "Despublicada — ya podés editar." });
+    });
+  }
+  function savePricing() {
+    start(async () => {
+      const cents = Math.round(parseFloat(priceDollars || "0") * 100);
+      const r = await setPricing({
+        experienceId: experience.id,
+        priceCents: Number.isFinite(cents) ? cents : 0,
+        paywallAfter,
+        message: paywallMsg || null,
+        title,
+      });
+      setMsg(
+        r.ok
+          ? { kind: "ok", text: cents > 0 ? "Precio y paywall guardados." : "Marcada como gratis." }
+          : { kind: "err", text: r.error ?? "Error" }
+      );
     });
   }
 
@@ -181,6 +208,58 @@ export default function ExperienceEditor({
           />
         </div>
       </div>
+
+      {/* monetización */}
+      {!ro && (
+        <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-neutral-900/40 p-5">
+          <h2 className="text-sm font-medium text-neutral-300">Monetización</h2>
+          <div className="flex flex-wrap items-end gap-4">
+            <label className="block">
+              <span className="mb-1 block text-xs text-neutral-500">Precio (USD · 0 = gratis)</span>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={priceDollars}
+                onChange={(e) => setPriceDollars(e.target.value)}
+                className="w-32 rounded-lg border border-white/10 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400/50"
+              />
+            </label>
+            {Number(priceDollars) > 0 && (
+              <label className="block">
+                <span className="mb-1 block text-xs text-neutral-500">Gratis hasta el paso</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={steps.length}
+                  value={paywallAfter}
+                  onChange={(e) => setPaywallAfter(Number(e.target.value))}
+                  className="w-24 rounded-lg border border-white/10 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400/50"
+                />
+              </label>
+            )}
+          </div>
+          {Number(priceDollars) > 0 && (
+            <textarea
+              value={paywallMsg}
+              onChange={(e) => setPaywallMsg(e.target.value)}
+              rows={2}
+              placeholder="Mensaje del paywall (lo que ve el usuario antes de comprar)"
+              className={ta}
+            />
+          )}
+          <button
+            onClick={savePricing}
+            disabled={pending}
+            className="rounded-lg border border-white/10 px-4 py-1.5 text-sm text-neutral-200 hover:bg-white/5 disabled:opacity-50"
+          >
+            {pending ? "Guardando…" : "Guardar precio"}
+          </button>
+          <p className="text-xs text-neutral-600">
+            Al guardar un precio se crea el producto en Stripe y se inserta el paso de paywall.
+          </p>
+        </div>
+      )}
 
       {/* pasos */}
       <h2 className="mb-3 mt-8 text-sm font-medium uppercase tracking-wide text-neutral-500">

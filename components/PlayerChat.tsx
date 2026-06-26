@@ -7,13 +7,8 @@ import { mapsDirUrl } from "@/lib/maps";
 import type { PlayMedia } from "@/lib/db/experiences";
 
 type StopMeta = { title: string; placeQuery: string | null; media: PlayMedia[] };
-type Message = {
-  role: "user" | "henry";
-  text: string;
-  time: string;
-  media?: PlayMedia[];
-};
-type Status = "EN_CURSO" | "TERMINADO";
+type Message = { role: "user" | "henry"; text: string; time: string; media?: PlayMedia[] };
+type Status = "EN_CURSO" | "TERMINADO" | "PAYWALL";
 
 type State = {
   stopIndex: number;
@@ -33,21 +28,29 @@ const NUDGE_AFTER_MS = 100_000;
 
 export default function PlayerChat({
   slug,
+  anonId,
   openingMessage,
   closingMessage,
   stops,
+  locked,
+  priceCents,
+  paywallMessage,
 }: {
   slug: string;
+  anonId: string;
   title: string;
   openingMessage: string;
   closingMessage: string | null;
   stops: StopMeta[];
+  locked: boolean;
+  priceCents: number;
+  paywallMessage: string | null;
 }) {
   const LAST = stops.length - 1;
 
   const applyIntent = useCallback(
     (prev: State, intent: string): State => {
-      if (prev.status === "TERMINADO") return prev;
+      if (prev.status !== "EN_CURSO") return prev;
       const s = { ...prev };
       switch (intent) {
         case "arrived":
@@ -57,7 +60,7 @@ export default function PlayerChat({
           } else s.turnsInStop++;
           break;
         case "next":
-          if (s.stopIndex >= LAST) s.status = "TERMINADO";
+          if (s.stopIndex >= LAST) s.status = locked ? "PAYWALL" : "TERMINADO";
           else {
             s.stopIndex++;
             s.phase = "CAMINANDO";
@@ -81,7 +84,7 @@ export default function PlayerChat({
       }
       return s;
     },
-    [LAST]
+    [LAST, locked]
   );
 
   const [messages, setMessages] = useState<Message[]>(() => [
@@ -97,17 +100,18 @@ export default function PlayerChat({
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [nudged, setNudged] = useState(false);
+  const [buying, setBuying] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, sending]);
+  }, [messages, sending, tour.status]);
   useEffect(() => {
-    const ta = taRef.current;
-    if (!ta) return;
-    ta.style.height = "0px";
-    ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+    const t = taRef.current;
+    if (!t) return;
+    t.style.height = "0px";
+    t.style.height = Math.min(t.scrollHeight, 120) + "px";
   }, [input]);
 
   const historyFrom = (msgs: Message[]): ChatTurn[] =>
@@ -118,7 +122,6 @@ export default function PlayerChat({
     if (!text || sending) return;
     setInput("");
     setNudged(false);
-
     const history = historyFrom(messages);
     setMessages((prev) => [...prev, { role: "user", text, time: now() }]);
     setSending(true);
@@ -132,6 +135,7 @@ export default function PlayerChat({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slug,
+          anonId,
           stopIndex: tour.stopIndex,
           phase: tour.phase,
           turnsInStop: tour.turnsInStop,
@@ -149,8 +153,9 @@ export default function PlayerChat({
     }
 
     const next = applyIntent(tour, intent);
-    // cierre autorado: si terminó y hay mensaje de cierre, usamos ese
-    const shown = next.status === "TERMINADO" && closingMessage ? closingMessage : reply;
+    let shown = reply;
+    if (next.status === "TERMINADO" && closingMessage) shown = closingMessage;
+    if (next.status === "PAYWALL" && paywallMessage) shown = paywallMessage;
 
     const wait = humanDelayMs(shown.length) - (Date.now() - started);
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
@@ -179,6 +184,7 @@ export default function PlayerChat({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slug,
+          anonId,
           stopIndex: tour.stopIndex,
           phase: tour.phase,
           turnsInStop: tour.turnsInStop,
@@ -198,13 +204,30 @@ export default function PlayerChat({
       setMessages((prev) => [...prev, { role: "henry", text: reply, time: now() }]);
     }
     setSending(false);
-  }, [sending, nudged, tour, messages, slug]);
+  }, [sending, nudged, tour, messages, slug, anonId]);
 
   useEffect(() => {
     if (tour.status !== "EN_CURSO" || tour.phase === "EN_PAUSA" || nudged || sending) return;
     const id = setTimeout(sendNudge, NUDGE_AFTER_MS);
     return () => clearTimeout(id);
   }, [messages, tour.phase, tour.status, nudged, sending, sendNudge]);
+
+  async function buy() {
+    if (buying) return;
+    setBuying(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, anonId }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else setBuying(false);
+    } catch {
+      setBuying(false);
+    }
+  }
 
   const showMapLink = tour.status === "EN_CURSO" && tour.phase !== "EN_PAUSA";
   const target = stops[tour.stopIndex];
@@ -237,7 +260,21 @@ export default function PlayerChat({
         </a>
       )}
 
-      {tour.status === "TERMINADO" ? (
+      {tour.status === "PAYWALL" ? (
+        <div
+          className="bg-[#f0f0f0] px-5 py-5 text-center"
+          style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+        >
+          <p className="text-sm text-neutral-600">{paywallMessage ?? "Seguí el recorrido completo."}</p>
+          <button
+            onClick={buy}
+            disabled={buying}
+            className="mt-3 inline-flex items-center justify-center rounded-full bg-[#075e54] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0a7a68] active:scale-[0.99] disabled:opacity-60"
+          >
+            {buying ? "Abriendo el pago…" : `Comprar · $${(priceCents / 100).toFixed(2)}`}
+          </button>
+        </div>
+      ) : tour.status === "TERMINADO" ? (
         <div
           className="bg-[#f0f0f0] px-4 py-5 text-center text-sm text-neutral-500"
           style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}

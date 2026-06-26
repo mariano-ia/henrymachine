@@ -6,7 +6,6 @@ export type PlayMedia = {
   caption: string | null;
 };
 
-/** Una parada (arrival) lista para jugar. */
 export type PlayableStop = {
   title: string;
   proposal: string;
@@ -16,7 +15,6 @@ export type PlayableStop = {
   media: PlayMedia[];
 };
 
-/** Experiencia aplanada para el motor (parsea los pasos de la DB). */
 export type PlayableExperience = {
   id: string;
   slug: string;
@@ -25,31 +23,49 @@ export type PlayableExperience = {
   closingMessage: string | null;
   stops: PlayableStop[];
   grounding: string;
+  // monetización
+  locked: boolean; // paga y el viewer (anon) no compró → hay pasos detrás del paywall
+  priceCents: number;
+  paywallMessage: string | null;
 };
 
 /**
  * Carga una experiencia PUBLICADA lista para jugar, desde Supabase (service_role).
- * v1 (físico): estructura mensaje(apertura) + arrivals + mensaje(cierre).
- * Grounding y media privados → se leen server-side; media con signed URLs.
+ * El gate del paywall se evalúa acá con el anonId (entitlement). El contenido
+ * pago NUNCA se incluye si el viewer no compró.
  */
 export async function getPlayableExperience(
-  slug: string
+  slug: string,
+  anonId?: string
 ): Promise<PlayableExperience | null> {
   const sb = createAdminClient();
 
   const { data: exp } = await sb
     .from("experiences")
-    .select("id, slug, title, status")
+    .select("id, slug, title, status, price_cents")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
   if (!exp) return null;
 
-  const { data: steps } = await sb
+  let hasAccess = exp.price_cents === 0;
+  if (!hasAccess && anonId) {
+    const { data: ent } = await sb
+      .from("entitlements")
+      .select("id")
+      .eq("experience_id", exp.id)
+      .eq("anon_id", anonId)
+      .is("revoked_at", null)
+      .maybeSingle();
+    hasAccess = !!ent;
+  }
+
+  const { data: allSteps } = await sb
     .from("steps")
-    .select("id, type, title, body, proposal, walk_to_next, place_query, address, position")
+    .select("id, type, title, body, proposal, walk_to_next, place_query, address, position, is_paywall, paywall_message")
     .eq("experience_id", exp.id)
     .order("position");
+  const steps = allSteps ?? [];
 
   const { data: source } = await sb
     .from("content_sources")
@@ -57,14 +73,21 @@ export async function getPlayableExperience(
     .eq("experience_id", exp.id)
     .maybeSingle();
 
+  const paywallStep = steps.find((s) => s.is_paywall);
+  const paywallPos = paywallStep?.position ?? null;
+  const visible =
+    hasAccess || paywallPos == null ? steps : steps.filter((s) => s.position <= paywallPos);
+
+  // media (privada → signed URLs) solo de pasos visibles
+  const visibleIds = new Set(visible.map((s) => s.id));
   const { data: media } = await sb
     .from("step_media")
     .select("step_id, kind, storage_path, external_url, caption, position")
     .eq("experience_id", exp.id)
     .order("position");
-
   const mediaByStep: Record<string, PlayMedia[]> = {};
   for (const m of media ?? []) {
+    if (!visibleIds.has(m.step_id)) continue;
     let url: string | null = m.external_url ?? null;
     if (!url && m.storage_path) {
       const { data: signed } = await sb.storage
@@ -75,9 +98,8 @@ export async function getPlayableExperience(
     if (url) (mediaByStep[m.step_id] ??= []).push({ kind: m.kind, url, caption: m.caption });
   }
 
-  const list = steps ?? [];
-  const messages = list.filter((s) => s.type === "message");
-  const arrivals = list.filter((s) => s.type === "arrival");
+  const messages = visible.filter((s) => s.type === "message");
+  const arrivals = visible.filter((s) => s.type === "arrival");
 
   return {
     id: exp.id,
@@ -93,6 +115,9 @@ export async function getPlayableExperience(
       address: a.address,
       media: mediaByStep[a.id] ?? [],
     })),
-    grounding: source?.inline_text ?? "",
+    grounding: source?.inline_text ?? "", // server-only; NO se manda al cliente
+    locked: exp.price_cents > 0 && !hasAccess,
+    priceCents: exp.price_cents,
+    paywallMessage: paywallStep?.paywall_message ?? null,
   };
 }

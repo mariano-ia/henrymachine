@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as {
       slug?: string;
+      anonId?: string;
       stopIndex?: number;
       phase?: TourPhase;
       turnsInStop?: number;
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
     if (!slug) return NextResponse.json({ error: "Falta la experiencia." }, { status: 400 });
     if (!message) return NextResponse.json({ error: "Escribí un mensaje." }, { status: 400 });
 
-    const exp = await getPlayableExperience(slug);
+    const exp = await getPlayableExperience(slug, body.anonId);
     if (!exp || exp.stops.length === 0) {
       return NextResponse.json({ error: "Experiencia no disponible." }, { status: 404 });
     }

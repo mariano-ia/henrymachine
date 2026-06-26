@@ -119,6 +119,15 @@ export type Database = {
     }
     Functions: {
       assert_publishable: { Args: { exp: string }; Returns: undefined }
+      set_experience_pricing: {
+        Args: {
+          p_exp: string
+          p_price_cents: number
+          p_paywall_after: number | null
+          p_message: string | null
+        }
+        Returns: undefined
+      }
       can_read_step: { Args: { p_step_id: string }; Returns: boolean }
       has_experience_access: { Args: { exp: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }

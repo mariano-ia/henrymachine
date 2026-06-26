@@ -3,6 +3,39 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getStripe } from "@/lib/stripe";
+
+export async function setPricing(input: {
+  experienceId: string;
+  priceCents: number;
+  paywallAfter: number | null;
+  message: string | null;
+  title: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const sb = await createClient();
+  const { error: rpcErr } = await sb.rpc("set_experience_pricing", {
+    p_exp: input.experienceId,
+    p_price_cents: input.priceCents,
+    p_paywall_after: input.priceCents > 0 ? input.paywallAfter : null,
+    p_message: input.message,
+  });
+  if (rpcErr) return { ok: false, error: rpcErr.message };
+
+  if (input.priceCents > 0) {
+    try {
+      const price = await getStripe().prices.create({
+        unit_amount: input.priceCents,
+        currency: "usd",
+        product_data: { name: `Henry — ${input.title}` },
+      });
+      await sb.from("experiences").update({ stripe_price_id: price.id }).eq("id", input.experienceId);
+    } catch {
+      return { ok: false, error: "No se pudo crear el precio en Stripe." };
+    }
+  }
+  revalidatePath(`/admin/e/${input.experienceId}`);
+  return { ok: true };
+}
 
 export type StepEdit = {
   id: string;
