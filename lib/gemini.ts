@@ -87,6 +87,34 @@ export async function chatWithHenry(params: {
   };
 }
 
+/** Generación estructurada (JSON) — para el generador de experiencias. */
+export async function generateJson<T = unknown>(
+  systemInstruction: string,
+  prompt: string,
+  maxOutputTokens = 6000
+): Promise<T> {
+  const ai = client();
+  const res = await withRetry(() =>
+    ai.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+      config: {
+        systemInstruction,
+        temperature: 0.7,
+        maxOutputTokens,
+        responseMimeType: "application/json",
+        ...THINKING,
+      },
+    })
+  );
+  const text = (res.text ?? "")
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
+  return JSON.parse(text) as T;
+}
+
 /** Turno de recorrido: devuelve la respuesta de Henry + la intención clasificada. */
 export async function tourReply(params: {
   systemInstruction: string;
