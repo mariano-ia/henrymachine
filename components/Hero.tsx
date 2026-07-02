@@ -19,7 +19,7 @@ export default function Hero({
           Primera prueba
         </span>
 
-        <h1 className="font-display text-[3.25rem] font-bold uppercase leading-[0.92] tracking-tight text-white sm:text-7xl">
+        <h1 className="font-condensed text-[3.25rem] font-bold uppercase leading-[0.92] tracking-tight text-white sm:text-7xl">
           Chatear con Henry sobre su viaje a{" "}
           <span className="text-rose-500">Japón</span>
         </h1>

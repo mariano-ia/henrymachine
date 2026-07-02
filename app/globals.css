@@ -21,3 +21,49 @@ body {
   width: 0;
   background: transparent;
 }
+
+/* =========================================================================
+   HOME (tienda) — fondo claro propio.
+   El body global sigue DARK (player /e/[slug] y admin lo necesitan); la home
+   pinta su propio <main className="henry-home">. Cuando esa home está montada,
+   forzamos esquema claro y fondo claro en html/body para que el overscroll
+   (rubber-band iOS), scrollbars y controles no dejen colar el fondo oscuro.
+   ========================================================================= */
+html:has(.henry-home),
+body:has(.henry-home) {
+  background: #ffffff;
+  color-scheme: light;
+}
+
+/* =========================================================================
+   Chat preview del hero — burbujas que entran (en loop) + "escribiendo…"
+   ========================================================================= */
+@keyframes henry-bubble {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.henry-bubble {
+  animation: henry-bubble 0.34s ease both;
+}
+
+@keyframes henry-typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 0.9;
+    transform: translateY(-2px);
+  }
+}
+.henry-typing-dot {
+  animation: henry-typing 1.1s infinite ease-in-out;
+}

@@ -1,98 +1,93 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import CatalogGrid, { type Exp } from "@/components/CatalogGrid";
+import HeroChat from "@/components/HeroChat";
 
 export const dynamic = "force-dynamic";
-
-function coverUrl(path: string | null): string | null {
-  if (!path) return null;
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/experience-covers/${path}`;
-}
-function price(cents: number | null): string {
-  return !cents || cents === 0 ? "Gratis" : `$${(cents / 100).toFixed(2)}`;
-}
 
 export default async function Home() {
   const sb = await createClient();
   const { data } = await sb
     .from("experiences_public")
-    .select("id, slug, title, city, pitch, cover_path, price_cents")
+    .select(
+      "id, slug, title, city, neighborhood, theme, pitch, expected_minutes, distance_m, price_cents, stops_count"
+    )
     .order("published_at", { ascending: false });
-  const experiences = data ?? [];
+  const experiences = (data ?? []) as Exp[];
 
   return (
-    <main className="min-h-[100dvh]">
-      {/* glows */}
-      <div className="pointer-events-none fixed -top-40 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-indigo-600/15 blur-[140px]" />
-
-      <header className="relative mx-auto max-w-5xl px-6 pb-10 pt-20 text-center sm:pt-28">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
-          Henry
-        </p>
-        <h1 className="mx-auto mt-4 max-w-2xl font-display text-5xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-6xl">
-          Recorré la ciudad con <span className="text-rose-500">Henry</span>
-        </h1>
-        <p className="mx-auto mt-5 max-w-md text-[15px] leading-relaxed text-neutral-400">
-          Experiencias guiadas, caminando, en su voz. Henry te lleva paso a paso
-          y te responde en el camino.
-        </p>
-      </header>
-
-      <section className="relative mx-auto max-w-5xl px-6 pb-24">
-        {experiences.length === 0 ? (
-          <p className="text-center text-neutral-500">Pronto, las primeras experiencias.</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {experiences.map((e) => {
-              const cover = coverUrl(e.cover_path);
-              return (
-                <Link
-                  key={e.id}
-                  href={`/e/${e.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/40 transition hover:border-white/20 hover:bg-neutral-900"
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    {cover ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={cover}
-                        alt={e.title ?? ""}
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-600/30 via-neutral-800 to-rose-600/20">
-                        <span className="font-display text-3xl uppercase tracking-tight text-white/30">
-                          {e.city ?? "Henry"}
-                        </span>
-                      </div>
-                    )}
-                    <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
-                      {price(e.price_cents)}
-                    </span>
-                  </div>
-                  <div className="flex flex-1 flex-col p-4">
-                    {e.city && (
-                      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-                        {e.city}
-                      </p>
-                    )}
-                    <h2 className="mt-1 font-semibold leading-snug text-white">
-                      {e.title}
-                    </h2>
-                    {e.pitch && (
-                      <p className="mt-1.5 line-clamp-2 text-sm text-neutral-400">
-                        {e.pitch}
-                      </p>
-                    )}
-                    <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-neutral-300 transition group-hover:gap-2 group-hover:text-white">
-                      Empezar <span aria-hidden>→</span>
-                    </span>
-                  </div>
+    <main className="henry-home min-h-[100dvh] bg-paper text-ink antialiased">
+      {/* ===================== HERO (ciudad, neutro) ===================== */}
+      <section className="relative bg-ink text-paper">
+        <div className="mx-auto max-w-editorial px-6 sm:px-10">
+          {/* NAV */}
+          <header className="flex items-start justify-between pt-7">
+            <Link href="/" className="leading-[1.1] text-paper">
+              <span className="block text-[13px] font-medium tracking-tight">Henry</span>
+              <span className="block text-[9px] font-medium uppercase tracking-label text-paper/40">
+                New York
+              </span>
+            </Link>
+            <ul className="flex items-center gap-7 pt-1 text-[10px] font-medium uppercase tracking-label text-paper/55">
+              <li className="hidden sm:block">
+                <Link href="#experiencias" className="transition-colors hover:text-paper">
+                  Experiencias
                 </Link>
-              );
-            })}
+              </li>
+              <li className="hidden sm:block">
+                <Link href="#como-funciona" className="transition-colors hover:text-paper">
+                  Cómo funciona
+                </Link>
+              </li>
+              <li>
+                <Link href="#henry" className="transition-colors hover:text-paper">
+                  Henry
+                </Link>
+              </li>
+            </ul>
+          </header>
+
+          {/* HERO: copy a la izquierda, chat en loop a la derecha */}
+          <div className="grid items-center gap-12 pb-32 pt-16 sm:pb-40 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="max-w-2xl">
+              <span className="inline-flex items-center gap-2 rounded-full border border-paper/15 px-3 py-1.5 text-[9.5px] font-medium uppercase tracking-label text-paper/65">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+                Nueva York · recorridos por chat
+              </span>
+              <h1 className="mt-6 text-[clamp(2rem,5.2vw,3.6rem)] font-medium leading-[1.06] tracking-[-0.015em] text-paper">
+                Chateá con <span className="text-brand">Henry</span> y recorré
+                Nueva York a pie
+              </h1>
+              <p className="mt-5 max-w-[46ch] text-[13px] leading-[1.75] text-paper/60">
+                Le escribís y él te va guiando parada por parada, en su propia
+                voz —como un amigo que conoce cada cuadra. Elegí un recorrido y
+                arrancá la charla.
+              </p>
+            </div>
+
+            <div className="hidden justify-end lg:flex">
+              <HeroChat />
+            </div>
           </div>
-        )}
+        </div>
       </section>
+
+      {/* ===================== CATÁLOGO (card de filtros + grid) ===================== */}
+      <div className="mx-auto max-w-editorial px-6 sm:px-10">
+        <CatalogGrid experiences={experiences} />
+      </div>
+
+      {/* ===================== PIE ===================== */}
+      <footer className="mt-10 border-t border-ink/15">
+        <div className="mx-auto flex max-w-editorial flex-col gap-4 px-6 py-12 sm:flex-row sm:items-end sm:justify-between sm:px-10">
+          <p className="text-[13px] font-medium tracking-tight">
+            Henry <span className="font-normal text-ink/50">— New York</span>
+          </p>
+          <p className="text-[10px] font-medium uppercase tracking-label text-ink/40">
+            Recorridos guiados a pie
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }

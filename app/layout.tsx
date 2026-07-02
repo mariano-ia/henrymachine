@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Oswald } from "next/font/google";
+import { Inter, Fraunces, Oswald } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -8,23 +8,35 @@ const inter = Inter({
   display: "swap",
 });
 
-const oswald = Oswald({
+// Fraunces: serif editorial de alto contraste con itálicas caligráficas.
+// Variable (sin `weight`) para que opsz/font-optical-sizing dé el contraste
+// "display" automáticamente en los titulares grandes y los pesos vía CSS.
+const fraunces = Fraunces({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
+  axes: ["opsz"],
   variable: "--font-display",
   display: "swap",
 });
 
+// Oswald (condensada) se conserva para las vistas oscuras heredadas (/demo).
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-condensed",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Chateá con Henry",
-  description: "Chateá con Henry sobre su viaje a Japón.",
+  title: "Henry — Recorré la ciudad",
+  description:
+    "Experiencias-recorrido guiadas por Henry. Caminá Nueva York paso a paso, en su voz.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  themeColor: "#0a0a0a",
+  themeColor: "#f6f6f5",
 };
 
 export default function RootLayout({
@@ -33,7 +45,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${inter.variable} ${oswald.variable}`}>
+    <html
+      lang="es"
+      className={`${inter.variable} ${fraunces.variable} ${oswald.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

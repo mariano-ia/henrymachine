@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         anon_id: anonId,
         purchase_id: purchase?.id ?? "",
       },
-      success_url: `${origin}/e/${slug}?purchased=1`,
+      success_url: `${origin}/e/${slug}/chat?purchased=1`,
       cancel_url: `${origin}/e/${slug}`,
     });
     if (purchase) {
