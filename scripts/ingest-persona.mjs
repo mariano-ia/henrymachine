@@ -115,16 +115,17 @@ for (const url of links) {
     continue;
   }
   const title = (await fetchTitle(url)) ?? id;
+  const cleanUrl = `https://www.youtube.com/watch?v=${id}`;
   try {
     const text = await fetchTranscript(id);
-    videos.push({ title, text, via: "subtítulos" });
+    videos.push({ title, text, via: "subtítulos", url: cleanUrl });
     console.log(`✓ ${title} (${text.length} chars, subtítulos)`);
   } catch {
     try {
       process.stdout.write(`… ${title}: sin subtítulos, transcribiendo con Gemini`);
-      const text = await transcribeWithGemini(`https://www.youtube.com/watch?v=${id}`);
+      const text = await transcribeWithGemini(cleanUrl);
       if (!text) throw new Error("vacío");
-      videos.push({ title, text, via: "gemini" });
+      videos.push({ title, text, via: "gemini", url: cleanUrl });
       console.log(` → ✓ (${text.length} chars)`);
     } catch (e) {
       console.log(` → ✗ falló (${e.message})`);
@@ -164,7 +165,7 @@ const { data: existing } = await sb.from("voice_profiles").select("id").eq("is_g
 const profile = {
   bio,
   voice,
-  sources: videos.map((v) => ({ title: v.title, via: v.via })),
+  sources: videos.map((v) => ({ title: v.title, via: v.via, url: v.url })),
   ingested_at: new Date().toISOString(),
 };
 if (existing) {

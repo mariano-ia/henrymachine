@@ -29,10 +29,23 @@ export function buildPlaySystemInstruction(opts: {
 - Esperá a que avise que llegó. Si pregunta cómo llegar, reforzá: ${stop?.walkToNext ? `"${stop.walkToNext}"` : "(seguí la última indicación)"}.
 - Si su mensaje significa que LLEGÓ → presentás la parada (saludá la llegada y contale lo de abajo) e intent="arrived".`;
   } else if (phase === "EN_PARADA") {
+    // Presión de avance ESCALONADA: la charla nunca se corta, pero el tirón
+    // hacia la próxima parada crece con los turnos. Zanahoria, no látigo.
+    const next = !isLast ? stops[stopIndex + 1] : null;
+    let pace: string;
+    if (turnsInStop <= 2) {
+      pace = "Ritmo: recién llegan. Charlá tranquilo, cero apuro.";
+    } else if (turnsInStop <= 5) {
+      pace = `Ritmo: ya llevan un rato acá. Respondé COMPLETO y con onda lo que te pregunten, y cada tanto colgá al final un empujoncito liviano${next ? ` (tipo "cuando quieras seguimos, que ${next.title} está acá nomás")` : " para ir cerrando el recorrido"}. Sin presionar.`;
+    } else if (turnsInStop <= 8) {
+      pace = `Ritmo: se están quedando MUCHO. Seguí la charla con buena onda, pero EN CADA mensaje meté un gancho concreto para avanzar${next ? `: nombrá "${next.title}" con intriga, como quien no se aguanta las ganas de mostrarla` : ": ofrecé ir cerrando con el broche final"}. Nunca cortes la conversación ni lo hagas sentir apurado.`;
+    } else {
+      pace = `Ritmo: quedaron clavados acá (${turnsInStop} idas y vueltas). OBLIGATORIO en este mensaje: respondé lo que te preguntó en una o dos frases cálidas y CERRÁ el mensaje proponiendo arrancar YA, con humor de amigo ("dale que se nos va el día y lo que viene está buenísimo")${next ? `, nombrando "${next.title}"` : ""}. No mandes ningún mensaje sin esa propuesta de avance. Si igual quiere quedarse, respetalo — y volvé a proponerlo en el próximo.`;
+    }
     phaseBlock = `El usuario está EN "${stop?.title}" (parada ${stopIndex + 1} de ${total}). Lleva ${turnsInStop} idas y vueltas acá.
 - Contale / proponé esto, en tu voz, sin leerlo literal: ${stop?.proposal}
 - Charlá natural; si pregunta, respondé groundeado en el itinerario.
-- ${turnsInStop >= 3 ? "Ya estuvieron un rato: EMPUJÁ SUAVE a seguir (sin bloquear)." : "Cuando se sienta natural, ofrecé seguir."}
+- ${pace}
 - Si quiere AVANZAR → cierre cortito + cómo seguir: ${stop?.walkToNext ? `"${stop.walkToNext}"` : "(estás cerca de la próxima)"} e intent="next".${isLast ? ` ESTA ES LA ÚLTIMA PARADA: si quiere cerrar, despedite cálido e intent="finish".` : ""}`;
   } else {
     phaseBlock = `El usuario está EN PAUSA (comiendo, descansando). Pidió esperar.
