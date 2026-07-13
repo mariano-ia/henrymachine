@@ -60,12 +60,12 @@ export default function BuyBar({
   }
 
   const base =
-    "inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[13px] font-medium transition-colors";
+    "inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-semibold transition-colors";
 
   if (checking) {
     return (
       <button disabled className={`${base} bg-ink/10 text-ink/40`}>
-        Cargando…
+        Un segundo…
       </button>
     );
   }
@@ -73,8 +73,7 @@ export default function BuyBar({
   if (free || owned) {
     return (
       <button onClick={start} className={`${base} bg-brand text-white hover:bg-brand-dark`}>
-        Comenzar recorrido
-        <span aria-hidden>→</span>
+        Dale, vamos <span aria-hidden>→</span>
       </button>
     );
   }
@@ -85,8 +84,7 @@ export default function BuyBar({
       disabled={busy}
       className={`${base} bg-brand text-white hover:bg-brand-dark disabled:opacity-70`}
     >
-      {busy ? "Redirigiendo…" : `Comprar por ${fmtPrice(priceCents)}`}
-      {!busy && <span aria-hidden>→</span>}
+      {busy ? "Abriendo el pago…" : `Comprá y arrancá · ${fmtPrice(priceCents)}`}
     </button>
   );
 }

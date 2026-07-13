@@ -23,20 +23,27 @@ body {
 }
 
 /* =========================================================================
-   HOME (tienda) — fondo claro propio.
-   El body global sigue DARK (player /e/[slug] y admin lo necesitan); la home
-   pinta su propio <main className="henry-home">. Cuando esa home está montada,
-   forzamos esquema claro y fondo claro en html/body para que el overscroll
-   (rubber-band iOS), scrollbars y controles no dejen colar el fondo oscuro.
+   Tienda: base clara propia (el player viejo y el admin siguen oscuros por el
+   body global; la tienda pinta su <main className="henry-home">).
    ========================================================================= */
 html:has(.henry-home),
 body:has(.henry-home) {
-  background: #ffffff;
+  background: #fcfbf9;
   color-scheme: light;
 }
 
+/* Grano de ciudad muy sutil, para superficies oscuras (hero / chat) */
+.henry-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 /* =========================================================================
-   Chat preview del hero — burbujas que entran (en loop) + "escribiendo…"
+   Chat preview del hero — burbujas que entran (loop) + "escribiendo…"
    ========================================================================= */
 @keyframes henry-bubble {
   from {

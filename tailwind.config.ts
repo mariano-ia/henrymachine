@@ -5,29 +5,43 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        // Sistema (grotesca)
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        // Titulares (serif Fraunces)
-        display: ["var(--font-display)", "Georgia", "serif"],
-        serif: ["var(--font-display)", "Georgia", "serif"],
-        // Etiquetas tipo "ticket / sello urbano" (condensada Oswald)
-        condensed: ["var(--font-condensed)", "Oswald", "Impact", "sans-serif"],
+        display: ["var(--font-sans)", "system-ui", "sans-serif"],
+        // Voz de Henry (manuscrita, solo acentos)
+        hand: ["var(--font-hand)", "ui-rounded", "cursive"],
+        // Condensada (/demo viejo)
+        condensed: ["var(--font-condensed)", "Impact", "sans-serif"],
       },
       colors: {
-        // Base urbana neutra (blanco / tinta)
-        paper: "#FFFFFF",
+        // Base clara + tinta casi negra
+        paper: "#FCFBF9",
         card: "#FFFFFF",
-        ink: "#1C1B18",
-        // Acento contenido (ladrillo / NYC sin gritar)
+        ink: "#1A1A1A",
+        // Hero / chat: gris muy oscuro azulado (no negro puro)
+        night: "#14161B",
+        "night-soft": "#1E212A",
+        // Acento ladrillo
         brand: "#CC4E2A",
         "brand-dark": "#A93E20",
-        // Color por tema (sutil, se va sumando de a poco)
-        comida: "#B8492E",
-        vistas: "#3A6B97",
-        "vida-local": "#3C7A55",
-        clasicos: "#A87C2E",
+        // Temas — señalética del subte de NYC
+        comida: "#EE352E",
+        vistas: "#0039A6",
+        local: "#00933C",
+        clasicos: "#FF6319",
+        arte: "#B933AD",
+        historia: "#996633",
+        noche: "#14161B",
+        compras: "#FCCC0A",
+      },
+      boxShadow: {
+        card: "0 2px 14px -8px rgba(26,26,26,0.16)",
+        "card-hover": "0 18px 40px -22px rgba(26,26,26,0.38)",
+        bar: "0 -6px 26px -16px rgba(26,26,26,0.28)",
+        bubble: "0 1px 2px rgba(26,26,26,0.10)",
       },
       letterSpacing: {
-        label: "0.18em",
+        label: "0.14em",
       },
       maxWidth: {
         editorial: "78rem",

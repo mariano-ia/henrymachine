@@ -2,12 +2,15 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   saveExperience,
   publishExperience,
   unpublishExperience,
   deleteExperience,
   setPricing,
+  addStep,
+  deleteStep,
 } from "@/app/admin/(app)/e/[id]/actions";
 import MediaSection, { type MediaItem } from "@/components/admin/MediaSection";
 
@@ -63,30 +66,71 @@ export default function ExperienceEditor({
   );
   const [paywallMsg, setPaywallMsg] = useState(paywallStep?.paywall_message ?? "");
 
-  const ro = published; // read-only mientras está publicada (inmutable)
+  const ro = false; // las experiencias se pueden editar siempre, también publicadas
+
+  const router = useRouter();
 
   function patch(id: string, field: keyof Step, value: string) {
     setSteps((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
   }
 
+  function savePayload() {
+    return {
+      id: experience.id,
+      title,
+      pitch: pitch || null,
+      city: city || null,
+      steps: steps.map((s) => ({
+        id: s.id,
+        title: s.title,
+        body: s.body,
+        proposal: s.proposal,
+        walk_to_next: s.walk_to_next,
+        place_query: s.place_query,
+        address: s.address,
+      })),
+    };
+  }
+
   function save() {
     start(async () => {
-      const r = await saveExperience({
-        id: experience.id,
-        title,
-        pitch: pitch || null,
-        city: city || null,
-        steps: steps.map((s) => ({
-          id: s.id,
-          title: s.title,
-          body: s.body,
-          proposal: s.proposal,
-          walk_to_next: s.walk_to_next,
-          place_query: s.place_query,
-          address: s.address,
-        })),
-      });
+      const r = await saveExperience(savePayload());
       setMsg(r.ok ? { kind: "ok", text: "Guardado." } : { kind: "err", text: r.error ?? "Error" });
+    });
+  }
+
+  function addStepAt(afterPosition: number, type: "message" | "arrival") {
+    start(async () => {
+      // primero guardo lo editado, para no perderlo al recargar la lista
+      const s1 = await saveExperience(savePayload());
+      if (!s1.ok) {
+        setMsg({ kind: "err", text: s1.error ?? "Error al guardar antes de agregar" });
+        return;
+      }
+      const r = await addStep({ experienceId: experience.id, afterPosition, type });
+      if (!r.ok) setMsg({ kind: "err", text: r.error ?? "Error" });
+      else {
+        setMsg({ kind: "ok", text: type === "arrival" ? "Parada agregada." : "Mensaje agregado." });
+        router.refresh();
+      }
+    });
+  }
+
+  function removeStep(s: Step) {
+    const name = s.title ? ` · ${s.title}` : "";
+    if (!confirm(`¿Borrar el paso ${s.position}${name}? Se borra también su multimedia.`)) return;
+    start(async () => {
+      const s1 = await saveExperience(savePayload());
+      if (!s1.ok) {
+        setMsg({ kind: "err", text: s1.error ?? "Error al guardar antes de borrar" });
+        return;
+      }
+      const r = await deleteStep({ stepId: s.id, experienceId: experience.id });
+      if (!r.ok) setMsg({ kind: "err", text: r.error ?? "Error" });
+      else {
+        setMsg({ kind: "ok", text: "Paso borrado." });
+        router.refresh();
+      }
     });
   }
   function publish() {
@@ -101,21 +145,49 @@ export default function ExperienceEditor({
       setMsg({ kind: "ok", text: "Despublicada — ya podés editar." });
     });
   }
+  // pasos de contenido (sin contar la fila del paywall): el paywall válido va
+  // después de un paso entre 1 y contentCount-1 (tiene que quedar algo para vender)
+  const contentCount = steps.filter((s) => !s.is_paywall).length;
+  const maxPaywallAfter = Math.max(1, contentCount - 1);
+
   function savePricing() {
+    const cents = Math.round(parseFloat(priceDollars || "0") * 100);
+    const priceCents = Number.isFinite(cents) && cents > 0 ? cents : 0;
+    if (priceCents > 0) {
+      if (contentCount < 2) {
+        setMsg({ kind: "err", text: "Se necesitan al menos 2 pasos para poner un paywall." });
+        return;
+      }
+      if (!Number.isInteger(paywallAfter) || paywallAfter < 1 || paywallAfter > maxPaywallAfter) {
+        setMsg({
+          kind: "err",
+          text: `"Gratis hasta el paso" tiene que estar entre 1 y ${maxPaywallAfter}: tiene que quedar al menos un paso pago detrás del paywall.`,
+        });
+        return;
+      }
+    }
     start(async () => {
-      const cents = Math.round(parseFloat(priceDollars || "0") * 100);
+      // primero guardo lo editado: el RPC re-crea el paywall y el editor se remonta
+      const s1 = await saveExperience(savePayload());
+      if (!s1.ok) {
+        setMsg({ kind: "err", text: s1.error ?? "Error al guardar antes del precio" });
+        return;
+      }
       const r = await setPricing({
         experienceId: experience.id,
-        priceCents: Number.isFinite(cents) ? cents : 0,
+        priceCents,
         paywallAfter,
         message: paywallMsg || null,
         title,
       });
-      setMsg(
-        r.ok
-          ? { kind: "ok", text: cents > 0 ? "Precio y paywall guardados." : "Marcada como gratis." }
-          : { kind: "err", text: r.error ?? "Error" }
-      );
+      if (!r.ok) setMsg({ kind: "err", text: r.error ?? "Error" });
+      else {
+        setMsg({
+          kind: "ok",
+          text: priceCents > 0 ? "Precio y paywall guardados." : "Marcada como gratis.",
+        });
+        router.refresh();
+      }
     });
   }
 
@@ -135,6 +207,13 @@ export default function ExperienceEditor({
               >
                 Jugar
               </Link>
+              <button
+                onClick={save}
+                disabled={pending}
+                className="rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-neutral-950 hover:bg-neutral-200 disabled:opacity-50"
+              >
+                {pending ? "Guardando…" : "Guardar"}
+              </button>
               <button
                 onClick={unpublish}
                 disabled={pending}
@@ -175,8 +254,9 @@ export default function ExperienceEditor({
       )}
 
       {published && (
-        <p className="mb-4 rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-          Publicada (inmutable). Despublicá para editar el contenido.
+        <p className="mb-4 rounded-lg bg-sky-500/10 px-3 py-2 text-sm text-sky-200">
+          Publicada y en vivo. Editá y tocá <span className="font-medium">Guardar</span>: los cambios
+          se aplican al instante para quien la juegue.
         </p>
       )}
 
@@ -231,7 +311,7 @@ export default function ExperienceEditor({
                 <input
                   type="number"
                   min={1}
-                  max={steps.length}
+                  max={maxPaywallAfter}
                   value={paywallAfter}
                   onChange={(e) => setPaywallAfter(Number(e.target.value))}
                   className="w-24 rounded-lg border border-white/10 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400/50"
@@ -265,6 +345,27 @@ export default function ExperienceEditor({
       <h2 className="mb-3 mt-8 text-sm font-medium uppercase tracking-wide text-neutral-500">
         Pasos ({steps.length})
       </h2>
+      {steps.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center">
+          <p className="mb-3 text-sm text-neutral-500">Esta experiencia no tiene pasos todavía.</p>
+          <div className="flex justify-center gap-3">
+            <button
+              onClick={() => addStepAt(0, "message")}
+              disabled={pending}
+              className="rounded-lg border border-white/10 px-4 py-1.5 text-sm text-neutral-200 hover:bg-white/5 disabled:opacity-50"
+            >
+              + Mensaje de apertura
+            </button>
+            <button
+              onClick={() => addStepAt(0, "arrival")}
+              disabled={pending}
+              className="rounded-lg border border-white/10 px-4 py-1.5 text-sm text-neutral-200 hover:bg-white/5 disabled:opacity-50"
+            >
+              + Primera parada
+            </button>
+          </div>
+        </div>
+      )}
       <ol className="space-y-3">
         {steps.map((s) => (
           <li key={s.id} className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
@@ -282,6 +383,16 @@ export default function ExperienceEditor({
                 placeholder="Título del paso"
                 className="flex-1 bg-transparent text-sm font-medium text-white outline-none disabled:opacity-70"
               />
+              {!s.is_paywall && (
+                <button
+                  onClick={() => removeStep(s)}
+                  disabled={pending}
+                  title="Borrar paso"
+                  className="shrink-0 rounded-md px-1.5 text-lg leading-none text-neutral-600 transition hover:text-red-400 disabled:opacity-40"
+                >
+                  ×
+                </button>
+              )}
             </div>
 
             {s.type === "message" ? (
@@ -329,12 +440,33 @@ export default function ExperienceEditor({
               </div>
             )}
 
-            <MediaSection
-              experienceId={experience.id}
-              stepId={s.id}
-              items={media[s.id] ?? []}
-              disabled={ro}
-            />
+            {/* el paso paywall se borra y re-crea al guardar precio: no aceptar media ahí */}
+            {!s.is_paywall && (
+              <MediaSection
+                experienceId={experience.id}
+                stepId={s.id}
+                items={media[s.id] ?? []}
+                disabled={ro}
+              />
+            )}
+
+            {/* alta de pasos debajo de éste */}
+            <div className="mt-3 flex gap-3 border-t border-white/5 pt-2.5">
+              <button
+                onClick={() => addStepAt(s.position, "arrival")}
+                disabled={pending}
+                className="text-xs font-medium text-neutral-500 transition hover:text-white disabled:opacity-40"
+              >
+                + Parada debajo
+              </button>
+              <button
+                onClick={() => addStepAt(s.position, "message")}
+                disabled={pending}
+                className="text-xs font-medium text-neutral-500 transition hover:text-white disabled:opacity-40"
+              >
+                + Mensaje debajo
+              </button>
+            </div>
           </li>
         ))}
       </ol>

@@ -118,6 +118,11 @@ export type Database = {
       }
     }
     Functions: {
+      admin_add_step: {
+        Args: { p_exp: string; p_after: number; p_type: "message" | "arrival" }
+        Returns: string
+      }
+      admin_delete_step: { Args: { p_step: string }; Returns: undefined }
       assert_publishable: { Args: { exp: string }; Returns: undefined }
       set_experience_pricing: {
         Args: {
@@ -125,6 +130,7 @@ export type Database = {
           p_price_cents: number
           p_paywall_after: number | null
           p_message: string | null
+          p_stripe_price_id?: string | null
         }
         Returns: undefined
       }

@@ -1,25 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Fraunces, Oswald } from "next/font/google";
+import { Schibsted_Grotesk, Caveat, Oswald } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+// UI / sistema: grotesca con carácter (jerarquía por pesos).
+const sans = Schibsted_Grotesk({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 });
 
-// Fraunces: serif editorial de alto contraste con itálicas caligráficas.
-// Variable (sin `weight`) para que opsz/font-optical-sizing dé el contraste
-// "display" automáticamente en los titulares grandes y los pesos vía CSS.
-const fraunces = Fraunces({
+// Voz de Henry: manuscrita legible, SOLO para acentos (caption de fotos, tip de
+// Henry, hook del hero). Nunca en botones, nav, precios ni formularios.
+const hand = Caveat({
   subsets: ["latin"],
-  style: ["normal", "italic"],
-  axes: ["opsz"],
-  variable: "--font-display",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hand",
   display: "swap",
 });
 
-// Oswald (condensada) se conserva para las vistas oscuras heredadas (/demo).
+// Condensada, se conserva para las vistas viejas (/demo).
 const oswald = Oswald({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
@@ -28,15 +27,15 @@ const oswald = Oswald({
 });
 
 export const metadata: Metadata = {
-  title: "Henry — Recorré la ciudad",
+  title: "Henry — Nueva York a pie, por chat",
   description:
-    "Experiencias-recorrido guiadas por Henry. Caminá Nueva York paso a paso, en su voz.",
+    "Micro-recorridos a pie por Nueva York guiados por chat. Henry te lleva parada por parada, como un amigo local.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#f6f6f5",
+  themeColor: "#14161b",
 };
 
 export default function RootLayout({
@@ -47,7 +46,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} ${fraunces.variable} ${oswald.variable}`}
+      className={`${sans.variable} ${hand.variable} ${oswald.variable}`}
     >
       <body>{children}</body>
     </html>

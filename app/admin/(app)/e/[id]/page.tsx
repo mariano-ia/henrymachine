@@ -52,5 +52,7 @@ export default async function EditorPage({
     });
   }
 
-  return <ExperienceEditor experience={exp} steps={steps ?? []} media={mediaByStep} />;
+  // key por lista de pasos: al agregar/borrar un paso, el editor se remonta con datos frescos
+  const stepsKey = (steps ?? []).map((s) => s.id).join("|");
+  return <ExperienceEditor key={stepsKey} experience={exp} steps={steps ?? []} media={mediaByStep} />;
 }

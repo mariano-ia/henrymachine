@@ -7,7 +7,14 @@ import { mapsDirUrl } from "@/lib/maps";
 import type { PlayMedia } from "@/lib/db/experiences";
 
 type StopMeta = { title: string; placeQuery: string | null; media: PlayMedia[] };
-type Message = { role: "user" | "henry"; text: string; time: string; media?: PlayMedia[] };
+type Message = {
+  role: "user" | "henry";
+  text: string;
+  time: string;
+  media?: PlayMedia[];
+  kind?: "arrival";
+  arrival?: { n: number; title: string };
+};
 type Status = "EN_CURSO" | "TERMINADO" | "PAYWALL";
 
 type State = {
@@ -163,7 +170,15 @@ export default function PlayerChat({
     setMessages((prev) => {
       const out: Message[] = [...prev, { role: "henry", text: shown, time: now() }];
       if (intent === "arrived") {
-        const m = stops[next.stopIndex]?.media ?? [];
+        const st = stops[next.stopIndex];
+        out.push({
+          role: "henry",
+          text: "",
+          time: now(),
+          kind: "arrival",
+          arrival: { n: next.stopIndex + 1, title: st?.title ?? "" },
+        });
+        const m = st?.media ?? [];
         if (m.length) out.push({ role: "henry", text: "", time: now(), media: m });
       }
       return out;
@@ -233,60 +248,97 @@ export default function PlayerChat({
   const target = stops[tour.stopIndex];
 
   return (
-    <div className="mx-auto flex h-[100dvh] w-full max-w-md flex-col bg-[#efeae2]">
-      <header className="flex items-center gap-2.5 bg-[#075e54] px-2 py-2 text-white">
-        <button className="px-0.5 text-2xl leading-none opacity-90" aria-label="Atrás">‹</button>
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/25 text-base font-semibold">H</div>
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold leading-tight">Henry</p>
-          <p className="h-4 text-xs leading-tight text-white/80">{sending ? "escribiendo…" : "en línea"}</p>
+    <div className="mx-auto flex h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-[#F4F2EC]">
+      {/* header */}
+      <header className="flex items-center gap-3 bg-night px-3 py-2.5 text-white">
+        <button
+          onClick={() => history.back()}
+          className="-ml-1 px-1 text-2xl leading-none text-white/70"
+          aria-label="Atrás"
+        >
+          ‹
+        </button>
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-[15px] font-bold text-white">
+          H
         </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-semibold leading-tight text-white">Henry</p>
+          <p className="text-[11px] leading-tight text-white/55">
+            {sending ? "escribiendo…" : "en línea"}
+          </p>
+        </div>
+        {tour.status === "EN_CURSO" && stops.length > 0 && (
+          <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/70">
+            Parada {Math.min(tour.stopIndex + 1, stops.length)} de {stops.length}
+          </span>
+        )}
       </header>
 
-      <div ref={scrollRef} className="flex-1 space-y-1.5 overflow-y-auto px-3 py-3">
-        {messages.map((m, i) => (
-          <Bubble key={i} m={m} />
-        ))}
+      {/* body */}
+      <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-3 py-4">
+        {messages.map((m, i) => {
+          const isGroupStart =
+            m.role === "henry" &&
+            !m.kind &&
+            !(m.media?.length ?? 0) &&
+            (i === 0 || messages[i - 1].role !== "henry" || messages[i - 1].kind === "arrival");
+          return <Bubble key={i} m={m} avatar={isGroupStart} />;
+        })}
+        {sending && <TypingRow />}
       </div>
 
+      {/* cómo llegar */}
       {showMapLink && target?.placeQuery && (
         <a
           href={mapsDirUrl(target.placeQuery)}
           target="_blank"
           rel="noreferrer"
-          className="mx-3 mb-1 flex items-center justify-center gap-1.5 rounded-lg bg-white/70 px-3 py-2 text-sm font-medium text-[#075e54] shadow-sm active:scale-[0.99]"
+          className="mx-3 mb-1.5 flex items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-3 py-2.5 text-[14px] font-semibold text-ink shadow-bubble active:scale-[0.99]"
         >
-          📍 {tour.phase === "CAMINANDO" ? `Cómo llegar a ${target.title}` : `Ver ${target.title} en el mapa`}
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" className="h-4 w-4 text-brand">
+            <path d="M8 14s4.4-4.1 4.4-7.2A4.4 4.4 0 0 0 3.6 6.8C3.6 9.9 8 14 8 14Z" />
+            <circle cx="8" cy="6.6" r="1.5" />
+          </svg>
+          {tour.phase === "CAMINANDO" ? `Cómo llegar a ${target.title}` : `Ver ${target.title} en el mapa`}
         </a>
       )}
 
+      {/* footer: paywall / terminado / input */}
       {tour.status === "PAYWALL" ? (
         <div
-          className="bg-[#f0f0f0] px-5 py-5 text-center"
-          style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+          className="border-t border-ink/10 bg-white px-4 py-4"
+          style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
         >
-          <p className="text-sm text-neutral-600">{paywallMessage ?? "Seguí el recorrido completo."}</p>
+          <div className="flex gap-2.5">
+            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-[14px] font-bold text-white">
+              H
+            </div>
+            <p className="rounded-2xl rounded-tl-sm bg-[#F4F2EC] px-3.5 py-2.5 text-[15px] leading-snug text-ink">
+              {paywallMessage ?? "Hasta acá es gratis. Si te está gustando, seguimos con el resto del recorrido."}
+            </p>
+          </div>
           <button
             onClick={buy}
             disabled={buying}
-            className="mt-3 inline-flex items-center justify-center rounded-full bg-[#075e54] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0a7a68] active:scale-[0.99] disabled:opacity-60"
+            className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-6 py-3.5 text-[15px] font-semibold text-white transition hover:bg-brand-dark active:scale-[0.99] disabled:opacity-60"
           >
-            {buying ? "Abriendo el pago…" : `Comprar · $${(priceCents / 100).toFixed(2)}`}
+            {buying ? "Abriendo el pago…" : `Desbloqueá el resto · $${(priceCents / 100).toFixed(2)}`}
           </button>
         </div>
       ) : tour.status === "TERMINADO" ? (
         <div
-          className="bg-[#f0f0f0] px-4 py-5 text-center text-sm text-neutral-500"
+          className="border-t border-ink/10 bg-white px-4 py-5 text-center"
           style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
         >
-          Recorrido finalizado · ¡gracias por recorrer con Henry! 🗽
+          <p className="font-hand text-[24px] leading-tight text-brand">un abrazo, nos vemos en la próxima</p>
+          <p className="mt-1 text-[13px] text-ink/45">Recorrido terminado · gracias por caminar conmigo</p>
         </div>
       ) : (
         <div
-          className="flex items-end gap-2 bg-[#f0f0f0] px-2 py-2"
-          style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+          className="flex items-end gap-2 border-t border-ink/10 bg-white px-2.5 py-2.5"
+          style={{ paddingBottom: "max(0.6rem, env(safe-area-inset-bottom))" }}
         >
-          <div className="flex flex-1 items-end rounded-3xl bg-white px-4 py-2">
+          <div className="flex flex-1 items-end rounded-3xl bg-[#F0EEE7] px-4 py-2">
             <textarea
               ref={taRef}
               value={input}
@@ -298,14 +350,14 @@ export default function PlayerChat({
                 }
               }}
               rows={1}
-              placeholder="Escribe un mensaje"
-              className="block w-full resize-none overflow-y-auto bg-transparent py-1 text-[15px] leading-5 text-neutral-900 outline-none placeholder:text-neutral-400"
+              placeholder="Escribile a Henry…"
+              className="block w-full resize-none overflow-y-auto bg-transparent py-1 text-[16px] leading-6 text-ink outline-none placeholder:text-ink/40"
             />
           </div>
           <button
             onClick={send}
             disabled={sending || !input.trim()}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#075e54] text-white transition active:scale-95 disabled:opacity-60"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-white transition active:scale-95 disabled:opacity-40"
             aria-label="Enviar"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
@@ -318,43 +370,104 @@ export default function PlayerChat({
   );
 }
 
-function Bubble({ m }: { m: Message }) {
+function Bubble({ m, avatar }: { m: Message; avatar: boolean }) {
+  // tarjeta de "llegada" a una parada
+  if (m.kind === "arrival") {
+    return (
+      <div className="flex justify-center py-1.5">
+        <div className="inline-flex items-center gap-2.5 rounded-full bg-ink px-3.5 py-1.5 text-white shadow-bubble">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-bold">
+            {m.arrival?.n}
+          </span>
+          <span className="text-[13px] font-semibold">Llegamos · {m.arrival?.title}</span>
+        </div>
+      </div>
+    );
+  }
+
   const isUser = m.role === "user";
   const hasMedia = (m.media?.length ?? 0) > 0;
+
+  if (hasMedia) {
+    return (
+      <div className="flex justify-start pl-9">
+        <div className="max-w-[82%] space-y-1.5 rounded-2xl rounded-tl-sm bg-white p-1.5 shadow-bubble">
+          {m.media!.map((md, i) => (
+            <MediaCard key={i} m={md} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={isUser ? "flex justify-end" : "flex justify-start"}>
-      <div
-        className={`relative max-w-[82%] rounded-lg shadow-sm ${
-          hasMedia ? "p-1.5" : "px-2.5 py-1.5"
-        } ${isUser ? "rounded-tr-none bg-[#d9fdd3]" : "rounded-tl-none bg-white"}`}
-      >
-        {hasMedia ? (
-          <div className="space-y-1.5">
-            {m.media!.map((md, i) => (
-              <MediaCard key={i} m={md} />
-            ))}
+    <div className={"flex items-end gap-2 " + (isUser ? "justify-end" : "justify-start")}>
+      {!isUser &&
+        (avatar ? (
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-[12px] font-bold text-white">
+            H
           </div>
         ) : (
-          <>
-            <p className="whitespace-pre-wrap pb-2 pr-14 text-[15px] leading-snug text-[#111b21]">
-              {m.text}
-            </p>
-            <span className="absolute bottom-1 right-2 flex items-center gap-0.5 text-[11px] text-[#667781]">
-              {m.time}
-              {isUser && <span className="ml-0.5 text-[#53bdeb]">✓✓</span>}
-            </span>
-          </>
-        )}
+          <div className="w-7 shrink-0" />
+        ))}
+      <div
+        className={
+          "max-w-[80%] px-3.5 py-2 text-[16px] leading-snug shadow-bubble " +
+          (isUser
+            ? "rounded-2xl rounded-br-sm bg-brand text-white"
+            : "rounded-2xl rounded-tl-sm bg-white text-ink")
+        }
+      >
+        <p className="whitespace-pre-wrap break-words">{m.text}</p>
+      </div>
+    </div>
+  );
+}
+
+function TypingRow() {
+  return (
+    <div className="flex items-end gap-2">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-[12px] font-bold text-white">
+        H
+      </div>
+      <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-white px-3.5 py-3 shadow-bubble">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="henry-typing-dot h-1.5 w-1.5 rounded-full bg-ink/40"
+            style={{ animationDelay: `${i * 0.15}s` }}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
 function MediaCard({ m }: { m: PlayMedia }) {
+  const caption = m.caption ? (
+    <figcaption className="px-1 pb-1 pt-1.5 font-hand text-[16px] leading-tight text-ink/70">
+      {m.caption}
+    </figcaption>
+  ) : null;
   if (m.kind === "image")
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={m.url} alt={m.caption ?? ""} className="max-h-72 w-[260px] rounded-md object-cover" />;
+    return (
+      <figure>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={m.url} alt={m.caption ?? ""} className="max-h-72 w-[260px] rounded-lg object-cover" />
+        {caption}
+      </figure>
+    );
   if (m.kind === "video")
-    return <video src={m.url} controls className="max-h-72 w-[260px] rounded-md" />;
-  return <audio src={m.url} controls className="w-[240px]" />;
+    return (
+      <figure>
+        <video src={m.url} controls className="max-h-72 w-[260px] rounded-lg" />
+        {caption}
+      </figure>
+    );
+  return (
+    <figure>
+      <audio src={m.url} controls className="w-[240px]" />
+      {caption}
+    </figure>
+  );
 }

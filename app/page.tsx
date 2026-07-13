@@ -16,76 +16,68 @@ export default async function Home() {
   const experiences = (data ?? []) as Exp[];
 
   return (
-    <main className="henry-home min-h-[100dvh] bg-paper text-ink antialiased">
-      {/* ===================== HERO (ciudad, neutro) ===================== */}
-      <section className="relative bg-ink text-paper">
-        <div className="mx-auto max-w-editorial px-6 sm:px-10">
+    <main className="henry-home min-h-[100dvh] overflow-x-hidden bg-paper text-ink antialiased">
+      {/* ===================== HERO (ciudad de noche) ===================== */}
+      <section className="henry-grain relative overflow-hidden bg-night text-white">
+        <div className="relative z-10 mx-auto max-w-editorial px-5 sm:px-10">
           {/* NAV */}
-          <header className="flex items-start justify-between pt-7">
-            <Link href="/" className="leading-[1.1] text-paper">
-              <span className="block text-[13px] font-medium tracking-tight">Henry</span>
-              <span className="block text-[9px] font-medium uppercase tracking-label text-paper/40">
-                New York
-              </span>
+          <header className="flex items-center justify-between py-5">
+            <Link href="/" className="text-[15px] font-semibold tracking-tight text-white">
+              Henry <span className="font-normal text-white/40">· NY</span>
             </Link>
-            <ul className="flex items-center gap-7 pt-1 text-[10px] font-medium uppercase tracking-label text-paper/55">
+            <ul className="flex items-center gap-6 text-[13px] font-medium text-white/60">
               <li className="hidden sm:block">
-                <Link href="#experiencias" className="transition-colors hover:text-paper">
+                <Link href="#experiencias" className="transition-colors hover:text-white">
                   Experiencias
                 </Link>
               </li>
-              <li className="hidden sm:block">
-                <Link href="#como-funciona" className="transition-colors hover:text-paper">
-                  Cómo funciona
-                </Link>
-              </li>
               <li>
-                <Link href="#henry" className="transition-colors hover:text-paper">
-                  Henry
+                <Link href="#experiencias" className="transition-colors hover:text-white">
+                  Cómo funciona
                 </Link>
               </li>
             </ul>
           </header>
 
-          {/* HERO: copy a la izquierda, chat en loop a la derecha */}
-          <div className="grid items-center gap-12 pb-32 pt-16 sm:pb-40 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="max-w-2xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-paper/15 px-3 py-1.5 text-[9.5px] font-medium uppercase tracking-label text-paper/65">
+          {/* HERO: copy + chat */}
+          <div className="grid gap-9 pb-14 pt-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-12 lg:pb-24 lg:pt-12">
+            <div className="min-w-0">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-label text-white/70">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-                Nueva York · recorridos por chat
+                Nueva York · a pie · por chat
               </span>
-              <h1 className="mt-6 text-[clamp(2rem,5.2vw,3.6rem)] font-medium leading-[1.06] tracking-[-0.015em] text-paper">
-                Chateá con <span className="text-brand">Henry</span> y recorré
-                Nueva York a pie
+              <h1 className="mt-5 text-[clamp(1.75rem,6.5vw,3.4rem)] font-semibold leading-[1.05] tracking-[-0.02em] text-white">
+                Caminá Nueva York con un local
               </h1>
-              <p className="mt-5 max-w-[46ch] text-[13px] leading-[1.75] text-paper/60">
-                Le escribís y él te va guiando parada por parada, en su propia
-                voz —como un amigo que conoce cada cuadra. Elegí un recorrido y
-                arrancá la charla.
+              {/* hook en la voz de Henry (manuscrita) */}
+              <p className="mt-2 font-hand text-[clamp(1.7rem,6vw,2.6rem)] leading-none text-brand">
+                y ese local soy yo
+              </p>
+              <p className="mt-5 max-w-[42ch] text-[14.5px] leading-relaxed text-white/60">
+                Elegí un recorrido y te voy guiando por chat, parada por parada,
+                como si le escribieras a un amigo que conoce cada cuadra.
               </p>
             </div>
 
-            <div className="hidden justify-end lg:flex">
+            <div className="flex min-w-0 justify-center lg:justify-end">
               <HeroChat />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===================== CATÁLOGO (card de filtros + grid) ===================== */}
-      <div className="mx-auto max-w-editorial px-6 sm:px-10">
+      {/* ===================== CATÁLOGO ===================== */}
+      <div className="mx-auto max-w-editorial px-5 sm:px-10">
         <CatalogGrid experiences={experiences} />
       </div>
 
       {/* ===================== PIE ===================== */}
-      <footer className="mt-10 border-t border-ink/15">
-        <div className="mx-auto flex max-w-editorial flex-col gap-4 px-6 py-12 sm:flex-row sm:items-end sm:justify-between sm:px-10">
-          <p className="text-[13px] font-medium tracking-tight">
-            Henry <span className="font-normal text-ink/50">— New York</span>
+      <footer className="border-t border-ink/10">
+        <div className="mx-auto flex max-w-editorial flex-col gap-3 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-10">
+          <p className="text-[14px] font-semibold tracking-tight text-ink">
+            Henry <span className="font-normal text-ink/45">· Nueva York a pie</span>
           </p>
-          <p className="text-[10px] font-medium uppercase tracking-label text-ink/40">
-            Recorridos guiados a pie
-          </p>
+          <p className="font-hand text-[19px] leading-none text-ink/50">nos vemos en la esquina</p>
         </div>
       </footer>
     </main>
