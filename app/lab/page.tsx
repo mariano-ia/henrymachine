@@ -31,7 +31,7 @@ function Bullet({ color, letter, size = 26, dark }: { color: string; letter: str
         width: size,
         height: size,
         fontSize: size * 0.55,
-        fontFamily: "var(--lab-display)",
+        fontFamily: "'Archivo', system-ui, sans-serif",
       }}
     >
       {letter}
@@ -67,7 +67,7 @@ export default function LabPage() {
       {/* fuentes solo para el mockup */}
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link
-        href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;900&family=Doto:wght@800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;900&family=Doto:wght@800&family=Roboto+Condensed:wght@700;800&display=swap"
         rel="stylesheet"
       />
       <style
@@ -95,7 +95,7 @@ export default function LabPage() {
           <div className="lab-marquee inline-block">
             {[0, 1].map((i) => (
               <span key={i} className="lab-doto text-[13px] font-extrabold tracking-[0.2em]" style={{ color: "#FFB000" }}>
-                {" ★ HOLA QUERUBINES ★ BUEN SERVICIO EN LA LÍNEA H ★ GOLAZO: NUEVO RECORRIDO EN WILLIAMSBURG ★ NUEVA YORK A PIE, POR CHAT ★ ABIERTO 24/7 ★ QUÉ LOCO ★"}
+                {" ★ HOLA QUERUBINES ★ GOLAZO: NUEVO RECORRIDO EN WILLIAMSBURG ★ NUEVA YORK A PIE, POR CHAT ★ SE CAMINA, SE COME, SE CHATEA ★ ABIERTO 24/7 ★ QUÉ LOCO ★"}
               </span>
             ))}
           </div>
@@ -119,9 +119,12 @@ export default function LabPage() {
           <div className="grid gap-10 px-6 pb-10 pt-12 text-white sm:px-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:pb-16 lg:pt-16">
             <div>
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">
-                Estación de partida · elegí tu recorrido
+                Recorridos a pie · guiados por chat
               </p>
-              <h1 className="text-[clamp(2.4rem,7vw,5rem)] font-black uppercase leading-[0.95] tracking-[-0.01em]">
+              <h1
+                className="font-bold uppercase leading-[0.92]"
+                style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: "clamp(2.6rem, 7vw, 70px)", letterSpacing: "-3px" }}
+              >
                 Caminá
                 <br />
                 Nueva York{" "}
@@ -156,7 +159,7 @@ export default function LabPage() {
                   <img src="/henry.jpg" alt="Henry" className="h-9 w-9 rounded-full object-cover" style={{ boxShadow: `0 0 0 2.5px ${Y}` }} />
                   <div className="leading-tight">
                     <div className="text-[14px] font-bold text-white">Henry</div>
-                    <div className="text-[11px] text-white/55">en línea · Línea H</div>
+                    <div className="text-[11px] text-white/55">en línea · caminando con vos</div>
                   </div>
                   <BalaH size={22} />
                 </div>
@@ -220,7 +223,13 @@ export default function LabPage() {
                   </div>
                   <div className="relative flex h-8 items-center">
                     <div className="absolute left-0 right-0 top-1/2 h-[6px] -translate-y-1/2" style={{ background: Y }} />
-                    <BalaH size={32} />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/henry.jpg"
+                      alt="Henry"
+                      className="relative z-10 h-9 w-9 rounded-full object-cover"
+                      style={{ boxShadow: `0 0 0 3px ${Y}, 0 0 0 5px ${INK}` }}
+                    />
                   </div>
                   <div className="h-8" />
                 </div>
@@ -293,7 +302,7 @@ export default function LabPage() {
             {/* boca de estación */}
             <div className="relative px-6 py-6 text-white" style={{ background: INK }}>
               <div className="absolute left-0 right-0 top-[8px] h-[2px] bg-white" />
-              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/50">← Salida · todos los recorridos</p>
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/50">← Todos los recorridos</p>
               <div className="flex items-center gap-3">
                 <Bullet color={THEME.comida} letter="C" size={34} />
                 <h2 className="text-[clamp(1.7rem,4.5vw,2.6rem)] font-black uppercase leading-none">Pizzas de Brooklyn</h2>
@@ -337,7 +346,7 @@ export default function LabPage() {
                   <span className={"text-[15px] font-bold uppercase tracking-wide " + (s.open ? "" : "opacity-40")}>
                     {s.t}
                   </span>
-                  {!s.open && <span className="text-[11px] font-semibold uppercase tracking-[0.14em] opacity-40">con tu pase</span>}
+                  {!s.open && <span className="text-[11px] font-semibold uppercase tracking-[0.14em] opacity-40">se desbloquea al comprar</span>}
                 </div>
               ))}
             </div>
@@ -347,7 +356,7 @@ export default function LabPage() {
               <div className="absolute left-0 right-0 top-[6px] h-[1.5px] bg-white" />
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="text-white">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">Tu pase · pago único</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">Pago único · tuyo para siempre</p>
                   <p className="text-[30px] font-black leading-none" style={{ color: Y }}>US$6</p>
                 </div>
                 {/* ranura del molinete */}
@@ -357,10 +366,10 @@ export default function LabPage() {
                     className="lab-card-anim absolute left-2 top-1/2 flex h-[34px] w-[110px] -translate-y-1/2 items-center px-2 text-[9px] font-black uppercase leading-[1.1]"
                     style={{ background: Y, color: INK, clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)" }}
                   >
-                    Línea H<br />un viaje
+                    Henry<br />Nueva York
                   </div>
                   <span className="absolute bottom-1 right-2 text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
-                    deslizá tu pase →
+                    deslizá para desbloquear →
                   </span>
                 </div>
               </div>
@@ -377,10 +386,10 @@ export default function LabPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <BalaH size={26} />
-              <span className="text-[14px] font-black uppercase tracking-wide">Henry · Línea H</span>
+              <span className="text-[14px] font-black uppercase tracking-wide">Henry · Nueva York a pie</span>
             </div>
             <span className="rotate-[-1.5deg] font-hand text-[20px]" style={{ color: Y }}>
-              nos vemos en el andén
+              nos vemos en la esquina
             </span>
           </div>
         </footer>
