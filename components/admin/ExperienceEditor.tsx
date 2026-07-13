@@ -13,6 +13,8 @@ import {
   deleteStep,
 } from "@/app/admin/(app)/e/[id]/actions";
 import MediaSection, { type MediaItem } from "@/components/admin/MediaSection";
+import CoverSection from "@/components/admin/CoverSection";
+import { THEMES } from "@/lib/themes";
 
 type Step = {
   id: string;
@@ -33,6 +35,12 @@ type Experience = {
   title: string;
   pitch: string | null;
   city: string | null;
+  neighborhood: string | null;
+  theme: string | null;
+  expected_minutes: number | null;
+  distance_m: number | null;
+  henry_tip: string | null;
+  cover_path: string | null;
   status: string;
   price_cents: number;
 };
@@ -53,17 +61,30 @@ export default function ExperienceEditor({
   const [title, setTitle] = useState(experience.title);
   const [pitch, setPitch] = useState(experience.pitch ?? "");
   const [city, setCity] = useState(experience.city ?? "");
+  const [neighborhood, setNeighborhood] = useState(experience.neighborhood ?? "");
+  const [theme, setTheme] = useState(experience.theme ?? "");
+  const [durationMin, setDurationMin] = useState(
+    experience.expected_minutes ? String(experience.expected_minutes) : ""
+  );
+  const [distanceKm, setDistanceKm] = useState(
+    experience.distance_m ? String(experience.distance_m / 1000) : ""
+  );
+  const [henryTip, setHenryTip] = useState(experience.henry_tip ?? "");
   const [steps, setSteps] = useState<Step[]>(initialSteps);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [pending, start] = useTransition();
 
   const paywallStep = initialSteps.find((s) => s.is_paywall) ?? null;
+  const arrivalsInit = initialSteps.filter((s) => s.type === "arrival");
   const [priceDollars, setPriceDollars] = useState(
     experience.price_cents ? (experience.price_cents / 100).toString() : ""
   );
-  const [paywallAfter, setPaywallAfter] = useState<number>(
-    paywallStep ? paywallStep.position - 1 : Math.max(1, Math.ceil(initialSteps.length / 2))
-  );
+  // el autor piensa en PARADAS gratis (el timeline público muestra paradas);
+  // la posición del paso del paywall se calcula recién al guardar
+  const initialFreeStops = paywallStep
+    ? arrivalsInit.filter((a) => a.position < paywallStep.position).length
+    : Math.max(1, Math.ceil(arrivalsInit.length / 2));
+  const [freeStops, setFreeStops] = useState<number>(initialFreeStops);
   const [paywallMsg, setPaywallMsg] = useState(paywallStep?.paywall_message ?? "");
 
   const ro = false; // las experiencias se pueden editar siempre, también publicadas
@@ -75,11 +96,18 @@ export default function ExperienceEditor({
   }
 
   function savePayload() {
+    const mins = parseInt(durationMin, 10);
+    const km = parseFloat(distanceKm.replace(",", "."));
     return {
       id: experience.id,
       title,
       pitch: pitch || null,
       city: city || null,
+      neighborhood: neighborhood.trim() || null,
+      theme: theme || null,
+      expectedMinutes: Number.isFinite(mins) && mins > 0 ? mins : null,
+      distanceM: Number.isFinite(km) && km > 0 ? Math.round(km * 1000) : null,
+      henryTip: henryTip.trim() || null,
       steps: steps.map((s) => ({
         id: s.id,
         title: s.title,
@@ -92,10 +120,64 @@ export default function ExperienceEditor({
     };
   }
 
+  // UN solo "Guardar": campos + pasos + (si cambió) precio/paywall.
+  // Stripe solo se toca cuando la parte de precios está sucia.
   function save() {
+    const cents = Math.round(parseFloat(priceDollars || "0") * 100);
+    const priceCents = Number.isFinite(cents) && cents > 0 ? cents : 0;
+    const pricingDirty =
+      priceCents !== experience.price_cents ||
+      (priceCents > 0 &&
+        (freeStops !== initialFreeStops ||
+          paywallMsg !== (paywallStep?.paywall_message ?? "")));
+
+    if (pricingDirty && priceCents > 0) {
+      if (arrivalSteps.length < 2) {
+        setMsg({ kind: "err", text: "Se necesitan al menos 2 paradas para poner un paywall." });
+        return;
+      }
+      if (!Number.isInteger(freeStops) || freeStops < 1 || freeStops > maxFreeStops) {
+        setMsg({
+          kind: "err",
+          text: `"Paradas gratis" tiene que estar entre 1 y ${maxFreeStops}: tiene que quedar al menos una parada paga detrás del paywall.`,
+        });
+        return;
+      }
+    }
+    // traducir paradas → posición de paso (lista renumerada sin el paywall actual)
+    const lastFree = arrivalSteps[freeStops - 1];
+    const paywallAfter =
+      priceCents > 0 && lastFree ? contentSteps.indexOf(lastFree) + 1 : null;
+
     start(async () => {
       const r = await saveExperience(savePayload());
-      setMsg(r.ok ? { kind: "ok", text: "Guardado." } : { kind: "err", text: r.error ?? "Error" });
+      if (!r.ok) {
+        setMsg({ kind: "err", text: r.error ?? "Error" });
+        return;
+      }
+      if (!pricingDirty) {
+        setMsg({ kind: "ok", text: r.warning ? `Guardado. ⚠ ${r.warning}` : "Guardado." });
+        return;
+      }
+      const p = await setPricing({
+        experienceId: experience.id,
+        priceCents,
+        paywallAfter,
+        message: paywallMsg || null,
+        title,
+      });
+      if (!p.ok) {
+        setMsg({ kind: "err", text: p.error ?? "Error" });
+        return;
+      }
+      setMsg({
+        kind: "ok",
+        text:
+          priceCents > 0
+            ? "Guardado — precio y paywall actualizados."
+            : "Guardado — marcada como gratis.",
+      });
+      router.refresh();
     });
   }
 
@@ -145,51 +227,13 @@ export default function ExperienceEditor({
       setMsg({ kind: "ok", text: "Despublicada — ya podés editar." });
     });
   }
-  // pasos de contenido (sin contar la fila del paywall): el paywall válido va
-  // después de un paso entre 1 y contentCount-1 (tiene que quedar algo para vender)
-  const contentCount = steps.filter((s) => !s.is_paywall).length;
-  const maxPaywallAfter = Math.max(1, contentCount - 1);
-
-  function savePricing() {
-    const cents = Math.round(parseFloat(priceDollars || "0") * 100);
-    const priceCents = Number.isFinite(cents) && cents > 0 ? cents : 0;
-    if (priceCents > 0) {
-      if (contentCount < 2) {
-        setMsg({ kind: "err", text: "Se necesitan al menos 2 pasos para poner un paywall." });
-        return;
-      }
-      if (!Number.isInteger(paywallAfter) || paywallAfter < 1 || paywallAfter > maxPaywallAfter) {
-        setMsg({
-          kind: "err",
-          text: `"Gratis hasta el paso" tiene que estar entre 1 y ${maxPaywallAfter}: tiene que quedar al menos un paso pago detrás del paywall.`,
-        });
-        return;
-      }
-    }
-    start(async () => {
-      // primero guardo lo editado: el RPC re-crea el paywall y el editor se remonta
-      const s1 = await saveExperience(savePayload());
-      if (!s1.ok) {
-        setMsg({ kind: "err", text: s1.error ?? "Error al guardar antes del precio" });
-        return;
-      }
-      const r = await setPricing({
-        experienceId: experience.id,
-        priceCents,
-        paywallAfter,
-        message: paywallMsg || null,
-        title,
-      });
-      if (!r.ok) setMsg({ kind: "err", text: r.error ?? "Error" });
-      else {
-        setMsg({
-          kind: "ok",
-          text: priceCents > 0 ? "Precio y paywall guardados." : "Marcada como gratis.",
-        });
-        router.refresh();
-      }
-    });
-  }
+  // paradas de contenido: el paywall va después de una parada entre 1 y n-1
+  // (tiene que quedar al menos una parada paga detrás)
+  const contentSteps = steps.filter((s) => !s.is_paywall);
+  const arrivalSteps = contentSteps.filter((s) => s.type === "arrival");
+  const maxFreeStops = Math.max(1, arrivalSteps.length - 1);
+  const arrivalOrdinal = new Map<string, number>();
+  arrivalSteps.forEach((s, i) => arrivalOrdinal.set(s.id, i + 1));
 
   return (
     <div className="max-w-3xl">
@@ -260,33 +304,111 @@ export default function ExperienceEditor({
         </p>
       )}
 
-      {/* meta */}
-      <div className="space-y-3 rounded-2xl border border-white/10 bg-neutral-900/40 p-5">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          disabled={ro}
-          className="w-full bg-transparent text-lg font-semibold text-white outline-none disabled:opacity-70"
-          placeholder="Título"
-        />
-        <input
-          value={pitch}
-          onChange={(e) => setPitch(e.target.value)}
-          disabled={ro}
-          className="w-full bg-transparent text-sm text-neutral-400 outline-none disabled:opacity-70"
-          placeholder="Pitch (una línea vendedora)"
-        />
-        <div className="flex items-center gap-3 text-sm text-neutral-500">
-          <span>/{experience.slug}</span>
-          <span>·</span>
+      {/* meta: todo lo que se ve en la card del catálogo y el encabezado del detalle */}
+      <div className="space-y-4 rounded-2xl border border-white/10 bg-neutral-900/40 p-5">
+        <div>
+          <span className="mb-1.5 block text-xs text-neutral-500">Título</span>
           <input
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             disabled={ro}
-            className="bg-transparent text-neutral-400 outline-none disabled:opacity-70"
-            placeholder="Ciudad"
+            className={`${ta} text-base font-semibold disabled:opacity-70`}
+            placeholder="Título"
           />
         </div>
+        <div>
+          <span className="mb-1.5 block text-xs text-neutral-500">
+            Pitch <span className="text-neutral-600">(una línea vendedora, va debajo del título)</span>
+          </span>
+          <input
+            value={pitch}
+            onChange={(e) => setPitch(e.target.value)}
+            disabled={ro}
+            className={`${ta} disabled:opacity-70`}
+            placeholder="Henry te lleva 12 horas por Nueva York…"
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <span className="mb-1.5 block text-xs text-neutral-500">Ciudad</span>
+            <input
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              disabled={ro}
+              className={`${ta} disabled:opacity-70`}
+              placeholder="Nueva York"
+            />
+          </div>
+          <div>
+            <span className="mb-1.5 block text-xs text-neutral-500">Barrio / zona</span>
+            <input
+              value={neighborhood}
+              onChange={(e) => setNeighborhood(e.target.value)}
+              disabled={ro}
+              className={`${ta} disabled:opacity-70`}
+              placeholder="Brooklyn, Manhattan…"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div>
+            <span className="mb-1.5 block text-xs text-neutral-500">Tema</span>
+            <select
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
+              disabled={ro}
+              className={`${ta} disabled:opacity-70`}
+            >
+              <option value="">— sin tema —</option>
+              {Object.keys(THEMES).map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <span className="mb-1.5 block text-xs text-neutral-500">Duración (minutos)</span>
+            <input
+              type="number"
+              min={0}
+              value={durationMin}
+              onChange={(e) => setDurationMin(e.target.value)}
+              disabled={ro}
+              className={`${ta} disabled:opacity-70`}
+              placeholder="60"
+            />
+          </div>
+          <div>
+            <span className="mb-1.5 block text-xs text-neutral-500">Caminata (km)</span>
+            <input
+              type="number"
+              min={0}
+              step="0.1"
+              value={distanceKm}
+              onChange={(e) => setDistanceKm(e.target.value)}
+              disabled={ro}
+              className={`${ta} disabled:opacity-70`}
+              placeholder="3.5"
+            />
+          </div>
+        </div>
+        <div>
+          <span className="mb-1.5 block text-xs text-neutral-500">
+            Tip de Henry <span className="text-neutral-600">(frase manuscrita en el detalle)</span>
+          </span>
+          <input
+            value={henryTip}
+            onChange={(e) => setHenryTip(e.target.value)}
+            disabled={ro}
+            className={`${ta} disabled:opacity-70`}
+            placeholder="Vení con hambre y zapatillas cómodas."
+          />
+        </div>
+        <CoverSection experienceId={experience.id} coverPath={experience.cover_path} />
+        <p className="text-xs text-neutral-600">
+          /{experience.slug} · la cantidad de paradas se calcula sola desde los pasos
+        </p>
       </div>
 
       {/* monetización */}
@@ -307,16 +429,25 @@ export default function ExperienceEditor({
             </label>
             {Number(priceDollars) > 0 && (
               <label className="block">
-                <span className="mb-1 block text-xs text-neutral-500">Gratis hasta el paso</span>
+                <span className="mb-1 block text-xs text-neutral-500">Paradas gratis</span>
                 <input
                   type="number"
                   min={1}
-                  max={maxPaywallAfter}
-                  value={paywallAfter}
-                  onChange={(e) => setPaywallAfter(Number(e.target.value))}
+                  max={maxFreeStops}
+                  value={freeStops}
+                  onChange={(e) => setFreeStops(Number(e.target.value))}
                   className="w-24 rounded-lg border border-white/10 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400/50"
                 />
               </label>
+            )}
+            {Number(priceDollars) > 0 && arrivalSteps[freeStops - 1] && (
+              <p className="pb-2 text-xs text-neutral-500">
+                El paywall va después de{" "}
+                <span className="text-neutral-300">
+                  {arrivalSteps[freeStops - 1].title || `la parada ${freeStops}`}
+                </span>
+                {" "}· {Math.max(0, arrivalSteps.length - freeStops)} parada(s) pagas
+              </p>
             )}
           </div>
           {Number(priceDollars) > 0 && (
@@ -328,15 +459,9 @@ export default function ExperienceEditor({
               className={ta}
             />
           )}
-          <button
-            onClick={savePricing}
-            disabled={pending}
-            className="rounded-lg border border-white/10 px-4 py-1.5 text-sm text-neutral-200 hover:bg-white/5 disabled:opacity-50"
-          >
-            {pending ? "Guardando…" : "Guardar precio"}
-          </button>
           <p className="text-xs text-neutral-600">
-            Al guardar un precio se crea el producto en Stripe y se inserta el paso de paywall.
+            El precio y el paywall se aplican con el botón <span className="text-neutral-400">Guardar</span> de
+            arriba (si el precio cambió, se crea el producto en Stripe).
           </p>
         </div>
       )}
@@ -450,8 +575,8 @@ export default function ExperienceEditor({
               />
             )}
 
-            {/* alta de pasos debajo de éste */}
-            <div className="mt-3 flex gap-3 border-t border-white/5 pt-2.5">
+            {/* alta de pasos debajo de éste + marcador de paywall por parada */}
+            <div className="mt-3 flex items-center gap-3 border-t border-white/5 pt-2.5">
               <button
                 onClick={() => addStepAt(s.position, "arrival")}
                 disabled={pending}
@@ -466,6 +591,36 @@ export default function ExperienceEditor({
               >
                 + Mensaje debajo
               </button>
+              {s.type === "arrival" && Number(priceDollars) > 0 && (
+                <button
+                  onClick={() => {
+                    const k = arrivalOrdinal.get(s.id)!;
+                    if (k > maxFreeStops) {
+                      setMsg({
+                        kind: "err",
+                        text: "Después de la última parada no puede ir el paywall: no quedaría nada para vender.",
+                      });
+                      return;
+                    }
+                    setFreeStops(k);
+                    setMsg({
+                      kind: "ok",
+                      text: `Paywall después de "${s.title || `parada ${k}`}". Tocá "Guardar" para aplicarlo.`,
+                    });
+                  }}
+                  disabled={pending}
+                  className={
+                    "ml-auto text-xs font-medium transition disabled:opacity-40 " +
+                    (freeStops === arrivalOrdinal.get(s.id)
+                      ? "text-amber-300"
+                      : "text-neutral-600 hover:text-amber-200")
+                  }
+                >
+                  {freeStops === arrivalOrdinal.get(s.id)
+                    ? "🔒 paywall después de esta"
+                    : "poner paywall después de esta"}
+                </button>
+              )}
             </div>
           </li>
         ))}

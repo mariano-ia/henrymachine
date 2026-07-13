@@ -14,9 +14,10 @@ export default async function EditorPage({
   const { id } = await params;
   const sb = await createClient();
 
+  // select * : tolera columnas nuevas aún no migradas (p. ej. henry_tip / 0007)
   const { data: exp } = await sb
     .from("experiences")
-    .select("id, slug, title, pitch, city, status, price_cents")
+    .select("*")
     .eq("id", id)
     .maybeSingle();
   if (!exp) notFound();

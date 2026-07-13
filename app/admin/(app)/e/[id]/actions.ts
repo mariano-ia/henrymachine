@@ -115,15 +115,34 @@ export async function saveExperience(input: {
   title: string;
   pitch: string | null;
   city: string | null;
+  neighborhood: string | null;
+  theme: string | null;
+  expectedMinutes: number | null;
+  distanceM: number | null;
+  henryTip: string | null;
   steps: StepEdit[];
-}): Promise<{ ok: boolean; error?: string }> {
+}): Promise<{ ok: boolean; error?: string; warning?: string }> {
   const sb = await createClient();
 
-  const { error: e1 } = await sb
-    .from("experiences")
-    .update({ title: input.title, pitch: input.pitch, city: input.city })
-    .eq("id", input.id);
-  if (e1) return { ok: false, error: e1.message };
+  const meta = {
+    title: input.title,
+    pitch: input.pitch,
+    city: input.city,
+    neighborhood: input.neighborhood,
+    theme: input.theme,
+    expected_minutes: input.expectedMinutes,
+    distance_m: input.distanceM,
+    henry_tip: input.henryTip,
+  };
+  let warning: string | undefined;
+  let { error: e1 } = await sb.from("experiences").update(meta).eq("id", input.id);
+  if (e1 && e1.message.includes("henry_tip")) {
+    // columna aún no migrada (0007): guardar el resto igual y avisar
+    const { henry_tip: _omit, ...sinTip } = meta;
+    ({ error: e1 } = await sb.from("experiences").update(sinTip).eq("id", input.id));
+    warning = "El tip de Henry no se guardó todavía (falta aplicar la migración 0007).";
+  }
+  if (e1) return { ok: false, error: traduceDbError(e1.message) };
 
   for (const s of input.steps) {
     const { error } = await sb
@@ -141,6 +160,27 @@ export async function saveExperience(input: {
   }
 
   revalidatePath(`/admin/e/${input.id}`);
+  return { ok: true, warning };
+}
+
+export async function setCover(input: {
+  experienceId: string;
+  path: string | null; // null = quitar portada
+  oldPath: string | null;
+}): Promise<{ ok: boolean; error?: string }> {
+  const sb = await createClient();
+  if (input.path && !input.path.startsWith(`${input.experienceId}/`)) {
+    return { ok: false, error: "Ruta de portada inválida." };
+  }
+  const { error } = await sb
+    .from("experiences")
+    .update({ cover_path: input.path })
+    .eq("id", input.experienceId);
+  if (error) return { ok: false, error: traduceDbError(error.message) };
+  if (input.oldPath && input.oldPath !== input.path) {
+    await createAdminClient().storage.from("experience-covers").remove([input.oldPath]);
+  }
+  revalidatePath(`/admin/e/${input.experienceId}`);
   return { ok: true };
 }
 

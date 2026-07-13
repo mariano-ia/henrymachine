@@ -119,9 +119,18 @@ export default async function DetailPage({
       </header>
 
       <div className="mx-auto max-w-editorial px-5 py-6 sm:px-10 sm:py-10">
-        {/* ---- PORTADA (slot; placeholder = bloque de color del tema) ---- */}
+        {/* ---- PORTADA (imagen o video; placeholder = bloque de color del tema) ---- */}
         <div className="relative mb-7 h-[clamp(180px,30vw,320px)] overflow-hidden rounded-2xl">
-          {cover ? (
+          {cover && exp.coverKind === "video" ? (
+            <video
+              src={cover}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="h-full w-full object-cover"
+            />
+          ) : cover ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={cover} alt={exp.title} className="h-full w-full object-cover" />
           ) : (
@@ -152,9 +161,9 @@ export default async function DetailPage({
             </span>
           </div>
           {exp.pitch && <p className="mt-5 text-[16px] leading-[1.65] text-ink/75">{exp.pitch}</p>}
-          {/* tip de Henry — voz manuscrita */}
+          {/* tip de Henry — voz manuscrita (editable en el admin; default si no hay) */}
           <p className="mt-4 font-hand text-[22px] leading-tight text-brand">
-            “Vení con hambre y zapatillas cómodas.”
+            “{exp.henryTip ?? "Vení con hambre y zapatillas cómodas."}”
           </p>
         </div>
 

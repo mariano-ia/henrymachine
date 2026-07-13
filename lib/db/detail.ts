@@ -10,12 +10,14 @@ export type ExperienceDetail = {
   neighborhood: string | null;
   city: string | null;
   pitch: string | null;
+  henryTip: string | null;
   expectedMinutes: number | null;
   distanceM: number | null;
   priceCents: number;
   stopsCount: number;
   freeStops: number;
   coverPath: string | null;
+  coverKind: "image" | "video" | null;
   itinerary: DetailStop[];
 };
 
@@ -29,11 +31,10 @@ export async function getExperienceDetail(
 ): Promise<ExperienceDetail | null> {
   const sb = createAdminClient();
 
+  // select * : tolera columnas nuevas aún no migradas (p. ej. henry_tip / 0007)
   const { data: exp } = await sb
     .from("experiences")
-    .select(
-      "id, slug, title, theme, neighborhood, city, pitch, expected_minutes, distance_m, price_cents, cover_path, status"
-    )
+    .select("*")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
@@ -64,12 +65,18 @@ export async function getExperienceDetail(
     neighborhood: exp.neighborhood,
     city: exp.city,
     pitch: exp.pitch,
+    henryTip: exp.henry_tip ?? null,
     expectedMinutes: exp.expected_minutes,
     distanceM: exp.distance_m,
     priceCents: exp.price_cents,
     stopsCount: arrivals.length,
     freeStops: itinerary.filter((s) => !s.locked).length,
     coverPath: exp.cover_path,
+    coverKind: exp.cover_path
+      ? /\.(mp4|webm|mov|m4v)$/i.test(exp.cover_path)
+        ? "video"
+        : "image"
+      : null,
     itinerary,
   };
 }
