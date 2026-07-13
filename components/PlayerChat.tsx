@@ -37,6 +37,7 @@ export default function PlayerChat({
   slug,
   anonId,
   openingMessage,
+  openingMedia,
   closingMessage,
   stops,
   locked,
@@ -47,6 +48,7 @@ export default function PlayerChat({
   anonId: string;
   title: string;
   openingMessage: string;
+  openingMedia?: PlayMedia[];
   closingMessage: string | null;
   stops: StopMeta[];
   locked: boolean;
@@ -94,9 +96,12 @@ export default function PlayerChat({
     [LAST, locked]
   );
 
-  const [messages, setMessages] = useState<Message[]>(() => [
-    { role: "henry", text: openingMessage, time: now() },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const init: Message[] = [{ role: "henry", text: openingMessage, time: now() }];
+    // media del paso de apertura (ej. audio de bienvenida de Henry)
+    if (openingMedia?.length) init.push({ role: "henry", text: "", time: now(), media: openingMedia });
+    return init;
+  });
   const [tour, setTour] = useState<State>({
     stopIndex: 0,
     phase: "CAMINANDO",

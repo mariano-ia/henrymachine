@@ -83,11 +83,14 @@ export default function MediaSection({
             {m.kind === "video" && m.url && (
               <video src={m.url} className="h-16 w-24 rounded-lg object-cover" muted />
             )}
-            {m.kind === "audio" && (
-              <div className="flex h-16 items-center rounded-lg bg-white/5 px-3 text-xs text-neutral-400">
-                🎧 audio
-              </div>
-            )}
+            {m.kind === "audio" &&
+              (m.url ? (
+                <audio src={m.url} controls preload="metadata" className="h-10 w-60" />
+              ) : (
+                <div className="flex h-16 items-center rounded-lg bg-white/5 px-3 text-xs text-neutral-400">
+                  🎧 audio
+                </div>
+              ))}
             {!disabled && (
               <button
                 onClick={() => remove(m)}

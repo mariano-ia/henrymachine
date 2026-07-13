@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     slug: exp.slug,
     title: exp.title,
     openingMessage: exp.openingMessage,
+    openingMedia: exp.openingMedia,
     closingMessage: exp.closingMessage,
     stops: exp.stops.map((s) => ({
       title: s.title,

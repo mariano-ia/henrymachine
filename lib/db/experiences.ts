@@ -20,6 +20,7 @@ export type PlayableExperience = {
   slug: string;
   title: string;
   openingMessage: string;
+  openingMedia: PlayMedia[]; // media del paso de apertura (ej. audio de bienvenida)
   closingMessage: string | null;
   stops: PlayableStop[];
   grounding: string;
@@ -106,6 +107,7 @@ export async function getPlayableExperience(
     slug: exp.slug,
     title: exp.title,
     openingMessage: messages[0]?.body ?? "",
+    openingMedia: messages[0] ? mediaByStep[messages[0].id] ?? [] : [],
     closingMessage: messages.length > 1 ? messages[messages.length - 1].body : null,
     stops: arrivals.map((a) => ({
       title: a.title ?? "",

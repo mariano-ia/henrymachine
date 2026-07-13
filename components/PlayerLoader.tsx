@@ -8,6 +8,7 @@ type Data = {
   slug: string;
   title: string;
   openingMessage: string;
+  openingMedia: PlayMedia[];
   closingMessage: string | null;
   stops: { title: string; placeQuery: string | null; media: PlayMedia[] }[];
   locked: boolean;
