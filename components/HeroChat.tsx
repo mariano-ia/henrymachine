@@ -65,9 +65,8 @@ export default function HeroChat() {
     <div className="w-full max-w-[350px] overflow-hidden rounded-[1.6rem] border border-black/5 bg-[#F4F2EC] shadow-[0_30px_70px_-30px_rgba(0,0,0,0.7)]">
       {/* header oscuro, igual que el chat real */}
       <div className="flex items-center gap-3 bg-night px-4 py-3 text-white">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-[14px] font-bold text-white">
-          H
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/henry.jpg" alt="Henry" className="h-9 w-9 rounded-full object-cover" />
         <div className="leading-tight">
           <div className="text-[14px] font-semibold text-white">Henry</div>
           <div className="flex items-center gap-1.5 text-[11px] text-white/55">

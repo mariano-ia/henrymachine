@@ -263,9 +263,8 @@ export default function PlayerChat({
         >
           ‹
         </button>
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-[15px] font-bold text-white">
-          H
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/henry.jpg" alt="Henry" className="h-9 w-9 rounded-full object-cover" />
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-semibold leading-tight text-white">Henry</p>
           <p className="text-[11px] leading-tight text-white/55">
@@ -315,9 +314,8 @@ export default function PlayerChat({
           style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
         >
           <div className="flex gap-2.5">
-            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-[14px] font-bold text-white">
-              H
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/henry.jpg" alt="Henry" className="mt-0.5 h-8 w-8 shrink-0 rounded-full object-cover" />
             <p className="rounded-2xl rounded-tl-sm bg-[#F4F2EC] px-3.5 py-2.5 text-[15px] leading-snug text-ink">
               {paywallMessage ?? "Hasta acá es gratis. Si te está gustando, seguimos con el resto del recorrido."}
             </p>
@@ -409,9 +407,8 @@ function Bubble({ m, avatar }: { m: Message; avatar: boolean }) {
     <div className={"flex items-end gap-2 " + (isUser ? "justify-end" : "justify-start")}>
       {!isUser &&
         (avatar ? (
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-[12px] font-bold text-white">
-            H
-          </div>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/henry.jpg" alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
         ) : (
           <div className="w-7 shrink-0" />
         ))}
@@ -432,9 +429,8 @@ function Bubble({ m, avatar }: { m: Message; avatar: boolean }) {
 function TypingRow() {
   return (
     <div className="flex items-end gap-2">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-[12px] font-bold text-white">
-        H
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/henry.jpg" alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
       <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-white px-3.5 py-3 shadow-bubble">
         {[0, 1, 2].map((i) => (
           <span

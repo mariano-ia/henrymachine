@@ -161,6 +161,22 @@ export async function tourReply(params: {
       intent: typeof o.intent === "string" ? o.intent : "none",
     };
   } catch {
-    return { reply: text || "Perdón, se me trabó 😅 dale de nuevo.", intent: "none" };
+    // JSON malformado: rescatar reply/intent por regex; NUNCA mostrar llaves crudas
+    const replyMatch = cleaned.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    const intentMatch = cleaned.match(/"?intent"?\s*:\s*"(\w+)"/);
+    if (replyMatch) {
+      let reply = replyMatch[1];
+      try {
+        reply = JSON.parse(`"${replyMatch[1]}"`) as string; // desescapar \n, \" etc.
+      } catch {
+        /* usar tal cual */
+      }
+      return { reply, intent: intentMatch?.[1] ?? "none" };
+    }
+    const looksJson = cleaned.startsWith("{") || cleaned.includes('"reply"');
+    return {
+      reply: looksJson || !text ? "Perdón, se me trabó 😅 dale de nuevo." : text,
+      intent: "none",
+    };
   }
 }
