@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
+import { sendAccessEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -107,6 +108,28 @@ export async function POST(req: NextRequest) {
         utm_campaign: s.metadata?.utm_campaign || null,
       });
       if (saleErr && !isDup(saleErr)) return new NextResponse("db sales", { status: 500 });
+    }
+
+    // 3) email de acceso (no bloquea ni reintenta: sendAccessEmail se traga sus errores)
+    const notifyEmail = isGift ? giftEmail : email;
+    if (experienceId && notifyEmail) {
+      const { data: exp } = await sb
+        .from("experiences")
+        .select("title")
+        .eq("id", experienceId)
+        .maybeSingle();
+      // el mensaje del regalo (si lo hay) vive en la purchase
+      let giftMessage: string | null = null;
+      if (isGift && purchaseId) {
+        const { data: p } = await sb.from("purchases").select("gift_message").eq("id", purchaseId).maybeSingle();
+        giftMessage = p?.gift_message ?? null;
+      }
+      await sendAccessEmail({
+        to: notifyEmail,
+        experienceTitle: exp?.title ?? "tu recorrido",
+        isGift,
+        giftMessage,
+      });
     }
   }
 
