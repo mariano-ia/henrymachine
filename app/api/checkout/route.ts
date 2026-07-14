@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 import { rateLimit } from "@/lib/rate-limit";
+import { resolvePromotionCode } from "@/lib/stripe-coupons";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  const body = (await req.json()) as { slug?: string; anonId?: string; utm?: Record<string, string> };
+  const body = (await req.json()) as {
+    slug?: string;
+    anonId?: string;
+    utm?: Record<string, string>;
+    promo?: string | null;
+  };
   const slug = typeof body.slug === "string" ? body.slug : "";
   const anonId = typeof body.anonId === "string" ? body.anonId : "";
   const utm = (body as { utm?: Record<string, string> }).utm ?? {};
@@ -60,13 +66,21 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SITE_URL ||
     "https://henry-demo-zeta.vercel.app";
 
+  // cupón del upsell (?promo=CODE): se resuelve a un promotion code de Stripe
+  const promoId =
+    typeof body.promo === "string" && body.promo.trim()
+      ? await resolvePromotionCode(body.promo)
+      : null;
+
   try {
     const session = await getStripe().checkout.sessions.create({
       mode: "payment",
       line_items: [{ price: exp.stripe_price_id, quantity: 1 }],
       client_reference_id: anonId,
-      // opt-in de promociones en el mismo acto de compra (transaccional ≠ marketing)
-      consent_collection: { promotions: "auto" },
+      // con descuento aplicado no se puede además ofrecer el campo de promo manual
+      ...(promoId
+        ? { discounts: [{ promotion_code: promoId }] }
+        : { consent_collection: { promotions: "auto" } }),
       metadata: {
         experience_id: exp.id,
         anon_id: anonId,

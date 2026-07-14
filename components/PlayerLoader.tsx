@@ -15,6 +15,14 @@ type Data = {
   locked: boolean;
   priceCents: number;
   paywallMessage: string | null;
+  upsell: {
+    slug: string;
+    title: string;
+    priceCents: number;
+    coverPath: string | null;
+    message: string | null;
+    promoCode: string | null;
+  } | null;
   serverProgress: { stopIndex: number; phase: string; totalTurns: number } | null;
 };
 

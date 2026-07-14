@@ -17,6 +17,15 @@ export type PlayableStop = {
   media: PlayMedia[];
 };
 
+export type UpsellOffer = {
+  slug: string;
+  title: string;
+  priceCents: number;
+  coverPath: string | null;
+  message: string | null;
+  promoCode: string | null;
+};
+
 export type PlayableExperience = {
   id: string;
   slug: string;
@@ -30,6 +39,7 @@ export type PlayableExperience = {
   locked: boolean; // paga y el viewer (anon) no compró → hay pasos detrás del paywall
   priceCents: number;
   paywallMessage: string | null;
+  upsell: UpsellOffer | null; // qué ofrecer al terminar
 };
 
 /**
@@ -45,11 +55,32 @@ export async function getPlayableExperience(
 
   const { data: exp } = await sb
     .from("experiences")
-    .select("id, slug, title, status, price_cents")
+    .select("id, slug, title, status, price_cents, upsell_experience_id, upsell_message, upsell_promo_code")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
   if (!exp) return null;
+
+  // upsell: la siguiente experiencia a ofrecer al terminar (solo si está publicada)
+  let upsell: UpsellOffer | null = null;
+  if (exp.upsell_experience_id) {
+    const { data: next } = await sb
+      .from("experiences")
+      .select("slug, title, price_cents, cover_path, status")
+      .eq("id", exp.upsell_experience_id)
+      .eq("status", "published")
+      .maybeSingle();
+    if (next) {
+      upsell = {
+        slug: next.slug,
+        title: next.title,
+        priceCents: next.price_cents,
+        coverPath: next.cover_path,
+        message: exp.upsell_message,
+        promoCode: exp.upsell_promo_code,
+      };
+    }
+  }
 
   let hasAccess = exp.price_cents === 0;
   if (!hasAccess && anonId) {
@@ -125,5 +156,6 @@ export async function getPlayableExperience(
     locked: exp.price_cents > 0 && !hasAccess,
     priceCents: exp.price_cents,
     paywallMessage: paywallStep?.paywall_message ?? null,
+    upsell,
   };
 }

@@ -89,6 +89,7 @@ export default function PlayerChat({
   locked,
   priceCents,
   paywallMessage,
+  upsell,
   serverProgress,
 }: {
   slug: string;
@@ -101,9 +102,23 @@ export default function PlayerChat({
   locked: boolean;
   priceCents: number;
   paywallMessage: string | null;
+  upsell?: {
+    slug: string;
+    title: string;
+    priceCents: number;
+    coverPath: string | null;
+    message: string | null;
+    promoCode: string | null;
+  } | null;
   serverProgress?: { stopIndex: number; phase: string; totalTurns: number } | null;
 }) {
   const LAST = stops.length - 1;
+  const upsellCover = upsell?.coverPath
+    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/experience-covers/${upsell.coverPath}`
+    : null;
+  const upsellHref = upsell
+    ? `/e/${upsell.slug}${upsell.promoCode ? `?promo=${encodeURIComponent(upsell.promoCode)}` : ""}`
+    : "#";
 
   const applyIntent = useCallback(
     (prev: State, intent: string): State => {
@@ -423,11 +438,51 @@ export default function PlayerChat({
         </div>
       ) : tour.status === "TERMINADO" ? (
         <div
-          className="border-t border-ink/10 bg-white px-4 py-5 text-center"
+          className="border-t border-ink/10 bg-white px-4 py-5"
           style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
         >
-          <p className="font-hand text-[24px] leading-tight text-brand">un abrazo, nos vemos en la próxima</p>
-          <p className="mt-1 text-[13px] text-ink/45">Recorrido terminado · gracias por caminar conmigo</p>
+          <p className="text-center font-hand text-[24px] leading-tight text-brand">
+            un abrazo, nos vemos en la próxima
+          </p>
+          <p className="mt-1 text-center text-[13px] text-ink/45">
+            Recorrido terminado · gracias por caminar conmigo
+          </p>
+
+          {/* upsell: la siguiente experiencia, en la voz de Henry */}
+          {upsell && (
+            <div className="mt-4 rounded-2xl border border-ink/10 bg-[#F4F2EC] p-3">
+              {upsell.message && (
+                <p className="mb-2.5 flex items-start gap-2 text-[14px] leading-snug text-ink">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/henry.jpg" alt="" className="mt-0.5 h-6 w-6 shrink-0 rounded-full object-cover" />
+                  <span>{upsell.message}</span>
+                </p>
+              )}
+              <a
+                href={upsellHref}
+                className="flex items-center gap-3 rounded-xl bg-white p-2 shadow-bubble transition active:scale-[0.99]"
+              >
+                <span
+                  className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-ink/5"
+                  style={
+                    upsellCover
+                      ? { backgroundImage: `url(${upsellCover})`, backgroundSize: "cover", backgroundPosition: "center" }
+                      : undefined
+                  }
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-semibold text-ink">{upsell.title}</span>
+                  <span className="text-[12px] text-ink/50">
+                    {upsell.priceCents > 0 ? `US$${(upsell.priceCents / 100).toFixed(2)}` : "Gratis"}
+                    {upsell.promoCode ? ` · con ${upsell.promoCode}` : ""}
+                  </span>
+                </span>
+                <span className="shrink-0 rounded-full bg-brand px-3.5 py-1.5 text-[13px] font-semibold text-white">
+                  Ver →
+                </span>
+              </a>
+            </div>
+          )}
         </div>
       ) : (
         <div

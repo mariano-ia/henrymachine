@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
     locked: exp.locked,
     priceCents: exp.priceCents,
     paywallMessage: exp.paywallMessage,
+    upsell: exp.upsell,
     serverProgress,
   });
 }

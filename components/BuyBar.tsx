@@ -48,10 +48,15 @@ export default function BuyBar({
     if (!anonId) return;
     setBusy(true);
     try {
+      // cupón del upsell (llega como ?promo=CODE en la URL del detalle)
+      const promo =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("promo")
+          : null;
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, anonId, utm: getUtm() }),
+        body: JSON.stringify({ slug, anonId, utm: getUtm(), promo }),
       });
       const d = await res.json();
       if (d.url) window.location.href = d.url;
