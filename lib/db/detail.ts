@@ -2,6 +2,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type DetailStop = { n: number; title: string; locked: boolean };
 
+export type DetailReview = {
+  rating: number;
+  body: string | null;
+  authorName: string | null;
+  country: string | null;
+  verified: boolean;
+  featured: boolean;
+};
+
 export type ExperienceDetail = {
   id: string;
   slug: string;
@@ -19,6 +28,9 @@ export type ExperienceDetail = {
   coverPath: string | null;
   coverKind: "image" | "video" | null;
   itinerary: DetailStop[];
+  reviews: DetailReview[];
+  ratingAvg: number | null;
+  ratingCount: number;
 };
 
 /**
@@ -57,6 +69,28 @@ export async function getExperienceDetail(
     locked: paywallPos != null && a.position > paywallPos,
   }));
 
+  // reseñas reales aprobadas/destacadas (las destacadas primero)
+  const { data: reviewRows } = await sb
+    .from("reviews")
+    .select("rating, body, author_name, country, verified_purchase, status")
+    .eq("experience_id", exp.id)
+    .in("status", ["approved", "featured"])
+    .order("created_at", { ascending: false });
+  const reviews: DetailReview[] = (reviewRows ?? [])
+    .map((r) => ({
+      rating: r.rating,
+      body: r.body,
+      authorName: r.author_name,
+      country: r.country,
+      verified: r.verified_purchase,
+      featured: r.status === "featured",
+    }))
+    .sort((a, b) => Number(b.featured) - Number(a.featured));
+  const ratingCount = reviews.length;
+  const ratingAvg = ratingCount
+    ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / ratingCount) * 10) / 10
+    : null;
+
   return {
     id: exp.id,
     slug: exp.slug,
@@ -78,5 +112,8 @@ export async function getExperienceDetail(
         : "image"
       : null,
     itinerary,
+    reviews,
+    ratingAvg,
+    ratingCount,
   };
 }

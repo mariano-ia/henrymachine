@@ -8,6 +8,7 @@ import ThemeBadge from "@/components/ThemeBadge";
 import TrackView from "@/components/TrackView";
 import { themeInfo } from "@/lib/themes";
 import { metersToSteps } from "@/lib/steps";
+import { flagEmoji } from "@/lib/country";
 
 export const dynamic = "force-dynamic";
 const STAR = "#D89A34";
@@ -88,13 +89,6 @@ const STEPS = [
   { t: "Caminás a tu ritmo", d: "Sin apuro. Preguntame lo que quieras en el camino." },
 ];
 
-const REVIEWS = [
-  { name: "Camila R.", rating: 5, text: "Sentí que un amigo me mostraba la ciudad. Lugares que sola jamás hubiera encontrado." },
-  { name: "Diego M.", rating: 5, text: "La mejor forma de conocer NYC. Cada parada mejor que la anterior." },
-  { name: "Sofía L.", rating: 4, text: "Muy copada. Henry responde todo y te hace sentir local." },
-];
-const RATING = 4.9;
-const RATING_COUNT = 128;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -182,11 +176,13 @@ export default async function DetailPage({
               <PinIco />
               {[exp.neighborhood, exp.city].filter(Boolean).join(" · ") || "Nueva York"}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink/60">
-              <Stars value={RATING} />
-              {RATING.toString().replace(".", ",")}
-              <span className="text-ink/35">({RATING_COUNT})</span>
-            </span>
+            {exp.ratingAvg != null && (
+              <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink/60">
+                <Stars value={exp.ratingAvg} />
+                {exp.ratingAvg.toString().replace(".", ",")}
+                <span className="text-ink/35">({exp.ratingCount})</span>
+              </span>
+            )}
           </div>
           {exp.pitch && <p className="mt-5 text-[16px] leading-[1.65] text-ink/75">{exp.pitch}</p>}
           {/* tip de Henry — voz manuscrita (editable en el admin; default si no hay) */}
@@ -262,22 +258,36 @@ export default async function DetailPage({
             <section className="mt-11 border-t border-ink/10 pt-9">
               <div className="mb-5 flex items-center gap-2.5">
                 <h2 className="text-[11px] font-bold uppercase tracking-label text-ink/45">Reseñas</h2>
-                <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-ink/55">
-                  <Stars value={RATING} />
-                  {RATING.toString().replace(".", ",")} · {RATING_COUNT}
-                </span>
+                {exp.ratingAvg != null && (
+                  <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-ink/55">
+                    <Stars value={exp.ratingAvg} />
+                    {exp.ratingAvg.toString().replace(".", ",")} · {exp.ratingCount}
+                  </span>
+                )}
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {REVIEWS.map((r, i) => (
-                  <figure key={i} className="rounded-xl border border-ink/8 bg-card p-4">
-                    <Stars value={r.rating} />
-                    <blockquote className="mt-2 text-[12.5px] leading-relaxed text-ink/60">“{r.text}”</blockquote>
-                    <figcaption className="mt-2 text-[11px] font-medium uppercase tracking-label text-ink/35">
-                      {r.name}
-                    </figcaption>
-                  </figure>
-                ))}
-              </div>
+              {exp.reviews.length === 0 ? (
+                <p className="text-[13.5px] text-ink/45">
+                  Todavía no hay reseñas. Sé de los primeros en caminarlo y contanos cómo te fue.
+                </p>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {exp.reviews.slice(0, 6).map((r, i) => (
+                    <figure key={i} className="rounded-xl border border-ink/8 bg-card p-4">
+                      <div className="flex items-center justify-between">
+                        <Stars value={r.rating} />
+                        {r.country && <span className="text-[15px]">{flagEmoji(r.country)}</span>}
+                      </div>
+                      {r.body && (
+                        <blockquote className="mt-2 text-[12.5px] leading-relaxed text-ink/60">“{r.body}”</blockquote>
+                      )}
+                      <figcaption className="mt-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-label text-ink/35">
+                        {r.authorName ?? "Anónimo"}
+                        {r.verified && <span className="text-local">✓</span>}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
 
