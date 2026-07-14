@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlayableExperience } from "@/lib/db/experiences";
 import { getGlobalPersona } from "@/lib/db/persona";
 import { getUtilitiesBlock } from "@/lib/db/utilities";
+import { getStopHoursLine } from "@/lib/places";
 import { buildPlaySystemInstruction, type TourPhase } from "@/lib/engine/play-prompt";
 import { tourReply } from "@/lib/gemini";
 import type { ChatTurn } from "@/lib/types";
@@ -43,6 +44,9 @@ export async function POST(req: NextRequest) {
       ? (body.phase as TourPhase)
       : "CAMINANDO";
 
+    // horarios reales de la parada actual (caché 12 h en steps.meta; null sin key)
+    const hoursInfo = await getStopHoursLine(exp.stops[stopIndex]);
+
     const systemInstruction = buildPlaySystemInstruction({
       stops: exp.stops,
       grounding: exp.grounding,
@@ -52,6 +56,7 @@ export async function POST(req: NextRequest) {
       nudge: body.nudge === true,
       persona,
       utilities,
+      hoursInfo,
     });
 
     const result = await tourReply({

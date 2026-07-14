@@ -7,11 +7,13 @@ export type PlayMedia = {
 };
 
 export type PlayableStop = {
+  id: string;
   title: string;
   proposal: string;
   walkToNext: string | null;
   placeQuery: string | null;
   address: string | null;
+  meta: unknown; // steps.meta (caché de Places, etc.) — server-only
   media: PlayMedia[];
 };
 
@@ -63,7 +65,7 @@ export async function getPlayableExperience(
 
   const { data: allSteps } = await sb
     .from("steps")
-    .select("id, type, title, body, proposal, walk_to_next, place_query, address, position, is_paywall, paywall_message")
+    .select("id, type, title, body, proposal, walk_to_next, place_query, address, position, is_paywall, paywall_message, meta")
     .eq("experience_id", exp.id)
     .order("position");
   const steps = allSteps ?? [];
@@ -110,11 +112,13 @@ export async function getPlayableExperience(
     openingMedia: messages[0] ? mediaByStep[messages[0].id] ?? [] : [],
     closingMessage: messages.length > 1 ? messages[messages.length - 1].body : null,
     stops: arrivals.map((a) => ({
+      id: a.id,
       title: a.title ?? "",
       proposal: a.proposal ?? a.body ?? "",
       walkToNext: a.walk_to_next,
       placeQuery: a.place_query,
       address: a.address,
+      meta: a.meta,
       media: mediaByStep[a.id] ?? [],
     })),
     grounding: source?.inline_text ?? "", // server-only; NO se manda al cliente

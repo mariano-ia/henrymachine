@@ -136,10 +136,12 @@ Costos LLM medidos: ingesta del dossier ~US$0,02; experiencia jugada
   columnas `rag_provider`/`rag_corpus_ref` ya previstas.
 - Reanudar cross-device / analytics de abandono: cablear `play_sessions`
   (tabla ya existe) + `resume_window_hours` como expiración server-side.
-- Horarios reales de los lugares (Google Places): guardar `place_id` por
-  parada, refrescar horarios con caché diario (steps.meta jsonb ya existe)
-  e inyectarlos al grounding — Henry podría avisar "ojo que cierra a las 5".
-  Requiere API key de Google Places; costo ~centavos/día con caché.
+- ~~Horarios reales (Google Places)~~: HECHO 2026-07-14 — `lib/places.ts`
+  resuelve place_id + horarios de la PARADA ACTUAL con caché de 12 h en
+  `steps.meta.places` y lo inyecta al prompt ("ahora está CERRADO · hoy:
+  Tuesday: Closed"); detecta CLOSED_PERMANENTLY y avisa. Env:
+  `GOOGLE_MAPS_API_KEY` (Places API New, proyecto GCP "henry"). Sin key,
+  el motor sigue igual. Pendiente menor: mismo dato en la página de detalle.
 - "Utility intents": base de conocimiento GLOBAL editable en el admin
   (baños públicos, wifi, tarjetas de metro, emergencias, agua) que se inyecta
   en el prompt de TODAS las experiencias; opcionalmente también como página

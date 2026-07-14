@@ -18,6 +18,8 @@ export function buildPlaySystemInstruction(opts: {
   persona?: { bio: string | null; voice: string | null } | null;
   /** Guía útil global (baños, agua, transporte...) — bloque ya formateado. */
   utilities?: string | null;
+  /** Horarios reales (Google Places) de la parada actual — línea ya formateada. */
+  hoursInfo?: string | null;
 }): string {
   const { stops, grounding, stopIndex, phase, turnsInStop, nudge } = opts;
   const stop = stops[stopIndex];
@@ -81,7 +83,14 @@ CÓMO CONVERSÁS (importante):
 - Si el usuario quiere terminar en cualquier momento, despedite cálido e intent="finish".
 
 ESTADO ACTUAL:
-${phaseBlock}
+${phaseBlock}${
+    opts.hoursInfo
+      ? `
+
+${opts.hoursInfo}
+(Usá este dato si preguntan por horarios o si está abierto; si el dato contradice el plan —cerrado, por cerrar—, avisale con onda y proponé alternativa u otra parada. No inventes horarios de lugares sin dato.)`
+      : ""
+  }
 
 SALIDA: devolvé EXCLUSIVAMENTE un JSON válido:
 {"reply": "tu mensaje como Henry", "intent": "<arrived | next | pause | resume | finish | question | chat | none>"}
