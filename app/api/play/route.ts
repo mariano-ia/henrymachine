@@ -91,7 +91,12 @@ export async function POST(req: NextRequest) {
 
     const result = await tourReply({
       systemInstruction,
-      history: Array.isArray(body.history) ? body.history.slice(-12) : [],
+      history: Array.isArray(body.history)
+        ? body.history.slice(-12).map((t) => ({
+            role: t?.role === "henry" ? ("henry" as const) : ("user" as const),
+            text: String(t?.text ?? "").slice(0, 1000),
+          }))
+        : [],
       message,
     });
 
