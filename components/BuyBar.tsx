@@ -62,11 +62,11 @@ export default function BuyBar({
       const d = await res.json();
       if (d.url) window.location.href = d.url;
       else {
-        setErr(d.error ?? "No se pudo iniciar el pago. Probá de nuevo.");
+        setErr(d.error ?? "No se pudo iniciar el pago. Inténtalo de nuevo.");
         setBusy(false);
       }
     } catch {
-      setErr("No se pudo iniciar el pago. Probá de nuevo.");
+      setErr("No se pudo iniciar el pago. Inténtalo de nuevo.");
       setBusy(false);
     }
   }
@@ -86,20 +86,20 @@ export default function BuyBar({
   if (free || owned) {
     return (
       <button onClick={start} className={`${base} bg-brand text-white hover:bg-brand-dark`}>
-        Dale, vamos <span aria-hidden>→</span>
+        Vamos <span aria-hidden>→</span>
       </button>
     );
   }
 
-  // paga con paradas gratis → empezás gratis y pagás en el chat al llegar al paywall
+  // paga con paradas gratis → empiezas gratis y pagas en el chat al llegar al paywall
   if (freeStops > 0) {
     return (
       <div>
         <button onClick={start} className={`${base} bg-brand text-white hover:bg-brand-dark`}>
-          Empezá gratis <span aria-hidden>→</span>
+          Empieza gratis <span aria-hidden>→</span>
         </button>
         <p className="mt-2 text-center text-[12px] text-ink/50">
-          {freeStops} {freeStops === 1 ? "parada gratis" : "paradas gratis"} · después desbloqueás por {fmtUsd(priceCents)}
+          {freeStops} {freeStops === 1 ? "parada gratis" : "paradas gratis"} · después desbloqueas por {fmtUsd(priceCents)}
         </p>
       </div>
     );
@@ -113,7 +113,7 @@ export default function BuyBar({
         disabled={busy}
         className={`${base} bg-brand text-white hover:bg-brand-dark disabled:opacity-70`}
       >
-        {busy ? "Abriendo el pago…" : `Comprá y arrancá · ${fmtUsd(priceCents)}`}
+        {busy ? "Abriendo el pago…" : `Compra y arranca · ${fmtUsd(priceCents)}`}
       </button>
       {err && <p className="mt-2 text-center text-[12px] text-red-600">{err}</p>}
     </div>

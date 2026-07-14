@@ -112,7 +112,7 @@ export default function TourChat() {
     setSending(true);
     const started = Date.now();
 
-    let reply = "Se me cortó la señal 😅 dale de nuevo";
+    let reply = "Se me cortó la señal 😅 inténtalo de nuevo";
     let intent = "none";
     try {
       const res = await fetch("/api/tour", {
@@ -130,7 +130,7 @@ export default function TourChat() {
       if (res.ok) {
         reply = data.reply;
         intent = data.intent || "none";
-      } else reply = data.error || "uff, algo se me trabó. dale de nuevo";
+      } else reply = data.error || "uff, algo se me trabó. inténtalo de nuevo";
     } catch {
       /* fallback */
     }

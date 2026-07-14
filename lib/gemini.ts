@@ -175,7 +175,7 @@ export async function tourReply(params: {
       reply:
         typeof o.reply === "string" && o.reply.trim()
           ? o.reply
-          : "Perdón, se me cruzaron los cables 😅 dale de nuevo.",
+          : "Perdón, se me cruzaron los cables 😅 inténtalo de nuevo.",
       intent: typeof o.intent === "string" ? o.intent : "none",
       usage,
     };
@@ -194,7 +194,7 @@ export async function tourReply(params: {
     }
     const looksJson = cleaned.startsWith("{") || cleaned.includes('"reply"');
     return {
-      reply: looksJson || !text ? "Perdón, se me trabó 😅 dale de nuevo." : text,
+      reply: looksJson || !text ? "Perdón, se me trabó 😅 inténtalo de nuevo." : text,
       intent: "none",
       usage,
     };

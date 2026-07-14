@@ -30,14 +30,14 @@ export async function POST(req: NextRequest) {
     .eq("email", email)
     .maybeSingle();
 
-  if (!row) return NextResponse.json({ ok: false, error: "Pedí un código nuevo." }, { status: 400 });
+  if (!row) return NextResponse.json({ ok: false, error: "Pide un código nuevo." }, { status: 400 });
   if (new Date(row.expires_at).getTime() < Date.now()) {
     await sb.from("login_codes").delete().eq("email", email);
-    return NextResponse.json({ ok: false, error: "El código venció. Pedí uno nuevo." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "El código venció. Pide uno nuevo." }, { status: 400 });
   }
   if (row.attempts >= 5) {
     await sb.from("login_codes").delete().eq("email", email);
-    return NextResponse.json({ ok: false, error: "Demasiados intentos. Pedí un código nuevo." }, { status: 429 });
+    return NextResponse.json({ ok: false, error: "Demasiados intentos. Pide un código nuevo." }, { status: 429 });
   }
   if (row.code_hash !== hash(code, email)) {
     await sb.from("login_codes").update({ attempts: row.attempts + 1 }).eq("email", email);

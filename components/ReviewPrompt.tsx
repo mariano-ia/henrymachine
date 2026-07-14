@@ -40,7 +40,7 @@ export default function ReviewPrompt({ slug, anonId }: { slug: string; anonId: s
       <p className="flex items-center justify-center gap-2 text-center text-[14px] font-semibold text-ink">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/henry.jpg" alt="" className="h-6 w-6 rounded-full object-cover" />
-        ¿Me dejás una reseña?
+        ¿Me dejas una reseña?
       </p>
       <div className="mt-2 flex justify-center gap-1.5">
         {[1, 2, 3, 4, 5].map((i) => (
@@ -63,7 +63,7 @@ export default function ReviewPrompt({ slug, anonId }: { slug: string; anonId: s
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={2}
-            placeholder="Contá cómo te fue (opcional)"
+            placeholder="Cuéntame cómo te fue (opcional)"
             className="mt-3 w-full rounded-lg border border-ink/15 bg-white px-3 py-2 text-[14px] text-ink outline-none focus:border-ink/40"
           />
           <input

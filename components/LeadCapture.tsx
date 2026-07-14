@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-/** "Avisame del próximo recorrido" — captura de email para no-compradores. */
+/** "Avísame del próximo recorrido" — captura de email para no-compradores. */
 export default function LeadCapture({
   source,
   slug,
@@ -62,7 +62,7 @@ export default function LeadCapture({
         disabled={busy}
         className="shrink-0 rounded-full bg-brand px-5 py-2.5 text-[14px] font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
       >
-        {busy ? "…" : "Avisame"}
+        {busy ? "…" : "Avísame"}
       </button>
     </form>
   );

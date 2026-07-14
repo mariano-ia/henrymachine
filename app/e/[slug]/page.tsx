@@ -83,9 +83,9 @@ function Stat({ label, value, icon }: { label: string; value: string; icon: Reac
 }
 
 const STEPS = [
-  { t: "Elegí el recorrido", d: "Uno gratis o pago. Lo empezás cuando quieras." },
+  { t: "Elige el recorrido", d: "Uno gratis o pago. Lo empiezas cuando quieras." },
   { t: "Te escribo y te guío", d: "Como un amigo. Te llevo parada por parada." },
-  { t: "Caminás a tu ritmo", d: "Sin apuro. Preguntame lo que quieras en el camino." },
+  { t: "Caminas a tu ritmo", d: "Sin apuro. Pregúntame lo que quieras en el camino." },
 ];
 
 
@@ -172,7 +172,7 @@ export default async function DetailPage({
           {exp.pitch && <p className="mt-5 text-[16px] leading-[1.65] text-ink/75">{exp.pitch}</p>}
           {/* tip de Henry — voz manuscrita (editable en el admin; default si no hay) */}
           <p className="mt-4 font-hand text-[22px] leading-tight text-brand">
-            “{exp.henryTip ?? "Vení con hambre y zapatillas cómodas."}”
+            “{exp.henryTip ?? "Ven con hambre y zapatillas cómodas."}”
           </p>
         </div>
 
@@ -252,7 +252,7 @@ export default async function DetailPage({
               </div>
               {exp.reviews.length === 0 ? (
                 <p className="text-[13.5px] text-ink/45">
-                  Todavía no hay reseñas. Sé de los primeros en caminarlo y contanos cómo te fue.
+                  Todavía no hay reseñas. Sé de los primeros en caminarlo y cuéntanos cómo te fue.
                 </p>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -292,7 +292,7 @@ export default async function DetailPage({
               </div>
               {exp.priceCents > 0 && <GiftButton slug={exp.slug} />}
               <p className="mt-3 text-center text-[12px] leading-relaxed text-ink/45">
-                {exp.priceCents > 0 ? "Pago único · lo hacés cuando quieras" : "Sin costo · empezás cuando quieras"}
+                {exp.priceCents > 0 ? "Pago único · lo haces cuando quieras" : "Sin costo · empiezas cuando quieras"}
               </p>
             </div>
           </aside>
@@ -302,7 +302,7 @@ export default async function DetailPage({
         <div className="mt-10 border-t border-ink/10 pt-6 lg:hidden">
           {exp.priceCents > 0 && <GiftButton slug={exp.slug} />}
           <p className="mt-3 text-center text-[12px] leading-relaxed text-ink/45">
-            {exp.priceCents > 0 ? "Pago único · lo hacés cuando quieras" : "Sin costo · empezás cuando quieras"}
+            {exp.priceCents > 0 ? "Pago único · lo haces cuando quieras" : "Sin costo · empiezas cuando quieras"}
           </p>
         </div>
       </div>

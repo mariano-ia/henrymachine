@@ -16,7 +16,7 @@ const SCRIPT: Msg[] = [
   { from: "user", text: "Riquísima, qué buen dato 🔥" },
   { from: "henry", text: "Te dije 😄 Ahora cruzamos a un cafecito acá cerquita." },
   { from: "henry", text: "Tómate tu tiempo, no hay apuro, choche." },
-  { from: "user", text: "Dale, vamos para el café" },
+  { from: "user", text: "Ya, vamos para el café" },
 ];
 
 type Item = { id: number; msg: Msg; animate: boolean };

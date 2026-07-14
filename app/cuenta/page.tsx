@@ -23,7 +23,7 @@ export default function CuentaPage() {
     });
     const d = await res.json();
     setBusy(false);
-    if (!d.ok) setErr(d.error ?? "No pudimos mandarte el código. Revisá el email.");
+    if (!d.ok) setErr(d.error ?? "No pudimos mandarte el código. Revisa el email.");
     else setStage("code");
   }
 
@@ -39,7 +39,7 @@ export default function CuentaPage() {
     if (!d.ok || !d.tokenHash) { setErr(d.error ?? "Código incorrecto o vencido."); setBusy(false); return; }
     // 2) establecemos la sesión con ese token (Supabase no mandó ningún email)
     const { error } = await sb.auth.verifyOtp({ token_hash: d.tokenHash, type: "email" });
-    if (error) { setErr("No se pudo iniciar sesión. Probá de nuevo."); setBusy(false); return; }
+    if (error) { setErr("No se pudo iniciar sesión. Inténtalo de nuevo."); setBusy(false); return; }
     // 3) unir lo anónimo de este dispositivo + compras por email
     // (si falla el merge, igual entramos: no bloqueamos el login por esto)
     try {
@@ -63,7 +63,7 @@ export default function CuentaPage() {
       <div className="w-full max-w-sm">
         <h1 className="font-condensed text-[26px] font-bold uppercase tracking-[-0.015em]">Tus recorridos</h1>
         <p className="mt-1 text-sm text-ink/60">
-          Poné el email con el que compraste y te mandamos un código. Sin contraseñas.
+          Pon el email con el que compraste y te mandamos un código. Sin contraseñas.
         </p>
         {stage === "email" && (
           <div className="mt-6 space-y-3">
@@ -71,7 +71,7 @@ export default function CuentaPage() {
               className="w-full rounded-xl border border-ink/15 bg-white px-4 py-3 text-[16px] outline-none focus:border-ink/40" />
             <button onClick={sendCode} disabled={busy || !email.includes("@")}
               className="w-full rounded-full bg-brand py-3.5 text-[15px] font-semibold text-white disabled:opacity-50">
-              {busy ? "Enviando…" : "Mandame el código"}
+              {busy ? "Enviando…" : "Mándame el código"}
             </button>
           </div>
         )}

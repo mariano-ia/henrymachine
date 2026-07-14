@@ -127,7 +127,7 @@ export default function PlayerLoader({ slug }: { slug: string }) {
         <span>
           Tu pago está confirmándose (a veces tarda un minuto).
           <br />
-          Guardá este link y recargá en un rato — no vuelvas a comprar.
+          Guarda este link y recarga en un rato — no vuelvas a comprar.
           <br />
           <button
             onClick={() => location.reload()}

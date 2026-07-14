@@ -19,7 +19,7 @@ export default function GiftSentBanner({ title }: { title: string }) {
       <p className="mt-2 font-hand text-[24px] leading-tight">
         ¡Golazo! “{title}” quedó guardado para {to}.
         <br />
-        Entrá con ese email en “Mis recorridos” y arrancás cuando quieras. — H.
+        Entra con ese email en “Mis recorridos” y empiezas cuando quieras. — H.
       </p>
     </div>
   );

@@ -78,7 +78,7 @@ export async function createCoupon(input: {
   const pct = input.percentOff ?? null;
   const amt = input.amountOffCents ?? null;
   if ((pct == null && amt == null) || (pct != null && amt != null)) {
-    return { ok: false, error: "Elegí porcentaje O monto fijo, uno solo." };
+    return { ok: false, error: "Elige porcentaje O monto fijo, uno solo." };
   }
   if (pct != null && (pct < 1 || pct > 100)) {
     return { ok: false, error: "El porcentaje va de 1 a 100." };

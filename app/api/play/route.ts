@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const message =
       typeof body.message === "string" ? body.message.trim().slice(0, 1200) : "";
     if (!slug) return NextResponse.json({ error: "Falta la experiencia." }, { status: 400 });
-    if (!message) return NextResponse.json({ error: "Escribí un mensaje." }, { status: 400 });
+    if (!message) return NextResponse.json({ error: "Escribe un mensaje." }, { status: 400 });
 
     // rate limit: 20 msg/min y 400/día por anonId+IP
     const anonIdForRl = typeof body.anonId === "string" ? body.anonId : null;
@@ -120,6 +120,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ reply: result.reply, intent: result.intent });
   } catch {
-    return NextResponse.json({ error: "Se me trabó 😅 probá de nuevo." }, { status: 500 });
+    return NextResponse.json({ error: "Se me trabó 😅 prueba de nuevo." }, { status: 500 });
   }
 }

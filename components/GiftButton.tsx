@@ -23,7 +23,7 @@ export default function GiftButton({ slug }: { slug: string }) {
   async function send() {
     setErr(null);
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
-      setErr("Poné un email válido.");
+      setErr("Pon un email válido.");
       return;
     }
     setBusy(true);
@@ -55,8 +55,8 @@ export default function GiftButton({ slug }: { slug: string }) {
           Comprar para otro día
         </button>
         <p className="mt-1.5 px-1 text-center text-[12px] leading-relaxed text-ink/45">
-          Comprás ahora y lo usás cuando quieras. Lo guardamos en el email que pongas —
-          entrás desde cualquier dispositivo en “Mis recorridos”. También sirve para regalárselo a alguien.
+          Compras ahora y lo usas cuando quieras. Lo guardamos en el email que pongas —
+          entras desde cualquier dispositivo en “Mis recorridos”. También sirve para regalárselo a alguien.
         </p>
       </div>
     );
@@ -66,7 +66,7 @@ export default function GiftButton({ slug }: { slug: string }) {
     <div className="mt-3 rounded-2xl border border-ink/12 bg-paper p-3.5">
       <p className="text-[13px] font-semibold text-ink">Comprar para otro día</p>
       <p className="mb-2.5 mt-0.5 text-[12px] leading-relaxed text-ink/50">
-        Poné el email donde querés tenerlo (el tuyo, o el de quien se lo regalás). Con ese
+        Pon el email donde quieres tenerlo (el tuyo, o el de quien se lo regalas). Con ese
         email se accede al recorrido, cuando quieran.
       </p>
       <input

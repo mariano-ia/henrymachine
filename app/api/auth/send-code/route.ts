@@ -12,7 +12,7 @@ const hash = (code: string, email: string) =>
 /** Genera un código de 6 dígitos, lo guarda hasheado y lo manda por email (Henry). */
 export async function POST(req: NextRequest) {
   const ok = await rateLimit(req, "sendcode", null, 3600, 8);
-  if (!ok) return NextResponse.json({ ok: false, error: "Demasiados intentos. Probá en un rato." }, { status: 429 });
+  if (!ok) return NextResponse.json({ ok: false, error: "Demasiados intentos. Inténtalo en un rato." }, { status: 429 });
 
   const { email: raw } = (await req.json().catch(() => ({}))) as { email?: string };
   const email = (raw ?? "").trim().toLowerCase();

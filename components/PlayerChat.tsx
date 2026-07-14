@@ -245,7 +245,7 @@ export default function PlayerChat({
     setSending(true);
     const started = Date.now();
 
-    let reply = "Se me cortó la señal 😅 dale de nuevo";
+    let reply = "Se me cortó la señal 😅 prueba de nuevo";
     let intent = "none";
     let limitFarewell = false;
     try {
@@ -268,7 +268,7 @@ export default function PlayerChat({
         reply = data.reply;
         intent = data.intent || "none";
         if (data.limit) limitFarewell = true;
-      } else reply = data.error || "uff, algo se me trabó. dale de nuevo";
+      } else reply = data.error || "uff, algo se me trabó. prueba de nuevo";
     } catch {
       /* fallback */
     }
@@ -442,7 +442,7 @@ export default function PlayerChat({
             disabled={buying}
             className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-6 py-3.5 text-[15px] font-semibold text-white transition hover:bg-brand-dark active:scale-[0.99] disabled:opacity-60"
           >
-            {buying ? "Abriendo el pago…" : `Desbloqueá el resto · ${fmtUsd(priceCents)}`}
+            {buying ? "Abriendo el pago…" : `Desbloquea el resto · ${fmtUsd(priceCents)}`}
           </button>
         </div>
       ) : tour.status === "TERMINADO" ? (
@@ -512,7 +512,7 @@ export default function PlayerChat({
                 }
               }}
               rows={1}
-              placeholder="Escribile a Henry…"
+              placeholder="Escríbele a Henry…"
               className="block w-full resize-none overflow-y-auto bg-transparent py-1 text-[16px] leading-6 text-ink outline-none placeholder:text-ink/40"
             />
           </div>

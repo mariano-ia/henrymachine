@@ -54,7 +54,7 @@ export default async function MisRecorridosPage() {
           })}
           {(exps ?? []).length === 0 && (
             <p className="rounded-2xl border border-dashed border-ink/20 p-6 text-center text-sm text-ink/50">
-              Todavía no hay recorridos con este email. Si compraste con otro, entrá con ese.
+              Todavía no hay recorridos con este email. Si compraste con otro, entra con ese.
             </p>
           )}
         </ul>

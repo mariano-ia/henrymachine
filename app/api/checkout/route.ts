@@ -27,12 +27,12 @@ export async function POST(req: NextRequest) {
   const isGift = body.gift === true;
   const recipientEmail = (body.recipientEmail ?? "").trim().toLowerCase();
   if (isGift && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail)) {
-    return NextResponse.json({ error: "Poné un email válido para el regalo." }, { status: 400 });
+    return NextResponse.json({ error: "Pon un email válido para el regalo." }, { status: 400 });
   }
 
   const okCheckout = await rateLimit(req, "checkout", anonId, 3600, 10);
   if (!okCheckout) {
-    return NextResponse.json({ error: "Demasiados intentos. Probá en un rato." }, { status: 429 });
+    return NextResponse.json({ error: "Demasiados intentos. Prueba en un rato." }, { status: 429 });
   }
 
   const sb = createAdminClient();

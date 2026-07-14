@@ -51,7 +51,7 @@ export async function sendAccessEmail(opts: {
   <p style="font-size:16px;line-height:1.5">${intro}</p>
   ${note}
   <p style="font-size:15px;line-height:1.6;color:#444">
-    Entrá cuando quieras con <b>este email</b> y arrancás a caminar Nueva York conmigo,
+    Entra cuando quieras con <b>este email</b> y arrancas a caminar Nueva York conmigo,
     parada por parada. Desde cualquier dispositivo.
   </p>
   <p style="margin:24px 0">
@@ -81,7 +81,7 @@ export async function sendLoginCode(to: string, code: string): Promise<boolean> 
   <p style="font-size:16px;line-height:1.5">¡Hola, querubín! Tu código para entrar a tus recorridos:</p>
   <p style="font-size:34px;font-weight:700;letter-spacing:8px;text-align:center;
      background:#FCFBF9;border:1px solid #eee;border-radius:12px;padding:16px 0;margin:18px 0">${esc(code)}</p>
-  <p style="font-size:14px;color:#888;line-height:1.5">Vence en 10 minutos. Si no lo pediste, ignoralo.<br>— Henry</p>
+  <p style="font-size:14px;color:#888;line-height:1.5">Vence en 10 minutos. Si no lo pediste, ignóralo.<br>— Henry</p>
 </div>`;
     const res = await r.emails.send({
       from: FROM,

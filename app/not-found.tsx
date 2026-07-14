@@ -13,7 +13,7 @@ export default function NotFound() {
           </h1>
           <p className="mt-3 text-[14px] leading-relaxed text-ink/55">
             Puede que el recorrido se haya mudado o el link esté cortado.
-            Volvé al inicio y elegí por dónde caminamos.
+            Vuelve al inicio y elige por dónde caminamos.
           </p>
           <Link
             href="/"

@@ -65,14 +65,14 @@ export default async function Home() {
                 Nueva York · a pie · por chat
               </span>
               <h1 className="mt-5 text-[clamp(1.75rem,6.5vw,3.4rem)] font-semibold leading-[1.05] tracking-[-0.02em] text-white">
-                Caminá Nueva York con Henry
+                Camina Nueva York con Henry
               </h1>
               {/* hook en la voz de Henry (manuscrita) */}
               <p className="mt-2 font-hand text-[clamp(1.7rem,6vw,2.6rem)] leading-none text-brand">
                 la ciudad que no sale en las guías
               </p>
               <p className="mt-5 max-w-[42ch] text-[14.5px] leading-relaxed text-white/60">
-                Elegí un recorrido y te voy guiando por chat, parada por parada,
+                Elige un recorrido y te voy guiando por chat, parada por parada,
                 como si le escribieras a un amigo que conoce cada cuadra.
               </p>
             </div>
@@ -97,10 +97,10 @@ export default async function Home() {
         <div className="mx-auto flex max-w-editorial flex-col gap-4 px-5 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-10">
           <div className="max-w-md">
             <h2 className="text-[20px] font-semibold tracking-tight text-ink">
-              ¿Todavía no venís a Nueva York?
+              ¿Todavía no vienes a Nueva York?
             </h2>
             <p className="mt-1 text-[14px] leading-relaxed text-ink/55">
-              Dejame tu mail y te aviso cuando sume un recorrido nuevo. Sin spam, palabra de Henry.
+              Déjame tu mail y te aviso cuando sume un recorrido nuevo. Sin spam, palabra de Henry.
             </p>
           </div>
           <LeadCapture source="home" />

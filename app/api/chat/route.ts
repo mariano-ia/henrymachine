@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     const message = typeof body.message === "string" ? body.message.trim() : "";
     if (!message) {
-      return NextResponse.json({ error: "Escribí un mensaje." }, { status: 400 });
+      return NextResponse.json({ error: "Escribe un mensaje." }, { status: 400 });
     }
 
     // Sesión-demo fija: los videos de Tokio ya ingeridos (server-side).
