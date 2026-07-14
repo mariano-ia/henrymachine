@@ -33,6 +33,50 @@ function humanDelayMs(len: number): number {
 }
 const NUDGE_AFTER_MS = 100_000;
 
+// ---- reanudar: el progreso sobrevive a cerrar la pestaña (mismo navegador) ----
+const SAVE_VERSION = 1;
+const RESUME_WINDOW_MS = 48 * 3600 * 1000; // 48 h para retomar
+const saveKey = (slug: string) => `henry_play_${slug}`;
+
+type SavedPlay = { v: number; savedAt: number; tour: State; messages: Message[] };
+
+function loadSaved(slug: string, stopsLen: number, locked: boolean): SavedPlay | null {
+  try {
+    const raw = localStorage.getItem(saveKey(slug));
+    if (!raw) return null;
+    const s = JSON.parse(raw) as SavedPlay;
+    if (s.v !== SAVE_VERSION) return null;
+    if (Date.now() - s.savedAt > RESUME_WINDOW_MS) return null;
+    if (s.tour.status === "TERMINADO") return null;
+    if (s.tour.stopIndex >= stopsLen) return null;
+    // volvió del paywall ya comprado: destrabar y seguir
+    if (s.tour.status === "PAYWALL") {
+      if (locked) return null;
+      s.tour = { ...s.tour, status: "EN_CURSO" };
+    }
+    // las signed URLs de media caducan: se quitan esas burbujas del historial restaurado
+    s.messages = s.messages.filter((m) => !(m.media?.length ?? 0));
+    if (s.messages.length === 0) return null;
+    return s;
+  } catch {
+    return null;
+  }
+}
+
+function resumeGreeting(tour: State, stops: StopMeta[]): Message {
+  const st = stops[tour.stopIndex];
+  const n = tour.stopIndex + 1;
+  let text: string;
+  if (tour.phase === "EN_PARADA") {
+    text = `¡Volviste, querubín! Quedamos en ${st?.title ?? "una parada"} (parada ${n} de ${stops.length}). ¿Sigues por ahí?`;
+  } else if (tour.phase === "EN_PAUSA") {
+    text = `¡Volviste! Estábamos en pausa cerca de ${st?.title ?? "la próxima parada"}. Cuando quieras, retomamos.`;
+  } else {
+    text = `¡Volviste! Íbamos camino a ${st?.title ?? "la próxima parada"}. Avísame cuando llegues 🙌`;
+  }
+  return { role: "henry", text, time: now() };
+}
+
 export default function PlayerChat({
   slug,
   anonId,
@@ -96,19 +140,26 @@ export default function PlayerChat({
     [LAST, locked]
   );
 
+  // PlayerChat solo monta en el cliente (PlayerLoader lo gatea tras el fetch),
+  // así que acá localStorage está disponible.
+  const [saved] = useState<SavedPlay | null>(() => loadSaved(slug, stops.length, locked));
   const [messages, setMessages] = useState<Message[]>(() => {
+    if (saved) return [...saved.messages, resumeGreeting(saved.tour, stops)];
     const init: Message[] = [{ role: "henry", text: openingMessage, time: now() }];
     // media del paso de apertura (ej. audio de bienvenida de Henry)
     if (openingMedia?.length) init.push({ role: "henry", text: "", time: now(), media: openingMedia });
     return init;
   });
-  const [tour, setTour] = useState<State>({
-    stopIndex: 0,
-    phase: "CAMINANDO",
-    turnsInStop: 0,
-    prevPhase: "CAMINANDO",
-    status: "EN_CURSO",
-  });
+  const [tour, setTour] = useState<State>(
+    () =>
+      saved?.tour ?? {
+        stopIndex: 0,
+        phase: "CAMINANDO",
+        turnsInStop: 0,
+        prevPhase: "CAMINANDO",
+        status: "EN_CURSO",
+      }
+  );
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [nudged, setNudged] = useState(false);
@@ -119,6 +170,20 @@ export default function PlayerChat({
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, sending, tour.status]);
+
+  // persistir el progreso: cerrar y volver retoma donde quedó (48 h)
+  useEffect(() => {
+    try {
+      if (tour.status === "TERMINADO") {
+        localStorage.removeItem(saveKey(slug));
+        return;
+      }
+      const s: SavedPlay = { v: SAVE_VERSION, savedAt: Date.now(), tour, messages };
+      localStorage.setItem(saveKey(slug), JSON.stringify(s));
+    } catch {
+      /* storage lleno o bloqueado: el chat sigue, solo no persiste */
+    }
+  }, [messages, tour, slug]);
   useEffect(() => {
     const t = taRef.current;
     if (!t) return;

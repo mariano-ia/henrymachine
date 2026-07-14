@@ -62,6 +62,11 @@ supabase/migrations/        0001–0007 (todas aplicadas a la DB remota)
 - **Paywall**: pasos con `position > paywall` jamás salen del server sin
   entitlement. El precio de Stripe se crea ANTES de fijar el precio en DB
   (nunca divergen el precio mostrado y el cobrado).
+- **Pausa y reanudar**: el progreso (posición + conversación) se guarda en
+  localStorage por experiencia (ventana de 48 h); cerrar la pestaña y volver
+  retoma con un saludo de Henry en personaje. El prompt le indica ofrecer la
+  pausa si nota apuro/cansancio. Solo mismo navegador (cross-device requiere
+  play_sessions/identidad — ver pendientes).
 
 ## Reglas de negocio en la DB (migraciones clave)
 
@@ -129,3 +134,13 @@ Costos LLM medidos: ingesta del dossier ~US$0,02; experiencia jugada
 - ~~Nombre del producto~~: definido 2026-07-14 → "La Nueva York de Henry, by Resilentos".
 - Vertex RAG (fase 2, si hace falta profundidad fáctica sobre todo el canal):
   columnas `rag_provider`/`rag_corpus_ref` ya previstas.
+- Reanudar cross-device / analytics de abandono: cablear `play_sessions`
+  (tabla ya existe) + `resume_window_hours` como expiración server-side.
+- Horarios reales de los lugares (Google Places): guardar `place_id` por
+  parada, refrescar horarios con caché diario (steps.meta jsonb ya existe)
+  e inyectarlos al grounding — Henry podría avisar "ojo que cierra a las 5".
+  Requiere API key de Google Places; costo ~centavos/día con caché.
+- "Utility intents": base de conocimiento GLOBAL editable en el admin
+  (baños públicos, wifi, tarjetas de metro, emergencias, agua) que se inyecta
+  en el prompt de TODAS las experiencias; opcionalmente también como página
+  pública. Necesita tabla nueva o content_source global (migración).
