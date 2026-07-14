@@ -53,7 +53,22 @@ export default async function EditorPage({
     });
   }
 
+  // otras experiencias (para el upsell "al terminar"): publicadas, menos esta
+  const { data: others } = await sb
+    .from("experiences_public")
+    .select("id, title")
+    .neq("id", id)
+    .order("title");
+
   // key por lista de pasos: al agregar/borrar un paso, el editor se remonta con datos frescos
   const stepsKey = (steps ?? []).map((s) => s.id).join("|");
-  return <ExperienceEditor key={stepsKey} experience={exp} steps={steps ?? []} media={mediaByStep} />;
+  return (
+    <ExperienceEditor
+      key={stepsKey}
+      experience={exp}
+      steps={steps ?? []}
+      media={mediaByStep}
+      otherExperiences={(others ?? []) as { id: string; title: string }[]}
+    />
+  );
 }

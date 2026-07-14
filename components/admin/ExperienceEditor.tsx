@@ -41,6 +41,9 @@ type Experience = {
   distance_m: number | null;
   henry_tip: string | null;
   cover_path: string | null;
+  upsell_experience_id: string | null;
+  upsell_message: string | null;
+  upsell_promo_code: string | null;
   status: string;
   price_cents: number;
 };
@@ -52,10 +55,12 @@ export default function ExperienceEditor({
   experience,
   steps: initialSteps,
   media,
+  otherExperiences = [],
 }: {
   experience: Experience;
   steps: Step[];
   media: Record<string, MediaItem[]>;
+  otherExperiences?: { id: string; title: string }[];
 }) {
   const published = experience.status === "published";
   const [title, setTitle] = useState(experience.title);
@@ -70,6 +75,9 @@ export default function ExperienceEditor({
     experience.distance_m ? String(experience.distance_m / 1000) : ""
   );
   const [henryTip, setHenryTip] = useState(experience.henry_tip ?? "");
+  const [upsellId, setUpsellId] = useState(experience.upsell_experience_id ?? "");
+  const [upsellMsg, setUpsellMsg] = useState(experience.upsell_message ?? "");
+  const [upsellPromo, setUpsellPromo] = useState(experience.upsell_promo_code ?? "");
   const [steps, setSteps] = useState<Step[]>(initialSteps);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [pending, start] = useTransition();
@@ -108,6 +116,9 @@ export default function ExperienceEditor({
       expectedMinutes: Number.isFinite(mins) && mins > 0 ? mins : null,
       distanceM: Number.isFinite(km) && km > 0 ? Math.round(km * 1000) : null,
       henryTip: henryTip.trim() || null,
+      upsellExperienceId: upsellId || null,
+      upsellMessage: upsellMsg.trim() || null,
+      upsellPromoCode: upsellPromo.trim().toUpperCase() || null,
       steps: steps.map((s) => ({
         id: s.id,
         title: s.title,
@@ -409,6 +420,60 @@ export default function ExperienceEditor({
         <p className="text-xs text-neutral-600">
           /{experience.slug} · la cantidad de paradas se calcula sola desde los pasos
         </p>
+      </div>
+
+      {/* al terminar: upsell de la siguiente experiencia */}
+      <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-neutral-900/40 p-5">
+        <h2 className="text-sm font-medium text-neutral-300">Al terminar</h2>
+        <p className="text-xs text-neutral-500">
+          Cuando el usuario termina este recorrido, Henry le ofrece el siguiente (con un
+          cupón si querés). Dejalo vacío para no ofrecer nada.
+        </p>
+        <div>
+          <span className="mb-1.5 block text-xs text-neutral-500">Siguiente experiencia</span>
+          <select
+            value={upsellId}
+            onChange={(e) => setUpsellId(e.target.value)}
+            disabled={ro}
+            className={`${ta} disabled:opacity-70`}
+          >
+            <option value="">— no ofrecer nada —</option>
+            {otherExperiences.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.title}
+              </option>
+            ))}
+          </select>
+        </div>
+        {upsellId && (
+          <>
+            <div>
+              <span className="mb-1.5 block text-xs text-neutral-500">
+                Mensaje de Henry <span className="text-neutral-600">(en su voz)</span>
+              </span>
+              <textarea
+                value={upsellMsg}
+                onChange={(e) => setUpsellMsg(e.target.value)}
+                disabled={ro}
+                rows={2}
+                placeholder="¿Te quedaste con ganas de más, querubín? Este te va a encantar…"
+                className={`${ta} disabled:opacity-70`}
+              />
+            </div>
+            <div>
+              <span className="mb-1.5 block text-xs text-neutral-500">
+                Cupón <span className="text-neutral-600">(código de Stripe, opcional — ver la sección Cupones)</span>
+              </span>
+              <input
+                value={upsellPromo}
+                onChange={(e) => setUpsellPromo(e.target.value.toUpperCase())}
+                disabled={ro}
+                placeholder="GOLAZO20"
+                className={`${ta} disabled:opacity-70`}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* monetización */}

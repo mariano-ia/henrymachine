@@ -120,6 +120,9 @@ export async function saveExperience(input: {
   expectedMinutes: number | null;
   distanceM: number | null;
   henryTip: string | null;
+  upsellExperienceId: string | null;
+  upsellMessage: string | null;
+  upsellPromoCode: string | null;
   steps: StepEdit[];
 }): Promise<{ ok: boolean; error?: string; warning?: string }> {
   const sb = await createClient();
@@ -133,6 +136,9 @@ export async function saveExperience(input: {
     expected_minutes: input.expectedMinutes,
     distance_m: input.distanceM,
     henry_tip: input.henryTip,
+    upsell_experience_id: input.upsellExperienceId,
+    upsell_message: input.upsellMessage,
+    upsell_promo_code: input.upsellPromoCode,
   };
   let warning: string | undefined;
   let { error: e1 } = await sb.from("experiences").update(meta).eq("id", input.id);
