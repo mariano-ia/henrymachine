@@ -78,7 +78,7 @@ export default async function Home() {
               </h1>
               {/* hook en la voz de Henry (manuscrita) */}
               <p className="mt-2 font-hand text-[clamp(1.7rem,6vw,2.6rem)] leading-none text-brand">
-                sí, el de los videos 👋
+                la ciudad que no sale en las guías
               </p>
               <p className="mt-5 max-w-[42ch] text-[14.5px] leading-relaxed text-white/60">
                 Elegí un recorrido y te voy guiando por chat, parada por parada,
