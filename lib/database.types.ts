@@ -62,6 +62,12 @@ export type Database = {
         Update: { created_at?: string; email?: string; id?: string; marketing_consent?: boolean; slug?: string | null; source?: string | null }
         Relationships: []
       }
+      login_codes: {
+        Row: { attempts: number; code_hash: string; created_at: string; email: string; expires_at: string }
+        Insert: { attempts?: number; code_hash: string; created_at?: string; email: string; expires_at: string }
+        Update: { attempts?: number; code_hash?: string; created_at?: string; email?: string; expires_at?: string }
+        Relationships: []
+      }
       play_sessions: {
         Row: { country: string | null; anon_id: string | null; created_at: string; current_step_position: number; email: string | null; entitlement_id: string | null; experience_id: string; expires_at: string | null; id: string; last_active_at: string; mode: Database["public"]["Enums"]["interaction_mode"]; paywall_passed: boolean; phase: Database["public"]["Enums"]["tour_phase"]; started_at: string | null; status: Database["public"]["Enums"]["session_status"]; total_turns: number; turns_in_step: number; user_id: string | null; wind_down: boolean }
         Insert: { country?: string | null; anon_id?: string | null; created_at?: string; current_step_position?: number; email?: string | null; entitlement_id?: string | null; experience_id: string; expires_at?: string | null; id?: string; last_active_at?: string; mode?: Database["public"]["Enums"]["interaction_mode"]; paywall_passed?: boolean; phase?: Database["public"]["Enums"]["tour_phase"]; started_at?: string | null; status?: Database["public"]["Enums"]["session_status"]; total_turns?: number; turns_in_step?: number; user_id?: string | null; wind_down?: boolean }

@@ -70,3 +70,27 @@ export async function sendAccessEmail(opts: {
     /* email nunca rompe el flujo de compra */
   }
 }
+
+/** Código de login (OTP de 6 dígitos) en la voz de Henry. Devuelve si se envió. */
+export async function sendLoginCode(to: string, code: string): Promise<boolean> {
+  const r = client();
+  if (!r) return false;
+  try {
+    const html = `
+<div style="font-family:system-ui,-apple-system,sans-serif;max-width:440px;margin:0 auto;color:#1A1A1A">
+  <p style="font-size:16px;line-height:1.5">¡Hola, querubín! Tu código para entrar a tus recorridos:</p>
+  <p style="font-size:34px;font-weight:700;letter-spacing:8px;text-align:center;
+     background:#FCFBF9;border:1px solid #eee;border-radius:12px;padding:16px 0;margin:18px 0">${esc(code)}</p>
+  <p style="font-size:14px;color:#888;line-height:1.5">Vence en 10 minutos. Si no lo pediste, ignoralo.<br>— Henry</p>
+</div>`;
+    const res = await r.emails.send({
+      from: FROM,
+      to,
+      subject: `Tu código: ${code}`,
+      html,
+    });
+    return !res.error;
+  } catch {
+    return false;
+  }
+}

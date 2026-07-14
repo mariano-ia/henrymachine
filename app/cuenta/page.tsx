@@ -15,17 +15,31 @@ export default function CuentaPage() {
 
   async function sendCode() {
     setBusy(true); setErr(null);
-    const { error } = await sb.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true } });
+    const res = await fetch("/api/auth/send-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+    const d = await res.json();
     setBusy(false);
-    if (error) setErr("No pudimos mandarte el código. Revisá el email.");
+    if (!d.ok) setErr(d.error ?? "No pudimos mandarte el código. Revisá el email.");
     else setStage("code");
   }
 
   async function verify() {
     setBusy(true); setErr(null);
-    const { error } = await sb.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: "email" });
-    if (error) { setErr("Código incorrecto o vencido."); setBusy(false); return; }
-    // unir lo anónimo de este dispositivo + compras por email
+    // 1) verificamos NUESTRO código; el server devuelve un token para la sesión
+    const res = await fetch("/api/auth/verify-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim(), code: code.trim() }),
+    });
+    const d = await res.json();
+    if (!d.ok || !d.tokenHash) { setErr(d.error ?? "Código incorrecto o vencido."); setBusy(false); return; }
+    // 2) establecemos la sesión con ese token (Supabase no mandó ningún email)
+    const { error } = await sb.auth.verifyOtp({ token_hash: d.tokenHash, type: "email" });
+    if (error) { setErr("No se pudo iniciar sesión. Probá de nuevo."); setBusy(false); return; }
+    // 3) unir lo anónimo de este dispositivo + compras por email
     const anonId = localStorage.getItem("henry_anon");
     await fetch("/api/claim", {
       method: "POST",
