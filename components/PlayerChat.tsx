@@ -6,6 +6,7 @@ import type { TourPhase } from "@/lib/engine/play-prompt";
 import { mapsDirUrl } from "@/lib/maps";
 import type { PlayMedia } from "@/lib/db/experiences";
 import { track, getUtm } from "@/lib/track";
+import ReviewPrompt from "@/components/ReviewPrompt";
 
 type StopMeta = { title: string; placeQuery: string | null; media: PlayMedia[] };
 type Message = {
@@ -447,6 +448,8 @@ export default function PlayerChat({
           <p className="mt-1 text-center text-[13px] text-ink/45">
             Recorrido terminado · gracias por caminar conmigo
           </p>
+
+          <ReviewPrompt slug={slug} anonId={anonId} />
 
           {/* upsell: la siguiente experiencia, en la voz de Henry */}
           {upsell && (
