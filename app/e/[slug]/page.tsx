@@ -5,10 +5,12 @@ import BuyBar from "@/components/BuyBar";
 import GiftButton from "@/components/GiftButton";
 import GiftSentBanner from "@/components/GiftSentBanner";
 import ThemeBadge from "@/components/ThemeBadge";
+import SiteHeader from "@/components/SiteHeader";
 import TrackView from "@/components/TrackView";
 import { themeInfo } from "@/lib/themes";
 import { metersToSteps } from "@/lib/steps";
 import { flagEmoji } from "@/lib/country";
+import { fmtUsd } from "@/lib/price";
 
 export const dynamic = "force-dynamic";
 const STAR = "#D89A34";
@@ -28,9 +30,6 @@ function fmtDuration(min: number | null): string {
 function fmtDistance(m: number | null): string {
   if (!m) return "—";
   return `${(m / 1000).toFixed(1).replace(".", ",")} km`;
-}
-function fmtPrice(cents: number): string {
-  return !cents || cents === 0 ? "Gratis" : `$${(cents / 100).toFixed(2)}`;
 }
 
 const Clock = () => (
@@ -94,7 +93,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const exp = await getExperienceDetail(slug);
   if (!exp) return {};
-  const price = exp.priceCents > 0 ? `US$${(exp.priceCents / 100).toFixed(0)}` : "Gratis";
+  const price = fmtUsd(exp.priceCents);
   const cover = coverUrl(exp.coverPath); // helper ya existente en este archivo
   return {
     title: `${exp.title} · ${price} — La Nueva York de Henry`,
@@ -123,21 +122,7 @@ export default async function DetailPage({
     <main className="henry-home min-h-[100dvh] bg-paper pb-24 text-ink antialiased lg:pb-0">
       <TrackView name="view_detail" slug={exp.slug} />
       {/* ---- barra superior ---- */}
-      <header className="bg-night text-white">
-        <div className="mx-auto flex max-w-editorial items-center justify-between px-5 py-4 sm:px-10">
-          <Link href="/" className="block leading-none">
-            <span className="block font-condensed text-[18px] font-bold uppercase tracking-[-0.015em] text-white sm:text-[20px]">
-              La Nueva York de Henry
-            </span>
-            <span className="mt-0.5 block font-hand text-[15px] leading-none text-white/75">
-              by Resilentos
-            </span>
-          </Link>
-          <Link href="/" className="text-[13px] font-medium text-white/55 transition-colors hover:text-white">
-            ← Volver
-          </Link>
-        </div>
-      </header>
+      <SiteHeader tone="dark" className="bg-night text-white" />
 
       <div className="mx-auto max-w-editorial px-5 py-6 sm:px-10 sm:py-10">
         <GiftSentBanner title={exp.title} />
@@ -295,7 +280,7 @@ export default async function DetailPage({
           <aside className="hidden lg:block">
             <div className="sticky top-8 rounded-2xl border border-ink/12 bg-card p-6 shadow-card-hover">
               <div className="flex items-baseline justify-between">
-                <span className="text-[2rem] font-bold tracking-tight text-ink">{fmtPrice(exp.priceCents)}</span>
+                <span className="text-[2rem] font-bold tracking-tight text-ink">{fmtUsd(exp.priceCents)}</span>
                 {exp.priceCents > 0 && exp.freeStops > 0 && (
                   <span className="text-[11px] font-medium uppercase tracking-label text-ink/45">
                     {exp.freeStops} paradas gratis
@@ -303,7 +288,7 @@ export default async function DetailPage({
                 )}
               </div>
               <div className="mt-6">
-                <BuyBar slug={exp.slug} priceCents={exp.priceCents} />
+                <BuyBar slug={exp.slug} priceCents={exp.priceCents} freeStops={exp.freeStops} />
               </div>
               {exp.priceCents > 0 && <GiftButton slug={exp.slug} />}
               <p className="mt-3 text-center text-[12px] leading-relaxed text-ink/45">
@@ -311,6 +296,14 @@ export default async function DetailPage({
               </p>
             </div>
           </aside>
+        </div>
+
+        {/* ---- opciones de compra (mobile) — la barra fija solo tiene el CTA principal ---- */}
+        <div className="mt-10 border-t border-ink/10 pt-6 lg:hidden">
+          {exp.priceCents > 0 && <GiftButton slug={exp.slug} />}
+          <p className="mt-3 text-center text-[12px] leading-relaxed text-ink/45">
+            {exp.priceCents > 0 ? "Pago único · lo hacés cuando quieras" : "Sin costo · empezás cuando quieras"}
+          </p>
         </div>
       </div>
 
@@ -326,10 +319,10 @@ export default async function DetailPage({
         <div className="mx-auto flex max-w-editorial items-center gap-3 px-5 pt-2.5">
           <div className="shrink-0">
             <div className="text-[10px] font-medium uppercase tracking-label text-ink/40">Precio</div>
-            <div className="text-[18px] font-bold leading-tight text-ink">{fmtPrice(exp.priceCents)}</div>
+            <div className="text-[18px] font-bold leading-tight text-ink">{fmtUsd(exp.priceCents)}</div>
           </div>
           <div className="flex-1">
-            <BuyBar slug={exp.slug} priceCents={exp.priceCents} />
+            <BuyBar slug={exp.slug} priceCents={exp.priceCents} freeStops={exp.freeStops} />
           </div>
         </div>
       </div>

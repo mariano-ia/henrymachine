@@ -5,6 +5,7 @@ import Link from "next/link";
 import ThemeBadge from "@/components/ThemeBadge";
 import { themeInfo } from "@/lib/themes";
 import { fmtSteps } from "@/lib/steps";
+import { fmtUsd } from "@/lib/price";
 
 export type Exp = {
   id: string;
@@ -36,9 +37,7 @@ function fmtDuration(min: number | null): string {
   if (m === 0) return `${h} h`;
   return `${h} h ${m} min`;
 }
-function priceLabel(cents: number | null): string {
-  return !cents || cents === 0 ? "Gratis" : `$${(cents / 100).toFixed(2)}`;
-}
+const priceLabel = fmtUsd;
 const uniq = (vals: (string | null)[]) => [...new Set(vals.filter(Boolean) as string[])];
 
 function Meta({ e }: { e: Exp }) {

@@ -40,6 +40,7 @@ export default function PlayerLoader({ slug }: { slug: string }) {
   const [missing, setMissing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [paymentPending, setPaymentPending] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let id = localStorage.getItem("henry_anon");
@@ -54,16 +55,33 @@ export default function PlayerLoader({ slug }: { slug: string }) {
     let cancelled = false;
 
     async function load(attempt = 0) {
-      const res = await fetch("/api/experience", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, anonId: id }),
-      });
+      let res: Response;
+      try {
+        res = await fetch("/api/experience", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug, anonId: id }),
+        });
+      } catch {
+        // se cayó la red: no dejar la pantalla en "Cargando…" para siempre
+        if (!cancelled) setFailed(true);
+        return;
+      }
       if (res.status === 404) {
         if (!cancelled) setMissing(true);
         return;
       }
-      const d = (await res.json()) as Data;
+      if (!res.ok) {
+        if (!cancelled) setFailed(true);
+        return;
+      }
+      let d: Data;
+      try {
+        d = (await res.json()) as Data;
+      } catch {
+        if (!cancelled) setFailed(true);
+        return;
+      }
       // si volvió de comprar y el webhook todavía no confirmó, reintentar
       if (purchased && d.locked && attempt < 6 && !cancelled) {
         setTimeout(() => load(attempt + 1), 1500);
@@ -88,6 +106,21 @@ export default function PlayerLoader({ slug }: { slug: string }) {
   }, [slug]);
 
   if (missing) return <Centered>Esta experiencia no está disponible.</Centered>;
+  if (failed)
+    return (
+      <Centered>
+        <span>
+          Se cortó la señal y no pude cargar el recorrido.
+          <br />
+          <button
+            onClick={() => location.reload()}
+            className="mt-4 rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900"
+          >
+            Reintentar
+          </button>
+        </span>
+      </Centered>
+    );
   if (paymentPending)
     return (
       <Centered>

@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ChatTurn } from "@/lib/types";
 import type { TourPhase } from "@/lib/engine/play-prompt";
 import { mapsDirUrl } from "@/lib/maps";
 import type { PlayMedia } from "@/lib/db/experiences";
 import { track, getUtm } from "@/lib/track";
+import { fmtUsd } from "@/lib/price";
 import ReviewPrompt from "@/components/ReviewPrompt";
 
 type StopMeta = { title: string; placeQuery: string | null; media: PlayMedia[] };
@@ -113,6 +115,7 @@ export default function PlayerChat({
   } | null;
   serverProgress?: { stopIndex: number; phase: string; totalTurns: number } | null;
 }) {
+  const router = useRouter();
   const LAST = stops.length - 1;
   const upsellCover = upsell?.coverPath
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/experience-covers/${upsell.coverPath}`
@@ -141,7 +144,9 @@ export default function PlayerChat({
           }
           break;
         case "finish":
-          s.status = "TERMINADO";
+          // si todavía hay paradas bloqueadas (preview pago), no cerramos:
+          // mostramos el paywall para no perder la venta.
+          s.status = locked ? "PAYWALL" : "TERMINADO";
           break;
         case "pause":
           if (s.phase !== "EN_PAUSA") {
@@ -366,9 +371,9 @@ export default function PlayerChat({
       {/* header */}
       <header className="flex items-center gap-3 bg-night px-3 py-2.5 text-white">
         <button
-          onClick={() => history.back()}
+          onClick={() => router.push(`/e/${slug}`)}
           className="-ml-1 px-1 text-2xl leading-none text-white/70"
-          aria-label="Atrás"
+          aria-label="Volver al recorrido"
         >
           ‹
         </button>
@@ -389,6 +394,9 @@ export default function PlayerChat({
 
       {/* body */}
       <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-3 py-4">
+        <p className="pb-1 text-center text-[10px] leading-tight text-ink/30">
+          Chat con IA en la voz de Henry
+        </p>
         {messages.map((m, i) => {
           const isGroupStart =
             m.role === "henry" &&
@@ -434,12 +442,12 @@ export default function PlayerChat({
             disabled={buying}
             className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-6 py-3.5 text-[15px] font-semibold text-white transition hover:bg-brand-dark active:scale-[0.99] disabled:opacity-60"
           >
-            {buying ? "Abriendo el pago…" : `Desbloqueá el resto · $${(priceCents / 100).toFixed(2)}`}
+            {buying ? "Abriendo el pago…" : `Desbloqueá el resto · ${fmtUsd(priceCents)}`}
           </button>
         </div>
       ) : tour.status === "TERMINADO" ? (
         <div
-          className="border-t border-ink/10 bg-white px-4 py-5"
+          className="max-h-[75dvh] overflow-y-auto border-t border-ink/10 bg-white px-4 py-5"
           style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
         >
           <p className="text-center font-hand text-[24px] leading-tight text-brand">

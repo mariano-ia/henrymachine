@@ -5,17 +5,17 @@ import { useEffect, useState } from "react";
 type Msg = { from: "henry" | "user"; text: string };
 
 // Charla de un recorrido EN CURSO (sin saludo): loopea con sentido y cualquier
-// mensaje se puede ver repetido. Placeholder hasta tener un guion real.
+// mensaje se puede ver repetido. Henry habla en su voz peruana (tú, querubín).
 const SCRIPT: Msg[] = [
-  { from: "henry", text: "Doblá en la esquina, vas bien 👍" },
+  { from: "henry", text: "Dobla en la esquina, vas bien 👍" },
   { from: "user", text: "¿Es la próxima cuadra o sigo derecho?" },
-  { from: "henry", text: "La próxima nomás. Cuando llegues, avisame." },
+  { from: "henry", text: "La próxima nomás. Cuando llegues, me avisas." },
   { from: "user", text: "Listo, llegué a la del cartel rojo" },
-  { from: "henry", text: "Esa misma. Entrá que te atienden bárbaro." },
-  { from: "henry", text: "Pedí una porción de muzza y seguimos tranquilos." },
+  { from: "henry", text: "Esa misma, querubín. Entra que ahí te atienden bien." },
+  { from: "henry", text: "Pídete un slice de pepperoni y seguimos tranquilos." },
   { from: "user", text: "Riquísima, qué buen dato 🔥" },
-  { from: "henry", text: "Te dije 😄 Ahora cruzamos a un café acá cerca." },
-  { from: "henry", text: "Tomate tu tiempo, no hay apuro." },
+  { from: "henry", text: "Te dije 😄 Ahora cruzamos a un cafecito acá cerquita." },
+  { from: "henry", text: "Tómate tu tiempo, no hay apuro, choche." },
   { from: "user", text: "Dale, vamos para el café" },
 ];
 

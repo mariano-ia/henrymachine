@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import SiteHeader from "@/components/SiteHeader";
 
 export default function CuentaPage() {
   const router = useRouter();
@@ -40,18 +41,25 @@ export default function CuentaPage() {
     const { error } = await sb.auth.verifyOtp({ token_hash: d.tokenHash, type: "email" });
     if (error) { setErr("No se pudo iniciar sesión. Probá de nuevo."); setBusy(false); return; }
     // 3) unir lo anónimo de este dispositivo + compras por email
-    const anonId = localStorage.getItem("henry_anon");
-    await fetch("/api/claim", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ anonId }),
-    });
+    // (si falla el merge, igual entramos: no bloqueamos el login por esto)
+    try {
+      const anonId = localStorage.getItem("henry_anon");
+      await fetch("/api/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ anonId }),
+      });
+    } catch {
+      /* el merge puede reintentarse; la sesión ya está establecida */
+    }
     setBusy(false);
     router.push("/mis-recorridos");
   }
 
   return (
-    <main className="flex min-h-[100dvh] items-center justify-center bg-paper px-6 text-ink">
+    <div className="flex min-h-[100dvh] flex-col bg-paper text-ink">
+      <SiteHeader tone="light" className="border-b border-ink/10" />
+      <main className="flex flex-1 items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
         <h1 className="font-condensed text-[26px] font-bold uppercase tracking-[-0.015em]">Tus recorridos</h1>
         <p className="mt-1 text-sm text-ink/60">
@@ -79,6 +87,7 @@ export default function CuentaPage() {
         )}
         {err && <p className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-600">{err}</p>}
       </div>
-    </main>
+      </main>
+    </div>
   );
 }

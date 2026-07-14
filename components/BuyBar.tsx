@@ -3,17 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track, getUtm } from "@/lib/track";
-
-function fmtPrice(cents: number): string {
-  return !cents || cents === 0 ? "Gratis" : `$${(cents / 100).toFixed(2)}`;
-}
+import { fmtUsd } from "@/lib/price";
 
 export default function BuyBar({
   slug,
   priceCents,
+  freeStops = 0,
 }: {
   slug: string;
   priceCents: number;
+  freeStops?: number;
 }) {
   const router = useRouter();
   const free = !priceCents || priceCents === 0;
@@ -21,6 +20,7 @@ export default function BuyBar({
   const [owned, setOwned] = useState(free);
   const [checking, setChecking] = useState(!free);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     let id = localStorage.getItem("henry_anon");
@@ -47,6 +47,7 @@ export default function BuyBar({
     track("begin_checkout", slug);
     if (!anonId) return;
     setBusy(true);
+    setErr(null);
     try {
       // cupón del upsell (llega como ?promo=CODE en la URL del detalle)
       const promo =
@@ -60,8 +61,12 @@ export default function BuyBar({
       });
       const d = await res.json();
       if (d.url) window.location.href = d.url;
-      else setBusy(false);
+      else {
+        setErr(d.error ?? "No se pudo iniciar el pago. Probá de nuevo.");
+        setBusy(false);
+      }
     } catch {
+      setErr("No se pudo iniciar el pago. Probá de nuevo.");
       setBusy(false);
     }
   }
@@ -77,6 +82,7 @@ export default function BuyBar({
     );
   }
 
+  // gratis o ya comprada → arrancar directo
   if (free || owned) {
     return (
       <button onClick={start} className={`${base} bg-brand text-white hover:bg-brand-dark`}>
@@ -85,13 +91,31 @@ export default function BuyBar({
     );
   }
 
+  // paga con paradas gratis → empezás gratis y pagás en el chat al llegar al paywall
+  if (freeStops > 0) {
+    return (
+      <div>
+        <button onClick={start} className={`${base} bg-brand text-white hover:bg-brand-dark`}>
+          Empezá gratis <span aria-hidden>→</span>
+        </button>
+        <p className="mt-2 text-center text-[12px] text-ink/50">
+          {freeStops} {freeStops === 1 ? "parada gratis" : "paradas gratis"} · después desbloqueás por {fmtUsd(priceCents)}
+        </p>
+      </div>
+    );
+  }
+
+  // paga sin preview → comprar directo
   return (
-    <button
-      onClick={buy}
-      disabled={busy}
-      className={`${base} bg-brand text-white hover:bg-brand-dark disabled:opacity-70`}
-    >
-      {busy ? "Abriendo el pago…" : `Comprá y arrancá · ${fmtPrice(priceCents)}`}
-    </button>
+    <div>
+      <button
+        onClick={buy}
+        disabled={busy}
+        className={`${base} bg-brand text-white hover:bg-brand-dark disabled:opacity-70`}
+      >
+        {busy ? "Abriendo el pago…" : `Comprá y arrancá · ${fmtUsd(priceCents)}`}
+      </button>
+      {err && <p className="mt-2 text-center text-[12px] text-red-600">{err}</p>}
+    </div>
   );
 }

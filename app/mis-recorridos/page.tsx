@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import SiteHeader from "@/components/SiteHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +29,9 @@ export default async function MisRecorridosPage() {
   const pasos = (m: number | null) => (m ? `~${Math.round((m * 1.3) / 100) * 100} pasos` : "");
 
   return (
-    <main className="min-h-[100dvh] bg-paper px-5 py-10 text-ink">
-      <div className="mx-auto max-w-2xl">
+    <main className="min-h-[100dvh] bg-paper text-ink">
+      <SiteHeader tone="light" className="border-b border-ink/10" />
+      <div className="mx-auto max-w-2xl px-5 py-10">
         <h1 className="font-condensed text-[28px] font-bold uppercase tracking-[-0.015em]">Mis recorridos</h1>
         <p className="mt-1 text-sm text-ink/55">{user.email}</p>
         <ul className="mt-8 space-y-3">

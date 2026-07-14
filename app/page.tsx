@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import CatalogGrid, { type Exp } from "@/components/CatalogGrid";
+import SocialLinks from "@/components/SocialLinks";
 import HeroChat from "@/components/HeroChat";
 import LeadCapture from "@/components/LeadCapture";
 import Leaderboard from "@/components/Leaderboard";
@@ -45,31 +46,12 @@ export default async function Home() {
                 by Resilentos
               </span>
             </Link>
-            {/* redes de Henry */}
-            <div className="flex items-center gap-4 text-white/65">
-              <a href="https://www.tiktok.com/@resilentos" target="_blank" rel="noreferrer" aria-label="TikTok" className="transition-colors hover:text-white">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-[19px] w-[19px]">
-                  <path d="M21 8.6a7.4 7.4 0 0 1-4.5-1.5v6.9a6.4 6.4 0 1 1-6.4-6.4c.3 0 .7 0 1 .1v3.3a3.2 3.2 0 1 0 2.3 3.1V2h3.1a4.5 4.5 0 0 0 .1.9A4.5 4.5 0 0 0 18.6 6a4.4 4.4 0 0 0 2.4.7z" />
-                </svg>
-              </a>
-              <a href="https://www.youtube.com/@Resilentos" target="_blank" rel="noreferrer" aria-label="YouTube" className="transition-colors hover:text-white">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-[21px] w-[21px]">
-                  <path d="M23 7.9a2.8 2.8 0 0 0-2-2C19.2 5.4 12 5.4 12 5.4s-7.2 0-9 .5a2.8 2.8 0 0 0-2 2A29 29 0 0 0 .6 12 29 29 0 0 0 1 16.1a2.8 2.8 0 0 0 2 2c1.8.5 9 .5 9 .5s7.2 0 9-.5a2.8 2.8 0 0 0 2-2A29 29 0 0 0 23.4 12 29 29 0 0 0 23 7.9zM9.8 14.8V9.2l6 2.8z" />
-                </svg>
-              </a>
-              <a href="https://www.facebook.com/resilentos" target="_blank" rel="noreferrer" aria-label="Facebook" className="transition-colors hover:text-white">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-[19px] w-[19px]">
-                  <path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z" />
-                </svg>
-              </a>
-              <a href="https://www.instagram.com/resilentos/" target="_blank" rel="noreferrer" aria-label="Instagram" className="transition-colors hover:text-white">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" className="h-[19px] w-[19px]">
-                  <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" />
-                  <circle cx="12" cy="12" r="4.2" />
-                  <circle cx="17.4" cy="6.6" r="1.15" fill="currentColor" stroke="none" />
-                </svg>
-              </a>
-              <Link href="/cuenta" className="ml-2 rounded-full border border-white/25 px-3.5 py-1.5 text-[12px] font-semibold text-white/85 transition hover:bg-white/10">
+            {/* redes de Henry + acceso a recorridos */}
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:block">
+                <SocialLinks tone="light" />
+              </div>
+              <Link href="/mis-recorridos" className="rounded-full border border-white/25 px-3.5 py-1.5 text-[12px] font-semibold text-white/85 transition hover:bg-white/10">
                 Mis recorridos
               </Link>
             </div>
@@ -136,7 +118,10 @@ export default async function Home() {
               by Resilentos
             </span>
           </p>
-          <p className="font-hand text-[19px] leading-none text-ink/50">nos vemos en la esquina</p>
+          <div className="flex items-center gap-5">
+            <SocialLinks tone="dark" />
+            <p className="hidden font-hand text-[19px] leading-none text-ink/50 sm:block">nos vemos en la esquina</p>
+          </div>
         </div>
         <p className="mx-auto max-w-editorial px-5 pb-4 text-[10px] text-ink/30 sm:px-10">
           Henry virtual · IA entrenada con la personalidad de Henry
