@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
           stripe_payment_intent_id: pi,
           purchaser_email: email,
           stripe_event_id: event.id,
+          marketing_consent: s.consent?.promotions === "opt_in",
         })
         .eq("id", purchaseId);
       if (error) return new NextResponse("db purchases", { status: 500 });

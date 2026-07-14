@@ -65,6 +65,8 @@ export async function POST(req: NextRequest) {
       mode: "payment",
       line_items: [{ price: exp.stripe_price_id, quantity: 1 }],
       client_reference_id: anonId,
+      // opt-in de promociones en el mismo acto de compra (transaccional ≠ marketing)
+      consent_collection: { promotions: "auto" },
       metadata: {
         experience_id: exp.id,
         anon_id: anonId,
