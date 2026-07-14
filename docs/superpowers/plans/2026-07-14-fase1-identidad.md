@@ -11,7 +11,23 @@
 
 ---
 
-### Task 1: Descubrir el shape real de play_sessions (NO saltear)
+### ⚑ RESULTADO DEL DESCUBRIMIENTO (Task 1, 2026-07-14) — usar estos valores
+
+- **enum `session_status`** = `NO_INICIADO | EN_CURSO | TERMINADO | EXPIRADO`
+  (default `NO_INICIADO`). Sesión abierta = **`EN_CURSO`**, terminada = **`TERMINADO`**.
+  (El plan de abajo decía `active`/`completed` — ESTÁN MAL, usar los de acá.)
+- **enum `tour_phase`** = `CAMINANDO | EN_PARADA | EN_PAUSA` (coincide con el motor).
+- **enum `interaction_mode`** = `normal | express | solo_ver | refugio | safety` (default `normal`).
+- **`session_messages` YA EXISTE** con: id, session_id, `role` (enum `user|henry|system`),
+  `text` (**NOT NULL**), step_position, phase (tour_phase), intent, media_id, created_at.
+  → NO crearla; la migración 0010 solo AGREGA `prompt_tokens`/`output_tokens`.
+  → el insert DEBE incluir `text` (obligatorio) y `role` del enum.
+- **`play_sessions`** ya tiene user_id, anon_id, email (citext), status, phase, mode,
+  current_step_position (default 1), turns_in_step, total_turns, wind_down,
+  paywall_passed, started_at, expires_at, last_active_at, created_at. Le FALTA `country`.
+  Sin triggers (toda la lógica la controla recordTurn).
+
+### Task 1: Descubrir el shape real de play_sessions (✅ HECHO — ver bloque de arriba)
 
 **Files:** ninguno (solo lectura de DB)
 
