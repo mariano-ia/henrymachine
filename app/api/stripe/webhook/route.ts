@@ -5,6 +5,9 @@ import { getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
+// 23505 = unique_violation: el insert ya se hizo en un intento anterior → ok
+const isDup = (e: { code?: string } | null) => e?.code === "23505";
+
 export async function POST(req: NextRequest) {
   const raw = await req.text();
   const sig = req.headers.get("stripe-signature");
@@ -20,14 +23,27 @@ export async function POST(req: NextRequest) {
 
   const sb = createAdminClient();
 
-  // idempotencia: el event_id es PK; si ya existe, ya se procesó.
-  const { error: dupErr } = await sb.from("stripe_events").insert({
+  // Idempotencia CON reproceso: si el intento anterior murió a mitad
+  // (la fila existe pero processed_at quedó null), se procesa de nuevo.
+  // Solo processed_at != null cuenta como duplicado real.
+  const { error: insErr } = await sb.from("stripe_events").insert({
     event_id: event.id,
     type: event.type,
     payload: JSON.parse(JSON.stringify(event)),
   });
-  if (dupErr) return NextResponse.json({ received: true, duplicate: true });
+  if (insErr) {
+    if (!isDup(insErr)) return new NextResponse("db events", { status: 500 });
+    const { data: prev, error: prevErr } = await sb
+      .from("stripe_events")
+      .select("processed_at")
+      .eq("event_id", event.id)
+      .maybeSingle();
+    if (prevErr) return new NextResponse("db events read", { status: 500 });
+    if (prev?.processed_at) return NextResponse.json({ received: true, duplicate: true });
+    // processed_at null → reprocesar
+  }
 
+  // Toda falla de escritura devuelve 500: Stripe reintenta solo (hasta 3 días).
   if (event.type === "checkout.session.completed") {
     const s = event.data.object as Stripe.Checkout.Session;
     const experienceId = s.metadata?.experience_id ?? null;
@@ -37,7 +53,7 @@ export async function POST(req: NextRequest) {
     const pi = typeof s.payment_intent === "string" ? s.payment_intent : null;
 
     if (purchaseId) {
-      await sb
+      const { error } = await sb
         .from("purchases")
         .update({
           status: "paid",
@@ -47,17 +63,20 @@ export async function POST(req: NextRequest) {
           stripe_event_id: event.id,
         })
         .eq("id", purchaseId);
+      if (error) return new NextResponse("db purchases", { status: 500 });
     }
 
     if (experienceId && (anonId || email)) {
-      await sb.from("entitlements").insert({
+      const { error: entErr } = await sb.from("entitlements").insert({
         experience_id: experienceId,
         anon_id: anonId,
         grant_email: email,
         source: "purchase",
         purchase_id: purchaseId,
       });
-      await sb.from("sales").insert({
+      if (entErr && !isDup(entErr)) return new NextResponse("db entitlements", { status: 500 });
+
+      const { error: saleErr } = await sb.from("sales").insert({
         experience_id: experienceId,
         purchase_id: purchaseId,
         email,
@@ -66,6 +85,7 @@ export async function POST(req: NextRequest) {
         status: "paid",
         stripe_session_id: s.id,
       });
+      if (saleErr && !isDup(saleErr)) return new NextResponse("db sales", { status: 500 });
     }
   }
 
@@ -74,13 +94,19 @@ export async function POST(req: NextRequest) {
     const pi = typeof ch.payment_intent === "string" ? ch.payment_intent : null;
     if (pi) {
       // el trigger revoke_entitlement_on_refund revoca el acceso y marca el sale
-      await sb
+      const { error } = await sb
         .from("purchases")
         .update({ status: "refunded", refunded_at: new Date().toISOString() })
         .eq("stripe_payment_intent_id", pi);
+      if (error) return new NextResponse("db refund", { status: 500 });
     }
   }
 
-  await sb.from("stripe_events").update({ processed_at: new Date().toISOString() }).eq("event_id", event.id);
+  const { error: doneErr } = await sb
+    .from("stripe_events")
+    .update({ processed_at: new Date().toISOString() })
+    .eq("event_id", event.id);
+  if (doneErr) return new NextResponse("db mark", { status: 500 });
+
   return NextResponse.json({ received: true });
 }

@@ -22,6 +22,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Esta experiencia no está a la venta." }, { status: 400 });
   }
 
+  // guard server-side: si ya tiene acceso, no dejar que pague dos veces
+  // (cubre la carrera "pagué pero el webhook demora y la UI me re-ofrece comprar")
+  const { data: existing } = await sb
+    .from("entitlements")
+    .select("id")
+    .eq("experience_id", exp.id)
+    .eq("anon_id", anonId)
+    .is("revoked_at", null)
+    .maybeSingle();
+  if (existing) {
+    return NextResponse.json({ alreadyOwned: true, url: `${req.headers.get("origin") || ""}/e/${slug}/chat` });
+  }
+
   // purchase 'pending' (puente checkout→identidad antes del webhook)
   const { data: purchase } = await sb
     .from("purchases")

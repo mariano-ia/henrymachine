@@ -29,6 +29,7 @@ export default function PlayerLoader({ slug }: { slug: string }) {
   const [anonId, setAnonId] = useState("");
   const [missing, setMissing] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [paymentPending, setPaymentPending] = useState(false);
 
   useEffect(() => {
     let id = localStorage.getItem("henry_anon");
@@ -57,6 +58,13 @@ export default function PlayerLoader({ slug }: { slug: string }) {
         setTimeout(() => load(attempt + 1), 1500);
         return;
       }
+      // pagó y seguimos sin confirmación: NO re-ofrecer compra (doble cargo);
+      // avisar que el pago se está acreditando
+      if (purchased && d.locked && !cancelled) {
+        setPaymentPending(true);
+        setConfirming(false);
+        return;
+      }
       if (!cancelled) {
         setData(d);
         setConfirming(false);
@@ -69,6 +77,23 @@ export default function PlayerLoader({ slug }: { slug: string }) {
   }, [slug]);
 
   if (missing) return <Centered>Esta experiencia no está disponible.</Centered>;
+  if (paymentPending)
+    return (
+      <Centered>
+        <span>
+          Tu pago está confirmándose (a veces tarda un minuto).
+          <br />
+          Guardá este link y recargá en un rato — no vuelvas a comprar.
+          <br />
+          <button
+            onClick={() => location.reload()}
+            className="mt-4 rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900"
+          >
+            Reintentar ahora
+          </button>
+        </span>
+      </Centered>
+    );
   if (confirming && !data) return <Centered>Confirmando tu compra…</Centered>;
   if (!data || !anonId) return <Centered>Cargando…</Centered>;
 
