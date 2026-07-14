@@ -110,7 +110,7 @@ export default async function DetailPage({
       <header className="bg-night text-white">
         <div className="mx-auto flex max-w-editorial items-center justify-between px-5 py-4 sm:px-10">
           <Link href="/" className="block leading-none">
-            <span className="block font-condensed text-[18px] font-bold uppercase tracking-[0.03em] text-white sm:text-[20px]">
+            <span className="block font-condensed text-[18px] font-bold uppercase tracking-[-0.015em] text-white sm:text-[20px]">
               La Nueva York de Henry
             </span>
             <span className="mt-0.5 block font-hand text-[15px] leading-none text-white/75">
@@ -296,7 +296,7 @@ export default async function DetailPage({
       <footer className="hidden border-t border-ink/10 lg:block">
         <div className="mx-auto flex max-w-editorial items-center justify-between px-5 py-8 sm:px-10">
           <p className="leading-none">
-            <span className="block font-condensed text-[17px] font-bold uppercase tracking-[0.03em] text-ink">
+            <span className="block font-condensed text-[17px] font-bold uppercase tracking-[-0.015em] text-ink">
               La Nueva York de Henry
             </span>
             <span className="mt-0.5 block font-hand text-[15px] leading-none text-ink/55">
