@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getExperienceDetail } from "@/lib/db/detail";
 import BuyBar from "@/components/BuyBar";
+import GiftButton from "@/components/GiftButton";
+import GiftSentBanner from "@/components/GiftSentBanner";
 import ThemeBadge from "@/components/ThemeBadge";
 import TrackView from "@/components/TrackView";
 import { themeInfo } from "@/lib/themes";
@@ -143,6 +145,7 @@ export default async function DetailPage({
       </header>
 
       <div className="mx-auto max-w-editorial px-5 py-6 sm:px-10 sm:py-10">
+        <GiftSentBanner title={exp.title} />
         {/* ---- PORTADA (imagen o video; placeholder = bloque de color del tema) ---- */}
         <div className="relative mb-7 h-[clamp(180px,30vw,320px)] overflow-hidden rounded-2xl">
           {cover && exp.coverKind === "video" ? (
@@ -287,6 +290,7 @@ export default async function DetailPage({
               <div className="mt-6">
                 <BuyBar slug={exp.slug} priceCents={exp.priceCents} />
               </div>
+              {exp.priceCents > 0 && <GiftButton slug={exp.slug} />}
               <p className="mt-3 text-center text-[12px] leading-relaxed text-ink/45">
                 {exp.priceCents > 0 ? "Pago único · lo hacés cuando quieras" : "Sin costo · empezás cuando quieras"}
               </p>

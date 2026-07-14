@@ -12,12 +12,22 @@ export async function POST(req: NextRequest) {
     anonId?: string;
     utm?: Record<string, string>;
     promo?: string | null;
+    gift?: boolean;
+    recipientEmail?: string;
+    giftMessage?: string;
   };
   const slug = typeof body.slug === "string" ? body.slug : "";
   const anonId = typeof body.anonId === "string" ? body.anonId : "";
   const utm = (body as { utm?: Record<string, string> }).utm ?? {};
   if (!slug || anonId.length < 24) {
     return NextResponse.json({ error: "Datos inválidos." }, { status: 400 });
+  }
+
+  // modo regalo: el acceso va al email del regalado, no al comprador
+  const isGift = body.gift === true;
+  const recipientEmail = (body.recipientEmail ?? "").trim().toLowerCase();
+  if (isGift && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail)) {
+    return NextResponse.json({ error: "Poné un email válido para el regalo." }, { status: 400 });
   }
 
   const okCheckout = await rateLimit(req, "checkout", anonId, 3600, 10);
@@ -35,17 +45,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Esta experiencia no está a la venta." }, { status: 400 });
   }
 
-  // guard server-side: si ya tiene acceso, no dejar que pague dos veces
-  // (cubre la carrera "pagué pero el webhook demora y la UI me re-ofrece comprar")
-  const { data: existing } = await sb
-    .from("entitlements")
-    .select("id")
-    .eq("experience_id", exp.id)
-    .eq("anon_id", anonId)
-    .is("revoked_at", null)
-    .maybeSingle();
-  if (existing) {
-    return NextResponse.json({ alreadyOwned: true, url: `${req.headers.get("origin") || ""}/e/${slug}/chat` });
+  // guard server-side: si YA tiene acceso, no dejar que pague dos veces
+  // (solo compra propia; un regalo se puede comprar aunque el comprador ya la tenga)
+  if (!isGift) {
+    const { data: existing } = await sb
+      .from("entitlements")
+      .select("id")
+      .eq("experience_id", exp.id)
+      .eq("anon_id", anonId)
+      .is("revoked_at", null)
+      .maybeSingle();
+    if (existing) {
+      return NextResponse.json({ alreadyOwned: true, url: `${req.headers.get("origin") || ""}/e/${slug}/chat` });
+    }
   }
 
   // purchase 'pending' (puente checkout→identidad antes del webhook)
@@ -57,6 +69,9 @@ export async function POST(req: NextRequest) {
       status: "pending",
       amount_cents: exp.price_cents,
       currency: "usd",
+      is_gift: isGift,
+      gift_recipient_email: isGift ? recipientEmail : null,
+      gift_message: isGift ? (body.giftMessage ?? "").slice(0, 400) || null : null,
     })
     .select("id")
     .single();
@@ -77,10 +92,12 @@ export async function POST(req: NextRequest) {
       mode: "payment",
       line_items: [{ price: exp.stripe_price_id, quantity: 1 }],
       client_reference_id: anonId,
-      // con descuento aplicado no se puede además ofrecer el campo de promo manual
+      // con descuento auto-aplicado no se puede además ofrecer el campo de promo manual.
+      // (consent_collection.promotions se descartó: exige aceptar ToS en el dashboard
+      // y rompía el checkout; el opt-in de marketing se retoma con la cuenta definitiva.)
       ...(promoId
         ? { discounts: [{ promotion_code: promoId }] }
-        : { consent_collection: { promotions: "auto" } }),
+        : { allow_promotion_codes: true }),
       metadata: {
         experience_id: exp.id,
         anon_id: anonId,
@@ -88,8 +105,13 @@ export async function POST(req: NextRequest) {
         utm_source: (utm.utm_source ?? "").slice(0, 100),
         utm_medium: (utm.utm_medium ?? "").slice(0, 100),
         utm_campaign: (utm.utm_campaign ?? "").slice(0, 100),
+        gift: isGift ? "1" : "",
+        gift_recipient_email: isGift ? recipientEmail : "",
       },
-      success_url: `${origin}/e/${slug}/chat?purchased=1`,
+      // un regalo NO desbloquea para el comprador: va a la confirmación de regalo
+      success_url: isGift
+        ? `${origin}/e/${slug}?gift=sent&to=${encodeURIComponent(recipientEmail)}`
+        : `${origin}/e/${slug}/chat?purchased=1`,
       cancel_url: `${origin}/e/${slug}`,
     });
     if (purchase) {

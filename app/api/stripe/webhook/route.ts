@@ -67,7 +67,21 @@ export async function POST(req: NextRequest) {
       if (error) return new NextResponse("db purchases", { status: 500 });
     }
 
-    if (experienceId && (anonId || email)) {
+    // regalo: el acceso va al email del regalado (source 'grant'), NO al comprador
+    const isGift = s.metadata?.gift === "1";
+    const giftEmail = (s.metadata?.gift_recipient_email || "").toLowerCase() || null;
+
+    // 1) entitlement: al regalado (grant) si es regalo, si no al comprador (purchase)
+    if (isGift && giftEmail && experienceId) {
+      const { error: giftErr } = await sb.from("entitlements").insert({
+        experience_id: experienceId,
+        anon_id: null,
+        grant_email: giftEmail,
+        source: "grant",
+        purchase_id: purchaseId,
+      });
+      if (giftErr && !isDup(giftErr)) return new NextResponse("db gift entitlement", { status: 500 });
+    } else if (experienceId && (anonId || email)) {
       const { error: entErr } = await sb.from("entitlements").insert({
         experience_id: experienceId,
         anon_id: anonId,
@@ -76,7 +90,10 @@ export async function POST(req: NextRequest) {
         purchase_id: purchaseId,
       });
       if (entErr && !isDup(entErr)) return new NextResponse("db entitlements", { status: 500 });
+    }
 
+    // 2) la venta se registra siempre (un regalo también es una venta)
+    if (experienceId) {
       const { error: saleErr } = await sb.from("sales").insert({
         experience_id: experienceId,
         purchase_id: purchaseId,
