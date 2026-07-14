@@ -5,31 +5,35 @@ la cuenta de Stripe actual NO es la definitiva (no invertir ahí), las reseñas 
 QUEDAN hasta que exista el ABM real, el dominio llega más adelante (no bloquea:
 esto aún no sale a prod real), transparencia de IA = sinceridad total.
 
-## Fase 0 — Endurecimiento pre-lanzamiento (≈1 jornada)
+## Fase 0 — Endurecimiento pre-lanzamiento ✅ COMPLETADA 2026-07-14
 
-- [ ] **0.1 Webhook Stripe robusto**: chequear error de CADA write y responder 500
+Ejecutada por subagentes (plan en docs/superpowers/plans/2026-07-14-fase0-endurecimiento.md).
+Build de producción OK (17 páginas), smoke completo. Todo en main local, sin deployar.
+Migración 0009 aplicada (events + rate_limits + rl_hit atómico).
+
+- [x] **0.1 Webhook Stripe robusto**: chequear error de CADA write y responder 500
       (Stripe reintenta solo); idempotencia reprocesable (`stripe_events` con
       `processed_at null` = reintentar, no "duplicate"); guard server-side en
       /api/checkout ("ya lo tenés"); UI post-pago "confirmando tu pago…" en vez
       de re-ofrecer compra si el poll expira.
-- [ ] **0.2 Rate limit**: /api/play y /api/checkout por anonId+IP (contador simple
+- [x] **0.2 Rate limit**: /api/play y /api/checkout por anonId+IP (contador simple
       en Supabase, ~20 msg/min + techo diario para no-compradores); tope de chars
       por turno de history (600/1000); ya existe tope de mensaje (1200) y
       presupuesto de turnos (240/300). ⚠️ Requiere confirmar tier de Gemini (ver
       "Necesito de Mariano").
-- [ ] **0.3 Transparencia IA**: eliminar la instrucción "nunca digas que sos IA"
+- [x] **0.3 Transparencia IA**: eliminar la instrucción "nunca digas que sos IA"
       de lib/persona.ts (ruta /demo vieja); nota chica y sincera en home y
       detalle: "Henry virtual · IA entrenada con los videos reales de Henry".
       El motor ya lo admite con onda si le preguntan (se conserva).
-- [ ] **0.4 Previews + SEO**: metadataBase + openGraph en layout; generateMetadata
+- [x] **0.4 Previews + SEO**: metadataBase + openGraph en layout; generateMetadata
       en /e/[slug] (og:image = cover del bucket, título, precio); sitemap.ts +
       robots.ts desde experiencias publicadas.
-- [ ] **0.5 Medición mínima** (el pico del lanzamiento es irrepetible):
+- [x] **0.5 Medición mínima** (el pico del lanzamiento es irrepetible):
       @vercel/analytics; tabla `events` + /api/track (sendBeacon); 5 eventos:
       view_home, view_detail, open_chat, begin_checkout, finish_tour; captura de
       utm_*/referrer al aterrizar (localStorage junto al anonId) → metadata del
       checkout → escribir sales.utm_* (las columnas ya existen vacías).
-- [ ] **0.6 País gratis**: guardar `x-vercel-ip-country` en events (y luego en
+- [x] **0.6 País gratis**: guardar `x-vercel-ip-country` en events (y luego en
       play_sessions al cablearse) — cubre a los del tour gratis, no solo tarjeta.
 
 Migración **0009**: tabla `events` (+ índices) — la corre Mariano en el SQL editor.
@@ -104,12 +108,19 @@ Migración **0009**: tabla `events` (+ índices) — la corre Mariano en el SQL 
 
 ## Necesito de Mariano
 
-1. **Tier de la key de Gemini**: confirmar que la key de GEMINI_API_KEY tiene
-   billing (AI Studio → https://aistudio.google.com/apikey → si dice "Free of
-   charge", habilitar billing en el proyecto GCP asociado). Sin esto, el pico
-   del lanzamiento tumba el chat.
-2. **Correr las migraciones** 0009/0010/0011 en el SQL editor cuando se las
-   pase (o reconectar el conector Supabase de claude.ai y las aplico yo).
-3. **Decidir el texto del disclaimer IA** (propongo: "Henry virtual · una IA
-   entrenada con los videos reales de Henry") — 0.3.
+1. ~~Tier de Gemini~~ RESUELTO: prepago Nivel 1 (pago) con ~USD 24 de crédito
+   → tope duro natural, aguanta el pico. Recomendado: recarga automática ON +
+   alerta de presupuesto (para que no muera). Failover a `GEMINI_API_KEY_FALLBACK`
+   ya cableado en lib/gemini.ts.
+2. ~~Correr migraciones~~ RESUELTO: hay acceso directo a Postgres
+   (`SUPABASE_DB_URL` + `scripts/db-run.mjs`) — Claude aplica las migraciones solo.
+3. ~~Disclaimer IA~~ RESUELTO: "Henry virtual · IA entrenada con la personalidad
+   de Henry" en footer de home y detalle.
 4. Más adelante: dominio, cuenta Stripe definitiva, charla del acuerdo con Henry.
+
+## Estado de ejecución
+
+- **Fase 0**: ✅ completa (commits `76e8da1`..`b33a2c6`, 2026-07-14).
+- **Fase 1**: plan escrito en docs/superpowers/plans/2026-07-14-fase1-identidad.md;
+  EN EJECUCIÓN. Migraciones que crea: 0010 (consent + country + session_messages).
+- Todo en `main` local, sin deployar (el dueño pide subir solo a pedido explícito).

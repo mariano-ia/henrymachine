@@ -67,6 +67,16 @@ supabase/migrations/        0001–0007 (todas aplicadas a la DB remota)
   retoma con un saludo de Henry en personaje. El prompt le indica ofrecer la
   pausa si nota apuro/cansancio. Solo mismo navegador (cross-device requiere
   play_sessions/identidad — ver pendientes).
+- **Presupuesto de conversación**: soft 240 turnos (Henry va cerrando) / hard
+  300 (~US$0,75, despedida sin llamar al LLM). Failover a `GEMINI_API_KEY_FALLBACK`
+  si la key primaria agota crédito.
+- **Rate limit** (Fase 0): 20 msg/min y 400/día por anonId+IP en /api/play,
+  10/h en /api/checkout (función `rl_hit` en Postgres, migración 0009). Tope de
+  1200 chars/mensaje y 1000/turno de history.
+- **Medición** (Fase 0): tabla `events` + `/api/track` (sendBeacon) con 5
+  eventos de embudo (view_home, view_detail, open_chat, begin_checkout,
+  finish_tour) + país por IP; UTM del aterrizaje viaja a `sales.utm_*`;
+  Vercel Analytics. OG por experiencia (cover como preview) + sitemap + robots.
 
 ## Reglas de negocio en la DB (migraciones clave)
 
