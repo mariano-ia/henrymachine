@@ -27,7 +27,7 @@ const oswald = Oswald({
 });
 
 export const metadata: Metadata = {
-  title: "Henry — Nueva York a pie, por chat",
+  title: "La Nueva York de Henry — by Resilentos",
   description:
     "Micro-recorridos a pie por Nueva York guiados por chat. Henry te lleva parada por parada, como un amigo local.",
 };

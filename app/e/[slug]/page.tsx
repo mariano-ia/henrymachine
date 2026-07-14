@@ -110,7 +110,8 @@ export default async function DetailPage({
       <header className="bg-night text-white">
         <div className="mx-auto flex max-w-editorial items-center justify-between px-5 py-4 sm:px-10">
           <Link href="/" className="text-[14px] font-semibold tracking-tight text-white">
-            Henry <span className="font-normal text-white/40">· NY</span>
+            La Nueva York de Henry{" "}
+            <span className="hidden font-normal text-white/40 sm:inline">by Resilentos</span>
           </Link>
           <Link href="/" className="text-[13px] font-medium text-white/55 transition-colors hover:text-white">
             ← Volver
@@ -291,7 +292,7 @@ export default async function DetailPage({
       <footer className="hidden border-t border-ink/10 lg:block">
         <div className="mx-auto flex max-w-editorial items-center justify-between px-5 py-8 sm:px-10">
           <p className="text-[14px] font-semibold tracking-tight">
-            Henry <span className="font-normal text-ink/45">· Nueva York a pie</span>
+            La Nueva York de Henry <span className="font-normal text-ink/45">by Resilentos</span>
           </p>
           <Link href="/" className="text-[13px] font-medium text-ink/45 transition-colors hover:text-ink">
             Ver todos los recorridos

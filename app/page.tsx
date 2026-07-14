@@ -32,7 +32,8 @@ export default async function Home() {
           {/* NAV */}
           <header className="flex items-center justify-between py-5">
             <Link href="/" className="text-[15px] font-semibold tracking-tight text-white">
-              Henry <span className="font-normal text-white/40">· NY</span>
+              La Nueva York de Henry{" "}
+              <span className="hidden font-normal text-white/40 sm:inline">by Resilentos</span>
             </Link>
             <ul className="flex items-center gap-6 text-[13px] font-medium text-white/60">
               <li className="hidden sm:block">
@@ -84,7 +85,7 @@ export default async function Home() {
       <footer className="border-t border-ink/10">
         <div className="mx-auto flex max-w-editorial flex-col gap-3 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-10">
           <p className="text-[14px] font-semibold tracking-tight text-ink">
-            Henry <span className="font-normal text-ink/45">· Nueva York a pie</span>
+            La Nueva York de Henry <span className="font-normal text-ink/45">by Resilentos</span>
           </p>
           <p className="font-hand text-[19px] leading-none text-ink/50">nos vemos en la esquina</p>
         </div>

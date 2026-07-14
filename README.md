@@ -1,4 +1,4 @@
-# Henry — Nueva York a pie, por chat
+# La Nueva York de Henry (by Resilentos)
 
 Micro recorridos a pie por NYC guiados por chat. Henry (YouTuber peruano radicado
 en New York, canal con tienda "Resilentos") te lleva parada por parada como un
@@ -126,6 +126,6 @@ Costos LLM medidos: ingesta del dossier ~US$0,02; experiencia jugada
 - Pasos *Mensaje* intermedios no se narran en el player.
 - Reusar el product de Stripe por experiencia (hoy cada cambio de precio crea uno nuevo).
 - Guardado de pasos no atómico (si falla a mitad, queda parcial).
-- Nombre del producto: sin definir ("Resilentos" es la marca de ropa de Henry).
+- ~~Nombre del producto~~: definido 2026-07-14 → "La Nueva York de Henry, by Resilentos".
 - Vertex RAG (fase 2, si hace falta profundidad fáctica sobre todo el canal):
   columnas `rag_provider`/`rag_corpus_ref` ya previstas.

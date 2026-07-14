@@ -27,7 +27,7 @@ export async function setPricing(input: {
       const price = await getStripe().prices.create({
         unit_amount: input.priceCents,
         currency: "usd",
-        product_data: { name: `Henry — ${input.title}` },
+        product_data: { name: `La Nueva York de Henry — ${input.title}` },
       });
       stripePriceId = price.id;
     } catch {
