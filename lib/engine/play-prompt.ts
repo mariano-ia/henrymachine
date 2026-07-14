@@ -20,6 +20,8 @@ export function buildPlaySystemInstruction(opts: {
   utilities?: string | null;
   /** Horarios reales (Google Places) de la parada actual — línea ya formateada. */
   hoursInfo?: string | null;
+  /** La charla ya fue larguísima: ir cerrando con calidez, sin cortar en seco. */
+  windDown?: boolean;
 }): string {
   const { stops, grounding, stopIndex, phase, turnsInStop, nudge } = opts;
   const stop = stops[stopIndex];
@@ -59,6 +61,10 @@ export function buildPlaySystemInstruction(opts: {
 
   if (nudge) {
     phaseBlock += `\n\nNUDGE: el usuario lleva un rato sin escribir. Mandá UN SOLO mensaje corto y cálido para ver si sigue ahí o retomar (caminando: "¿todo bien? ¿ya llegaste?"; en la parada: "cuando quieras seguimos"). No insistas. intent="none".`;
+  }
+
+  if (opts.windDown) {
+    phaseBlock += `\n\nWIND-DOWN: la charla ya fue LARGUÍSIMA y en un rato te tenés que ir (a editar, a grabar). Sin cortar en seco: respuestas más cortas, andá cerrando el recorrido con calidez, anticipá que se te hace tarde y empujá a llegar al final. Si el usuario quiere cerrar, despedite e intent="finish".`;
   }
 
   const bio = opts.persona?.bio;

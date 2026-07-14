@@ -21,6 +21,7 @@ type State = {
   stopIndex: number;
   phase: TourPhase;
   turnsInStop: number;
+  totalTurns: number; // presupuesto de conversación (el server corta suave/duro)
   prevPhase: TourPhase;
   status: Status;
 };
@@ -34,7 +35,7 @@ function humanDelayMs(len: number): number {
 const NUDGE_AFTER_MS = 100_000;
 
 // ---- reanudar: el progreso sobrevive a cerrar la pestaña (mismo navegador) ----
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2; // v2: State.totalTurns
 const RESUME_WINDOW_MS = 48 * 3600 * 1000; // 48 h para retomar
 const saveKey = (slug: string) => `henry_play_${slug}`;
 
@@ -156,6 +157,7 @@ export default function PlayerChat({
         stopIndex: 0,
         phase: "CAMINANDO",
         turnsInStop: 0,
+        totalTurns: 0,
         prevPhase: "CAMINANDO",
         status: "EN_CURSO",
       }
@@ -206,6 +208,7 @@ export default function PlayerChat({
 
     let reply = "Se me cortó la señal 😅 dale de nuevo";
     let intent = "none";
+    let limitFarewell = false;
     try {
       const res = await fetch("/api/play", {
         method: "POST",
@@ -216,6 +219,7 @@ export default function PlayerChat({
           stopIndex: tour.stopIndex,
           phase: tour.phase,
           turnsInStop: tour.turnsInStop,
+          totalTurns: tour.totalTurns,
           message: text,
           history,
         }),
@@ -224,14 +228,16 @@ export default function PlayerChat({
       if (res.ok) {
         reply = data.reply;
         intent = data.intent || "none";
+        if (data.limit) limitFarewell = true;
       } else reply = data.error || "uff, algo se me trabó. dale de nuevo";
     } catch {
       /* fallback */
     }
 
-    const next = applyIntent(tour, intent);
+    const next = { ...applyIntent(tour, intent), totalTurns: tour.totalTurns + 1 };
     let shown = reply;
-    if (next.status === "TERMINADO" && closingMessage) shown = closingMessage;
+    // la despedida por límite se muestra tal cual (no la pisa el cierre guionado)
+    if (next.status === "TERMINADO" && closingMessage && !limitFarewell) shown = closingMessage;
     if (next.status === "PAYWALL" && paywallMessage) shown = paywallMessage;
 
     const wait = humanDelayMs(shown.length) - (Date.now() - started);
@@ -273,6 +279,7 @@ export default function PlayerChat({
           stopIndex: tour.stopIndex,
           phase: tour.phase,
           turnsInStop: tour.turnsInStop,
+          totalTurns: tour.totalTurns,
           message: "(el usuario no respondió en un rato)",
           history: historyFrom(messages),
           nudge: true,
@@ -287,6 +294,7 @@ export default function PlayerChat({
       const wait = humanDelayMs(reply.length) - (Date.now() - started);
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));
       setMessages((prev) => [...prev, { role: "henry", text: reply, time: now() }]);
+      setTour((t) => ({ ...t, totalTurns: t.totalTurns + 1 }));
     }
     setSending(false);
   }, [sending, nudged, tour, messages, slug, anonId]);

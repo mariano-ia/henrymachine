@@ -12,6 +12,14 @@ export const maxDuration = 60;
 
 const PHASES: TourPhase[] = ["CAMINANDO", "EN_PARADA", "EN_PAUSA"];
 
+// Presupuesto de conversación por experiencia (~$0,0025/turno con Flash):
+// súper permisivo — lo normal son 30-60 turnos. Al SOFT Henry va cerrando;
+// al HARD se despide en personaje sin llamar al LLM.
+const SOFT_TURN_LIMIT = 240;
+const HARD_TURN_LIMIT = 300;
+const FAREWELL_AT_LIMIT =
+  "Uff querubín, se nos fue el día entero charlando y yo todavía tengo que editar unos videos 😅 Lo caminado nadie te lo quita. Dejamos el recorrido acá por hoy — ¡un abrazo y nos vemos en el próximo! 🤙";
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as {
@@ -20,15 +28,24 @@ export async function POST(req: NextRequest) {
       stopIndex?: number;
       phase?: TourPhase;
       turnsInStop?: number;
+      totalTurns?: number;
       message?: string;
       history?: ChatTurn[];
       nudge?: boolean;
     };
 
     const slug = typeof body.slug === "string" ? body.slug : "";
-    const message = typeof body.message === "string" ? body.message.trim() : "";
+    // tope de largo por mensaje: nadie escribe 1200 chars caminando
+    const message =
+      typeof body.message === "string" ? body.message.trim().slice(0, 1200) : "";
     if (!slug) return NextResponse.json({ error: "Falta la experiencia." }, { status: 400 });
     if (!message) return NextResponse.json({ error: "Escribí un mensaje." }, { status: 400 });
+
+    // límite duro: despedida cálida SIN llamar al modelo
+    const totalTurns = Math.max(0, Number(body.totalTurns ?? 0));
+    if (totalTurns >= HARD_TURN_LIMIT) {
+      return NextResponse.json({ reply: FAREWELL_AT_LIMIT, intent: "finish", limit: true });
+    }
 
     const [exp, persona, utilities] = await Promise.all([
       getPlayableExperience(slug, body.anonId),
@@ -57,6 +74,7 @@ export async function POST(req: NextRequest) {
       persona,
       utilities,
       hoursInfo,
+      windDown: totalTurns >= SOFT_TURN_LIMIT,
     });
 
     const result = await tourReply({
