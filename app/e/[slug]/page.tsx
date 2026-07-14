@@ -92,6 +92,23 @@ const REVIEWS = [
 const RATING = 4.9;
 const RATING_COUNT = 128;
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const exp = await getExperienceDetail(slug);
+  if (!exp) return {};
+  const price = exp.priceCents > 0 ? `US$${(exp.priceCents / 100).toFixed(0)}` : "Gratis";
+  const cover = coverUrl(exp.coverPath); // helper ya existente en este archivo
+  return {
+    title: `${exp.title} · ${price} — La Nueva York de Henry`,
+    description: exp.pitch ?? "Un recorrido a pie por Nueva York, guiado por chat por Henry.",
+    openGraph: {
+      title: `${exp.title} · ${price}`,
+      description: exp.pitch ?? "",
+      images: cover ? [cover] : ["/hero_background.jpg"],
+    },
+  };
+}
+
 export default async function DetailPage({
   params,
 }: {

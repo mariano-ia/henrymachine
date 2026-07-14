@@ -26,10 +26,21 @@ const condensed = Roboto_Condensed({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://henry-demo-zeta.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "La Nueva York de Henry — by Resilentos",
   description:
     "Micro-recorridos a pie por Nueva York guiados por chat. Henry te lleva parada por parada, como un amigo local.",
+  openGraph: {
+    title: "La Nueva York de Henry — by Resilentos",
+    description: "Micro-recorridos a pie por Nueva York guiados por chat.",
+    images: ["/hero_background.jpg"],
+    locale: "es",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {
