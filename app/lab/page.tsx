@@ -1,396 +1,325 @@
-/* MOCKUP — dirección "LÍNEA H" (señalética de subte intervenida por Henry).
-   Ruta apartada: NO toca el sitio real. Fuentes de mockup via <link> (en la
-   implementación real irían por next/font). */
+/* MOCKUP — dirección «HENRY TE ESTÁ ESCRIBIENDO»: el sitio entero ES el chat.
+   Ruta apartada, estático (la coreografía de mensajes apareciendo es de la
+   versión real). Voz de Henry en peruano (tú/tienes), muletillas reales. */
 
-const Y = "#FCCC0A"; // amarillo Henry (N/Q/R + taxi)
-const INK = "#0A0A0A";
-const PAPER = "#EFEEE9";
-const THEME = {
-  comida: "#EE352E",
-  vistas: "#0039A6",
-  local: "#00933C",
-  clasicos: "#FF6319",
-  arte: "#B933AD",
-};
+const Y = "#FCCC0A";
+const INK = "#1A1A1A";
+const PAPER = "#FCFBF9";
+const THEME = { comida: "#EE352E", local: "#00933C", vistas: "#0039A6", clasicos: "#FF6319" };
 
-const EXPS = [
-  { n: 1, title: "Pizzas de Brooklyn", theme: "comida", color: THEME.comida, letter: "C", meta: "45 MIN · 2,1 KM · BROOKLYN", price: "US$6", free: false },
-  { n: 2, title: "Cafés del Village", theme: "comida", color: THEME.comida, letter: "C", meta: "40 MIN · 1,6 KM · VILLAGE", price: "US$5", free: false },
-  { n: 3, title: "Miradores de Manhattan", theme: "vistas", color: THEME.vistas, letter: "V", meta: "1 H · 3,2 KM · MANHATTAN", price: "US$7", free: false },
-  { n: 4, title: "Domingo en Williamsburg", theme: "local", color: THEME.local, letter: "L", meta: "50 MIN · 2,4 KM · WILLIAMSBURG", price: "GRATIS", free: true },
-  { n: 5, title: "12 horas en Nueva York", theme: "clasicos", color: THEME.clasicos, letter: "K", meta: "12 H · 14 KM · TODA LA CIUDAD", price: "US$5", free: false },
-];
-
-function Bullet({ color, letter, size = 26, dark }: { color: string; letter: string; size?: number; dark?: boolean }) {
+function Time({ t, check }: { t: string; check?: boolean }) {
   return (
-    <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full font-black"
-      style={{
-        background: color,
-        color: dark ? INK : "#fff",
-        width: size,
-        height: size,
-        fontSize: size * 0.55,
-        fontFamily: "'Archivo', system-ui, sans-serif",
-      }}
-    >
-      {letter}
+    <span className="ml-2 inline-flex translate-y-[2px] items-center gap-0.5 text-[10px] opacity-45">
+      {t}
+      {check && <span style={{ color: "#53BDEB" }}>✓✓</span>}
     </span>
   );
 }
 
-function BalaH({ size = 30 }: { size?: number }) {
-  return <Bullet color={Y} letter="H" size={size} dark />;
-}
-
-/* chip de tarifa estilo MetroCard: esquina cortada en diagonal */
-function Fare({ children, free }: { children: string; free?: boolean }) {
+function Henry({ children, t = "10:42" }: { children: React.ReactNode; t?: string }) {
   return (
-    <span
-      className="inline-block px-2.5 py-1 text-[13px] font-bold tracking-wide"
-      style={{
-        background: free ? "#fff" : Y,
-        color: free ? "#00933C" : INK,
-        clipPath: "polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%)",
-        border: free ? `1.5px solid #00933C` : "none",
-        fontFamily: "var(--lab-display)",
-      }}
+    <div
+      className="max-w-[85%] rounded-2xl rounded-tl-[4px] bg-white px-3.5 py-2 text-[15px] leading-snug shadow-sm"
+      style={{ borderLeft: `3px solid ${Y}`, color: INK }}
     >
       {children}
-    </span>
+      <Time t={t} />
+    </div>
+  );
+}
+
+function User({ children, t = "10:43" }: { children: React.ReactNode; t?: string }) {
+  return (
+    <div
+      className="ml-auto max-w-[85%] rounded-2xl rounded-br-[4px] px-3.5 py-2 text-[15px] leading-snug shadow-sm"
+      style={{ background: INK, color: PAPER }}
+    >
+      {children}
+      <Time t={t} check />
+    </div>
+  );
+}
+
+function Chips({ items }: { items: { label: string; solid?: boolean }[] }) {
+  return (
+    <div className="flex flex-wrap justify-end gap-2 py-1">
+      {items.map((c) => (
+        <button
+          key={c.label}
+          className="rounded-full px-3.5 py-1.5 text-[13.5px] font-semibold transition-transform hover:scale-[1.03]"
+          style={
+            c.solid
+              ? { background: Y, color: INK }
+              : { background: "transparent", color: INK, border: `1.5px solid ${INK}33` }
+          }
+        >
+          {c.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const tiles = {
+  backgroundImage:
+    "linear-gradient(rgba(10,10,10,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(10,10,10,0.08) 1px, transparent 1px)",
+  backgroundSize: "30px 15px",
+  backgroundColor: "#F1EFE8",
+};
+
+function Attachment({
+  color,
+  title,
+  meta,
+  price,
+  free,
+  note,
+}: {
+  color: string;
+  title: string;
+  meta: string;
+  price: string;
+  free?: boolean;
+  note: string;
+}) {
+  return (
+    <div className="max-w-[88%] rounded-2xl rounded-tl-[4px] bg-white p-1.5 shadow-sm">
+      <div className="overflow-hidden rounded-xl border" style={{ borderColor: "rgba(10,10,10,0.12)" }}>
+        <div className="h-[4px]" style={{ background: color }} />
+        <div className="relative h-[118px]" style={tiles}>
+          <span className="absolute left-3 top-2.5 font-hand text-[20px] leading-tight" style={{ color: INK }}>
+            {note}
+          </span>
+          <span
+            className="absolute bottom-2 right-2 px-2 py-0.5 text-[12px] font-bold"
+            style={
+              free
+                ? { background: "#fff", color: THEME.local, border: `1.5px solid ${THEME.local}` }
+                : { background: Y, color: INK }
+            }
+          >
+            {price}
+          </span>
+        </div>
+        <div className="px-3 py-2.5">
+          <p className="text-[15px] font-bold leading-tight" style={{ color: INK }}>{title}</p>
+          <p className="mt-1 text-[10.5px] font-semibold uppercase tracking-[0.14em] opacity-55" style={{ fontFamily: "'Roboto Condensed', sans-serif", color: INK }}>
+            {meta}
+          </p>
+          <p className="mt-1.5 text-[13px] font-semibold" style={{ color: "#B48F00" }}>
+            Ver el plan →
+          </p>
+        </div>
+      </div>
+      <Time t="10:44" />
+    </div>
+  );
+}
+
+function Divider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 py-4 opacity-50">
+      <span className="h-px flex-1 border-t border-dashed" style={{ borderColor: INK }} />
+      <span className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: INK }}>{label}</span>
+      <span className="h-px flex-1 border-t border-dashed" style={{ borderColor: INK }} />
+    </div>
   );
 }
 
 export default function LabPage() {
   return (
-    <main className="min-h-screen antialiased" style={{ background: PAPER, color: INK }}>
-      {/* fuentes solo para el mockup */}
+    <main className="relative min-h-screen" style={{ background: "#14161B" }}>
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link
-        href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;900&family=Doto:wght@800&family=Roboto+Condensed:wght@700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap"
         rel="stylesheet"
       />
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        .lab { --lab-display: 'Archivo', system-ui, sans-serif; font-family: 'Archivo', system-ui, sans-serif; }
-        .lab-doto { font-family: 'Doto', monospace; }
-        @keyframes lab-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        .lab-marquee { animation: lab-marquee 55s linear infinite; }
-        .lab-marquee:hover { animation-play-state: paused; }
-        @keyframes lab-swipe { 0%, 18% { transform: translateX(0); } 50%, 68% { transform: translateX(calc(100% + 130px)); opacity: 1; } 69% { opacity: 0; } 70% { transform: translateX(0); opacity: 0; } 78%, 100% { transform: translateX(0); opacity: 1; } }
-        .lab-card-anim { animation: lab-swipe 4.5s ease-in-out infinite; }
-        .lab-tiles { background-image:
-          linear-gradient(rgba(10,10,10,0.07) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(10,10,10,0.07) 1px, transparent 1px);
-          background-size: 34px 17px; background-color: #F7F6F2; }
-        .lab-grain::after { content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
-          background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E"); }
-      ` }}
+      {/* grano de ciudad sobre el fondo oscuro */}
+      <div
+        className="pointer-events-none fixed inset-0 opacity-60"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E\")",
+        }}
       />
 
-      <div className="lab">
-        {/* ========== TICKER LED ========== */}
-        <div className="overflow-hidden whitespace-nowrap py-1.5" style={{ background: INK }}>
-          <div className="lab-marquee inline-block">
-            {[0, 1].map((i) => (
-              <span key={i} className="lab-doto text-[13px] font-extrabold tracking-[0.2em]" style={{ color: "#FFB000" }}>
-                {" ★ HOLA QUERUBINES ★ GOLAZO: NUEVO RECORRIDO EN WILLIAMSBURG ★ NUEVA YORK A PIE, POR CHAT ★ SE CAMINA, SE COME, SE CHATEA ★ ABIERTO 24/7 ★ QUÉ LOCO ★"}
-              </span>
-            ))}
-          </div>
-        </div>
+      {/* garabatos de margen — solo desktop */}
+      <div className="pointer-events-none fixed inset-0 hidden lg:block">
+        <p className="absolute left-[8%] top-[18%] rotate-[-6deg] font-hand text-[26px]" style={{ color: Y }}>
+          no hay menús ni grids:
+          <br />
+          todo pasa acá adentro →
+        </p>
+        <p className="absolute right-[7%] top-[38%] rotate-[3deg] font-hand text-[24px]" style={{ color: Y }}>
+          ← los recorridos te los
+          <br />
+          manda él, como en whatsapp
+        </p>
+        <p className="absolute left-[9%] top-[62%] rotate-[-4deg] font-hand text-[24px]" style={{ color: Y }}>
+          lo bloqueado se ve borroso…
+          <br />
+          igual que las ganas →
+        </p>
+        <p className="absolute right-[8%] top-[78%] rotate-[2deg] font-hand text-[24px]" style={{ color: Y }}>
+          ← y el recibo es una nota
+          <br />
+          manuscrita de Henry
+        </p>
+      </div>
 
-        {/* ========== NAV ========== */}
-        <header className="flex items-center justify-between px-5 py-4 sm:px-10">
-          <div className="flex items-center gap-2.5">
-            <BalaH size={34} />
-            <span className="text-[20px] font-black tracking-tight">HENRY</span>
+      {/* ============ EL HILO ============ */}
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[440px] flex-col shadow-2xl" style={{ background: PAPER }}>
+        {/* barra de contacto */}
+        <header className="sticky top-0 z-20 flex items-center gap-3 px-3.5 py-2.5" style={{ background: "#161616" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/henry.jpg" alt="Henry" className="h-10 w-10 rounded-full object-cover" style={{ boxShadow: `0 0 0 2.5px ${Y}` }} />
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="text-[15px] font-bold text-white">Henry</p>
+            <p className="flex items-center gap-1.5 text-[11.5px] text-white/55">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#2BD94F" }} />
+              en línea · Nueva York
+            </p>
           </div>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] opacity-60">
-            Recorridos · Nueva York
-          </span>
+          <button className="flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white/80">
+            ☰ Lista
+          </button>
         </header>
 
-        {/* ========== HERO: cartel de estación ========== */}
-        <section className="lab-grain relative mx-4 overflow-hidden rounded-sm sm:mx-8" style={{ background: INK }}>
-          {/* filete blanco MTA */}
-          <div className="absolute left-0 right-0 top-[10px] h-[2px] bg-white" />
-          <div className="grid gap-10 px-6 pb-10 pt-12 text-white sm:px-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:pb-16 lg:pt-16">
-            <div>
-              <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">
-                Recorridos a pie · guiados por chat
-              </p>
-              <h1
-                className="font-bold uppercase leading-[0.92]"
-                style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: "clamp(2.6rem, 7vw, 70px)", letterSpacing: "-3px" }}
-              >
-                Caminá
-                <br />
-                Nueva York{" "}
-                <span className="inline-flex translate-y-[-0.12em] gap-1.5 align-middle">
-                  <Bullet color={THEME.comida} letter="C" size={34} />
-                  <Bullet color={THEME.vistas} letter="V" size={34} />
-                  <Bullet color={THEME.local} letter="L" size={34} />
-                </span>
-                <br />
-                con un local
-              </h1>
-              {/* intervención en fibrón */}
-              <p className="mt-4 rotate-[-2deg] font-hand text-[clamp(1.8rem,4.5vw,2.6rem)] leading-none" style={{ color: Y }}>
-                ese local soy yo, choche →
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <button
-                  className="px-6 py-3.5 text-[15px] font-black uppercase tracking-wide"
-                  style={{ background: Y, color: INK }}
-                >
-                  Ver recorridos
-                </button>
-                <span className="text-[13px] text-white/55">desde GRATIS hasta US$7 · pago único</span>
-              </div>
-            </div>
-
-            {/* ventanita de chat (estática en el mockup) */}
-            <div className="mx-auto w-full max-w-[340px]">
-              <div className="overflow-hidden rounded-lg bg-[#F4F2EC] text-[15px] leading-snug" style={{ color: INK }}>
-                <div className="flex items-center gap-2.5 px-3.5 py-2.5" style={{ background: "#161616" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/henry.jpg" alt="Henry" className="h-9 w-9 rounded-full object-cover" style={{ boxShadow: `0 0 0 2.5px ${Y}` }} />
-                  <div className="leading-tight">
-                    <div className="text-[14px] font-bold text-white">Henry</div>
-                    <div className="text-[11px] text-white/55">en línea · caminando con vos</div>
-                  </div>
-                  <BalaH size={22} />
-                </div>
-                <div className="space-y-2 px-3 py-3.5">
-                  <div className="max-w-[85%] rounded-xl rounded-tl-sm bg-white px-3 py-2 shadow-sm">
-                    listo, ¿ya estás en la esquina de Bedford y N 7th?
-                  </div>
-                  <div className="ml-auto max-w-[85%] rounded-xl rounded-br-sm px-3 py-2 font-medium" style={{ background: Y }}>
-                    sí!! recién bajo del subte
-                  </div>
-                  <div className="max-w-[85%] rounded-xl rounded-tl-sm bg-white px-3 py-2 shadow-sm">
-                    golazo. mirá la vitrina del cartel rojo: pedite una porción de pepperoni y decime qué ves arriba del horno 👀
-                  </div>
-                  <div className="ml-auto max-w-[85%] rounded-xl rounded-br-sm px-3 py-2 font-medium" style={{ background: Y }}>
-                    jajaja ¿una foto tuya?
-                  </div>
-                  <div className="flex items-center gap-1.5 pl-1 pt-1">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black/40" />
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black/40 [animation-delay:150ms]" />
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black/40 [animation-delay:300ms]" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ========== MOSAICO divisor ========== */}
-        <div className="mx-4 mt-10 flex h-[12px] overflow-hidden sm:mx-8">
-          {Object.values(THEME).map((c) => (
-            <div key={c} className="flex-1" style={{ background: c }} />
-          ))}
-        </div>
-
-        {/* ========== CATÁLOGO: la Línea H ========== */}
-        <section className="px-4 py-10 sm:px-8">
-          {/* cartel de sección */}
-          <div className="relative mb-10 flex items-center justify-between px-5 py-3.5 text-white" style={{ background: INK }}>
-            <div className="absolute left-0 right-0 top-[6px] h-[1.5px] bg-white" />
-            <span className="text-[15px] font-bold uppercase tracking-[0.12em]">Recorridos</span>
-            <div className="flex items-center gap-1.5">
-              <Bullet color={THEME.comida} letter="C" size={22} />
-              <Bullet color={THEME.vistas} letter="V" size={22} />
-              <Bullet color={THEME.local} letter="L" size={22} />
-              <Bullet color={THEME.clasicos} letter="K" size={22} />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/henry.jpg" alt="" className="h-[22px] w-[22px] rounded-full object-cover" style={{ boxShadow: `0 0 0 2px ${Y}` }} />
-            </div>
+        {/* mensajes */}
+        <div className="flex-1 space-y-2 px-3 py-4">
+          <div className="flex justify-center pb-2">
+            <span className="rounded-full bg-black/5 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-wider opacity-60" style={{ color: INK }}>
+              Hoy
+            </span>
           </div>
 
-          {/* strip map horizontal: nombres a 45° POR ENCIMA de la línea, como en el vagón */}
-          <div className="relative mb-14 overflow-x-auto pb-2">
-            <div className="min-w-[860px] px-8">
-              <div className="flex">
-                {/* la bala H abre la línea */}
-                <div className="w-[110px] shrink-0">
-                  <div className="relative h-[150px]">
-                    <span className="absolute bottom-1 left-0 whitespace-nowrap font-hand text-[18px] opacity-70">
-                      arrancamos acá ↓
-                    </span>
-                  </div>
-                  <div className="relative flex h-8 items-center">
-                    <div className="absolute left-0 right-0 top-1/2 h-[6px] -translate-y-1/2" style={{ background: Y }} />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/henry.jpg"
-                      alt="Henry"
-                      className="relative z-10 h-9 w-9 rounded-full object-cover"
-                      style={{ boxShadow: `0 0 0 3px ${Y}, 0 0 0 5px ${INK}` }}
-                    />
-                  </div>
-                  <div className="h-8" />
-                </div>
-                {EXPS.map((e, i) => (
-                  <div key={e.n} className={"shrink-0 " + (i === EXPS.length - 1 ? "w-[150px]" : "w-[150px]")}>
-                    {/* nombre subiendo a 45° */}
-                    <div className="relative h-[150px]">
-                      <span className="absolute bottom-0 left-[10px] origin-bottom-left -rotate-45 whitespace-nowrap text-[13.5px] font-bold uppercase tracking-wide">
-                        {e.title}
-                      </span>
-                    </div>
-                    {/* estación sobre la línea */}
-                    <div className="relative flex h-8 items-center">
-                      <div className="absolute left-0 right-0 top-1/2 h-[6px] -translate-y-1/2" style={{ background: Y }} />
-                      <span className="relative z-10 h-8 w-8 rounded-full bg-white" style={{ border: `4px solid ${INK}` }} />
-                    </div>
-                    {/* bala de tema + tarifa debajo */}
-                    <div className="mt-2.5 flex items-center gap-1.5">
-                      <Bullet color={e.color} letter={e.letter} size={17} />
-                      <span className="text-[11px] font-bold tracking-wide opacity-60">{e.price}</span>
-                    </div>
-                  </div>
-                ))}
-                {/* cierre de línea */}
-                <div className="shrink-0">
-                  <div className="h-[150px]" />
-                  <div className="relative flex h-8 w-[60px] items-center">
-                    <div className="absolute left-0 right-1/2 top-1/2 h-[6px] -translate-y-1/2" style={{ background: Y }} />
-                    <span className="relative z-10 ml-2 h-4 w-4 rounded-full" style={{ background: Y }} />
-                  </div>
-                </div>
-              </div>
+          <Henry t="10:41">¡Querubines! Llegaste. 👋</Henry>
+          <Henry t="10:41">
+            Soy Henry. Vivo acá y te muestro Nueva York por chat, cuadra por cuadra, caminando conmigo.
+          </Henry>
+          <Chips items={[{ label: "¿Cómo funciona?" }, { label: "Muéstrame los recorridos", solid: true }, { label: "¿Quién eres?" }]} />
+          <User t="10:42">muéstrame los recorridos 👀</User>
+          <Henry t="10:42">Buenísimo. ¿Con hambre o con ganas de caminar?</Henry>
+          <Chips items={[{ label: "🍕 Con hambre" }, { label: "👟 A caminar" }, { label: "Todo, dale" }]} />
+          <User t="10:43">con hambre jaja</User>
+          <Henry t="10:43">Golazo. Mira, este lo armé el año que llegué, choche:</Henry>
+
+          <Attachment
+            color={THEME.comida}
+            title="Pizzas de Brooklyn"
+            meta="45 min · 2,1 km · Williamsburg"
+            price="US$6"
+            note="la mejor porción de tu vida →"
+          />
+
+          <Henry t="10:44">y si quieres algo tranquilo, un domingo perfecto:</Henry>
+
+          <Attachment
+            color={THEME.local}
+            title="Domingo en Williamsburg"
+            meta="50 min · 2,4 km · Williamsburg"
+            price="GRATIS"
+            free
+            note="mercadito, vinilos y río"
+          />
+
+          <User t="10:45">¿y cómo es? ¿me guías tú?</User>
+          <Henry t="10:45">
+            Te escribo yo, como ahora, pero caminando de verdad. Qué loco, ¿no? Mira cómo se ve adentro:
+          </Henry>
+
+          {/* mensaje de media con fibrón */}
+          <div className="max-w-[80%] rounded-2xl rounded-tl-[4px] bg-white p-1.5 shadow-sm">
+            <div className="relative h-[150px] overflow-hidden rounded-xl" style={tiles}>
+              <div className="absolute left-0 top-0 h-[4px] w-full" style={{ background: THEME.comida }} />
+              <span className="absolute left-3 top-6 rotate-[-2deg] font-hand text-[22px]" style={{ color: INK }}>
+                pide la de pepperoni
+                <br />y mira arriba del horno →
+              </span>
+              <span className="absolute bottom-2 right-2.5 text-[10px] font-bold uppercase tracking-[0.16em] opacity-40" style={{ color: INK }}>
+                foto que te manda Henry
+              </span>
             </div>
+            <Time t="10:46" />
           </div>
 
-          {/* cards = carteles de estación (muestro 3) */}
-          <div className="grid gap-5 md:grid-cols-3">
-            {EXPS.slice(0, 3).map((e) => (
-              <article key={e.n} className="group cursor-pointer border bg-white" style={{ borderColor: "rgba(10,10,10,0.18)" }}>
-                <div className="relative flex items-center justify-between gap-2 px-4 py-3 text-white" style={{ background: INK }}>
-                  <div className="absolute left-0 right-0 top-[5px] h-[1.5px] bg-white" />
-                  <h3 className="text-[15px] font-bold uppercase leading-tight tracking-wide">{e.title}</h3>
-                  <Bullet color={e.color} letter={e.letter} size={24} />
-                </div>
-                {/* cover mock: pared de azulejos + banda mosaico del tema */}
-                <div className="lab-tiles relative h-[120px]">
-                  <div className="absolute left-0 right-0 top-0 h-[10px]" style={{ background: e.color }} />
-                  <span className="absolute bottom-2.5 left-3.5 font-hand text-[19px] opacity-75">
-                    {e.n === 1 ? "la mejor porción de tu vida" : e.n === 2 ? "café como en Lima, te juro" : "la foto que rompe tu feed"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-[11px] font-semibold tracking-[0.14em] opacity-60">{e.meta}</span>
-                  <Fare free={e.free}>{e.price}</Fare>
-                </div>
-                {/* tren llegando */}
-                <div className="h-[3px] w-0 transition-all duration-300 group-hover:w-full" style={{ background: Y }} />
-              </article>
-            ))}
+          {/* paywall: borroso adentro de la ficción */}
+          <div className="max-w-[85%] select-none rounded-2xl rounded-tl-[4px] bg-white px-3.5 py-2 text-[15px] shadow-sm blur-[5px]" style={{ borderLeft: `3px solid ${Y}`, color: INK }}>
+            La tercera parada es un sótano donde hacen la mejor
           </div>
-        </section>
-
-        {/* ========== PREVIEW DETALLE ========== */}
-        <section className="mx-4 mb-14 border-t-2 border-dashed pt-10 sm:mx-8" style={{ borderColor: "rgba(10,10,10,0.25)" }}>
-          <p className="mb-6 text-center text-[11px] font-bold uppercase tracking-[0.3em] opacity-40">
-            — así se vería el detalle / compra —
+          <div className="max-w-[70%] select-none rounded-2xl rounded-tl-[4px] bg-white px-3.5 py-2 text-[15px] shadow-sm blur-[5px]" style={{ borderLeft: `3px solid ${Y}`, color: INK }}>
+            y ahí le dices al de la puerta que
+          </div>
+          <p className="flex items-center gap-2 pl-1 font-hand text-[19px] opacity-70" style={{ color: INK }}>
+            🔒 esto te lo cuento allá, querubín
           </p>
 
-          <div className="mx-auto max-w-3xl">
-            {/* boca de estación */}
-            <div className="relative px-6 py-6 text-white" style={{ background: INK }}>
-              <div className="absolute left-0 right-0 top-[8px] h-[2px] bg-white" />
-              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/50">← Todos los recorridos</p>
-              <div className="flex items-center gap-3">
-                <Bullet color={THEME.comida} letter="C" size={34} />
-                <h2 className="text-[clamp(1.7rem,4.5vw,2.6rem)] font-black uppercase leading-none">Pizzas de Brooklyn</h2>
-              </div>
-              <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-white/60">
-                Williamsburg → Dumbo · 45 min → 2,1 km → 5 paradas
-              </p>
-            </div>
+          <Henry t="10:47">
+            Las primeras paradas van por mi cuenta. Si te gusta, desbloqueas el resto por lo que sale una porción. 🍕
+          </Henry>
+          <Chips items={[{ label: "Empezar gratis", solid: true }, { label: "Dale, lo quiero · US$6" }, { label: "☰ Ver la lista" }]} />
 
-            {/* tip de Henry */}
-            <div className="flex items-start gap-4 px-2 py-7">
-              <div className="relative shrink-0 rotate-[-3deg]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/henry.jpg" alt="Henry" className="h-16 w-16 border-2 border-white object-cover shadow-md" />
-                <span className="absolute -top-2 left-1/2 h-4 w-10 -translate-x-1/2 rotate-3 bg-white/60 shadow-sm" />
-              </div>
-              <p className="rotate-[-1deg] font-hand text-[26px] leading-tight">
-                “vení con hambre, choche — acá se almuerza caminando”
-                <span className="mt-1 block text-[18px] opacity-60">— Henry <BalaH size={16} /></span>
-              </p>
-            </div>
+          <Divider label="y cuando compras, te llega esto" />
 
-            {/* strip map vertical con paywall */}
-            <div className="px-2">
-              {[
-                { t: "El horno original", open: true },
-                { t: "La porción del cartel rojo", open: true },
-                { t: "Parada exclusiva", open: false },
-                { t: "Parada exclusiva", open: false },
-              ].map((s, i) => (
-                <div key={i} className="relative flex items-center gap-4 pb-7">
-                  {i < 3 && (
-                    <span className="absolute left-[13px] top-7 h-full w-[5px]" style={{ background: s.open ? Y : "rgba(10,10,10,0.12)" }} />
-                  )}
-                  <span
-                    className="relative z-10 flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-black"
-                    style={s.open ? { background: "#fff", border: `4px solid ${INK}` } : { background: "rgba(10,10,10,0.08)", border: "2px dashed rgba(10,10,10,0.3)", color: "rgba(10,10,10,0.4)" }}
-                  >
-                    {s.open ? i + 1 : "🔒"}
-                  </span>
-                  <span className={"text-[15px] font-bold uppercase tracking-wide " + (s.open ? "" : "opacity-40")}>
-                    {s.t}
-                  </span>
-                  {!s.open && <span className="text-[11px] font-semibold uppercase tracking-[0.14em] opacity-40">se desbloquea al comprar</span>}
-                </div>
-              ))}
-            </div>
-
-            {/* molinete: swipe para comprar */}
-            <div className="relative mt-4 overflow-hidden px-6 py-7" style={{ background: INK }}>
-              <div className="absolute left-0 right-0 top-[6px] h-[1.5px] bg-white" />
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="text-white">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">Pago único · tuyo para siempre</p>
-                  <p className="text-[30px] font-black leading-none" style={{ color: Y }}>US$6</p>
-                </div>
-                {/* ranura del molinete */}
-                <div className="relative h-[52px] w-[260px] overflow-hidden rounded-sm border border-white/25 bg-white/5">
-                  <span className="absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 bg-white/15" />
-                  <div
-                    className="lab-card-anim absolute left-2 top-1/2 flex h-[34px] w-[110px] -translate-y-1/2 items-center px-2 text-[9px] font-black uppercase leading-[1.1]"
-                    style={{ background: Y, color: INK, clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)" }}
-                  >
-                    Henry<br />Nueva York
-                  </div>
-                  <span className="absolute bottom-1 right-2 text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
-                    deslizá para desbloquear →
-                  </span>
-                </div>
-              </div>
-              <p className="mt-3 font-hand text-[19px]" style={{ color: Y }}>
-                las 2 primeras paradas van por mi cuenta, querubín
-              </p>
-            </div>
+          {/* LA NOTA AMARILLA — el recibo manuscrito */}
+          <div className="mx-auto w-[86%] rotate-[-1.5deg] p-4 shadow-lg" style={{ background: Y }}>
+            <p className="text-[9.5px] font-bold uppercase tracking-[0.22em] opacity-60" style={{ color: INK }}>
+              Nota de Henry · tu entrada
+            </p>
+            <p className="mt-2 font-hand text-[24px] leading-[1.15]" style={{ color: INK }}>
+              Pizzas de Brooklyn — pagado ✓
+              <br />
+              Nos vemos en Bedford y N 7th.
+              <br />
+              Trae hambre. — H.
+            </p>
+            <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.18em] opacity-50" style={{ color: INK }}>
+              ↓ guardar · compartir
+            </p>
           </div>
-        </section>
+          <Henry t="10:48">¡Golazo! Ya es tuyo. ¿Arrancamos ahora o te lo guardo?</Henry>
+          <Chips items={[{ label: "Arrancar ahora", solid: true }, { label: "Guárdamelo" }]} />
 
-        {/* ========== FOOTER ========== */}
-        <footer className="relative px-6 py-8 text-white" style={{ background: INK }}>
-          <div className="absolute left-0 right-0 top-[8px] h-[2px] bg-white" />
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <BalaH size={26} />
-              <span className="text-[14px] font-black uppercase tracking-wide">Henry · Nueva York a pie</span>
+          <Divider label="la válvula de escape: la lista (botón ☰ arriba)" />
+
+          {/* bottom sheet de la lista completa */}
+          <div className="overflow-hidden rounded-t-2xl border bg-white shadow-lg" style={{ borderColor: "rgba(10,10,10,0.12)" }}>
+            <div className="flex justify-center py-2">
+              <span className="h-1 w-10 rounded-full bg-black/15" />
             </div>
-            <span className="rotate-[-1.5deg] font-hand text-[20px]" style={{ color: Y }}>
-              nos vemos en la esquina
+            <p className="px-4 pb-2 text-[13px] font-bold" style={{ color: INK }}>
+              Todos los recorridos <span className="font-normal opacity-50">· 5</span>
+            </p>
+            {[
+              { c: THEME.comida, t: "Pizzas de Brooklyn", m: "45 min · Williamsburg", p: "US$6" },
+              { c: THEME.comida, t: "Cafés del Village", m: "40 min · Village", p: "US$5" },
+              { c: THEME.vistas, t: "Miradores de Manhattan", m: "1 h · Manhattan", p: "US$7" },
+              { c: THEME.local, t: "Domingo en Williamsburg", m: "50 min · Williamsburg", p: "GRATIS" },
+              { c: THEME.clasicos, t: "12 horas en Nueva York", m: "12 h · toda la ciudad", p: "US$5" },
+            ].map((r) => (
+              <div key={r.t} className="flex items-center gap-3 border-t px-4 py-3" style={{ borderColor: "rgba(10,10,10,0.08)" }}>
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: r.c }} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-semibold" style={{ color: INK }}>{r.t}</p>
+                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] opacity-50" style={{ fontFamily: "'Roboto Condensed', sans-serif", color: INK }}>{r.m}</p>
+                </div>
+                <span className="text-[13px] font-bold" style={{ color: r.p === "GRATIS" ? THEME.local : INK }}>{r.p}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* barra de chips fija (el "input" del storefront) */}
+        <footer className="sticky bottom-0 z-20 border-t px-3 py-2.5" style={{ background: PAPER, borderColor: "rgba(10,10,10,0.1)" }}>
+          <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none]">
+            <span className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] font-bold" style={{ background: Y, color: INK }}>
+              Muéstrame los recorridos
             </span>
+            {["¿Cómo funciona?", "¿Quién eres?", "☰ Lista"].map((c) => (
+              <span key={c} className="whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] font-semibold" style={{ border: `1.5px solid ${INK}30`, color: INK }}>
+                {c}
+              </span>
+            ))}
           </div>
         </footer>
       </div>
