@@ -148,6 +148,10 @@ export type Database = {
       }
       admin_delete_step: { Args: { p_step: string }; Returns: undefined }
       assert_publishable: { Args: { exp: string }; Returns: undefined }
+      country_leaderboard: {
+        Args: { p_limit?: number }
+        Returns: { country: string; steps: number; tours: number }[]
+      }
       set_experience_pricing: {
         Args: {
           p_exp: string

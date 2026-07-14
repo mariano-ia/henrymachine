@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import CatalogGrid, { type Exp } from "@/components/CatalogGrid";
 import HeroChat from "@/components/HeroChat";
 import LeadCapture from "@/components/LeadCapture";
+import Leaderboard from "@/components/Leaderboard";
 import TrackView from "@/components/TrackView";
+import { getCountryLeaderboard } from "@/lib/db/leaderboard";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,7 @@ export default async function Home() {
     )
     .order("published_at", { ascending: false });
   const experiences = (data ?? []) as Exp[];
+  const leaderboard = await getCountryLeaderboard(10);
 
   return (
     <main className="henry-home min-h-[100dvh] overflow-x-hidden bg-paper text-ink antialiased">
@@ -103,6 +106,9 @@ export default async function Home() {
       <div className="mx-auto max-w-editorial px-5 sm:px-10">
         <CatalogGrid experiences={experiences} />
       </div>
+
+      {/* ===================== TOP10 PAÍSES ===================== */}
+      <Leaderboard rows={leaderboard} />
 
       {/* ===================== NOVEDADES (captura de leads) ===================== */}
       <section className="border-t border-ink/10 bg-card">
