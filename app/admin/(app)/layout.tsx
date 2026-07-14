@@ -47,6 +47,9 @@ export default async function AdminAppLayout({
               <Link href="/admin/cupones" className="transition hover:text-white">
                 Cupones
               </Link>
+              <Link href="/admin/resenas" className="transition hover:text-white">
+                Reseñas
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-3">
