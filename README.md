@@ -77,6 +77,13 @@ supabase/migrations/        0001–0007 (todas aplicadas a la DB remota)
   eventos de embudo (view_home, view_detail, open_chat, begin_checkout,
   finish_tour) + país por IP; UTM del aterrizaje viaja a `sales.utm_*`;
   Vercel Analytics. OG por experiencia (cover como preview) + sitemap + robots.
+- **Identidad** (Fase 1): login sin contraseña por OTP de email (`/cuenta`,
+  Supabase Auth), página `/mis-recorridos` (terminados/en curso), merge
+  anon↔user vía `/api/claim` (por anon_id del dispositivo + grant_email
+  cross-device). El progreso vive en `play_sessions` (fuente de verdad
+  server-side: posición, fase, total_turns, país, tokens por turno en
+  `session_messages`); el chat reanuda cross-device desde ahí. Enums de la
+  DB en español: `session_status` = NO_INICIADO|EN_CURSO|TERMINADO|EXPIRADO.
 
 ## Reglas de negocio en la DB (migraciones clave)
 

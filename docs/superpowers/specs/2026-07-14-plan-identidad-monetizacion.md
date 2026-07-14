@@ -38,23 +38,25 @@ Migración 0009 aplicada (events + rate_limits + rl_hit atómico).
 
 Migración **0009**: tabla `events` (+ índices) — la corre Mariano en el SQL editor.
 
-## Fase 1 — Identidad + sesiones server (la fundación, ≈2-3 jornadas)
+## Fase 1 — Identidad + sesiones server ✅ COMPLETADA 2026-07-14
 
-- [ ] **1.1 Email de compra persistido**: webhook guarda `customer_details.email`
+Build OK (19 páginas). Migración 0010 aplicada. Rutas nuevas /cuenta y /mis-recorridos.
+
+- [x] **1.1 Email de compra persistido**: webhook guarda `customer_details.email`
       en purchases + entitlements.grant_email; `consent_collection: promotions`
       en el checkout y persistir el opt-in (transaccional ≠ marketing desde día 1).
-- [ ] **1.2 Login sin contraseña**: OTP de 6 dígitos por email (Supabase Auth);
+- [x] **1.2 Login sin contraseña**: OTP de 6 dígitos por email (Supabase Auth);
       botón "Mis recorridos" en el nav de la home; página /mis-recorridos:
       pendientes / terminadas / pasos totales.
-- [ ] **1.3 Merge de identidad (regla única)**: al verificar OTP → backfill de
+- [x] **1.3 Merge de identidad (regla única)**: al verificar OTP → backfill de
       user_id donde anon_id = dispositivo actual + claim de compras cross-device
       por grant_email. Persona = user_id si existe, si no anon_id.
-- [ ] **1.4 play_sessions server-side**: upsert por turno desde /api/play
+- [x] **1.4 play_sessions server-side**: upsert por turno desde /api/play
       (posición, fase, paywall_passed, total_turns, country, wind_down) +
       session_messages por turno (fire-and-forget) con tokens de usageMetadata
       (costo real por sesión consultable). Resume cross-device: server como
       fuente de posición; localStorage queda como caché de mensajes.
-- [ ] **1.5 Límite de turnos server-side** (desde play_sessions; deja de confiar
+- [x] **1.5 Límite de turnos server-side** (desde play_sessions; deja de confiar
       en el contador del cliente).
 
 ## Fase 2 — Plata (≈2 jornadas)
@@ -121,6 +123,6 @@ Migración **0009**: tabla `events` (+ índices) — la corre Mariano en el SQL 
 ## Estado de ejecución
 
 - **Fase 0**: ✅ completa (commits `76e8da1`..`b33a2c6`, 2026-07-14).
-- **Fase 1**: plan escrito en docs/superpowers/plans/2026-07-14-fase1-identidad.md;
-  EN EJECUCIÓN. Migraciones que crea: 0010 (consent + country + session_messages).
+- **Fase 1**: ✅ completa (commits hasta ~2026-07-14). Migración 0010 aplicada.
+  Próxima: Fase 2 (upsell, cupones Stripe, regalo, leads).
 - Todo en `main` local, sin deployar (el dueño pide subir solo a pedido explícito).
