@@ -74,7 +74,7 @@ export default async function Home() {
                 Nueva York · a pie · por chat
               </span>
               <h1 className="mt-5 text-[clamp(1.75rem,6.5vw,3.4rem)] font-semibold leading-[1.05] tracking-[-0.02em] text-white">
-                Caminá Nueva York con un local
+                Caminá Nueva York con Henry
               </h1>
               {/* hook en la voz de Henry (manuscrita) */}
               <p className="mt-2 font-hand text-[clamp(1.7rem,6vw,2.6rem)] leading-none text-brand">
