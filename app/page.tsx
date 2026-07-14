@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import CatalogGrid, { type Exp } from "@/components/CatalogGrid";
 import HeroChat from "@/components/HeroChat";
+import LeadCapture from "@/components/LeadCapture";
 import TrackView from "@/components/TrackView";
 
 export const dynamic = "force-dynamic";
@@ -102,6 +103,21 @@ export default async function Home() {
       <div className="mx-auto max-w-editorial px-5 sm:px-10">
         <CatalogGrid experiences={experiences} />
       </div>
+
+      {/* ===================== NOVEDADES (captura de leads) ===================== */}
+      <section className="border-t border-ink/10 bg-card">
+        <div className="mx-auto flex max-w-editorial flex-col gap-4 px-5 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-10">
+          <div className="max-w-md">
+            <h2 className="text-[20px] font-semibold tracking-tight text-ink">
+              ¿Todavía no venís a Nueva York?
+            </h2>
+            <p className="mt-1 text-[14px] leading-relaxed text-ink/55">
+              Dejame tu mail y te aviso cuando sume un recorrido nuevo. Sin spam, palabra de Henry.
+            </p>
+          </div>
+          <LeadCapture source="home" />
+        </div>
+      </section>
 
       {/* ===================== PIE ===================== */}
       <footer className="border-t border-ink/10">
