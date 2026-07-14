@@ -30,8 +30,8 @@ export default function CouponsEditor({ coupons }: { coupons: CouponView[] }) {
 
   function create() {
     const v = parseFloat(value);
-    if (!code.trim()) return setMsg({ kind: "err", text: "Poné un código." });
-    if (!Number.isFinite(v) || v <= 0) return setMsg({ kind: "err", text: "Poné un valor válido." });
+    if (!code.trim()) return setMsg({ kind: "err", text: "Pon un código." });
+    if (!Number.isFinite(v) || v <= 0) return setMsg({ kind: "err", text: "Pon un valor válido." });
     const expiresAt = expiry ? Math.floor(new Date(expiry + "T23:59:59").getTime() / 1000) : null;
     const maxRedemptions = maxRed ? parseInt(maxRed, 10) : null;
     start(async () => {

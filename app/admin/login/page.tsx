@@ -18,7 +18,7 @@ export default function LoginPage() {
     const sb = createClient();
     const { error } = await sb.auth.signInWithPassword({ email, password });
     if (error) {
-      setError("No pudimos entrar. Revisá el email y la contraseña.");
+      setError("No pudimos entrar. Revisa el email y la contraseña.");
       setLoading(false);
       return;
     }
@@ -35,7 +35,7 @@ export default function LoginPage() {
           </p>
           <h1 className="mt-2 text-2xl font-semibold text-white">Constructor</h1>
           <p className="mt-1 text-sm text-neutral-400">
-            Entrá para crear y editar experiencias.
+            Entra para crear y editar experiencias.
           </p>
         </div>
 
@@ -51,7 +51,7 @@ export default function LoginPage() {
               required
               autoComplete="email"
               className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-2.5 text-sm text-white outline-none placeholder:text-neutral-600 focus:border-indigo-400/60 focus:ring-2 focus:ring-indigo-500/20"
-              placeholder="vos@ejemplo.com"
+              placeholder="tu@ejemplo.com"
             />
           </div>
           <div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { ChatTurn } from "@/lib/types";
 import type { TourPhase } from "@/lib/engine/play-prompt";
 import { mapsDirUrl } from "@/lib/maps";
@@ -115,7 +114,6 @@ export default function PlayerChat({
   } | null;
   serverProgress?: { stopIndex: number; phase: string; totalTurns: number } | null;
 }) {
-  const router = useRouter();
   const LAST = stops.length - 1;
   const upsellCover = upsell?.coverPath
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/experience-covers/${upsell.coverPath}`
@@ -369,14 +367,7 @@ export default function PlayerChat({
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-[#F4F2EC]">
       {/* header */}
-      <header className="flex items-center gap-3 bg-night px-3 py-2.5 text-white">
-        <button
-          onClick={() => router.push(`/e/${slug}`)}
-          className="-ml-1 px-1 text-2xl leading-none text-white/70"
-          aria-label="Volver al recorrido"
-        >
-          ‹
-        </button>
+      <header className="flex items-center gap-3 bg-night px-4 py-2.5 text-white">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/henry.jpg" alt="Henry" className="h-9 w-9 rounded-full object-cover" />
         <div className="min-w-0 flex-1">

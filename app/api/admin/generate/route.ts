@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   const stepCount = Math.min(Math.max(2, Number(body.stepCount ?? 6)), 30);
   if (!title || story.length < 20) {
     return NextResponse.json(
-      { error: "Poné un título y un relato (al menos un par de frases)." },
+      { error: "Pon un título y un relato (al menos un par de frases)." },
       { status: 400 }
     );
   }
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   try {
     draft = await generateExperienceDraft({ title, story, stepCount, city: body.city });
   } catch {
-    return NextResponse.json({ error: "El generador se trabó. Probá de nuevo." }, { status: 502 });
+    return NextResponse.json({ error: "El generador se trabó. Inténtalo de nuevo." }, { status: 502 });
   }
 
   const slug = `${slugify(draft.slug || title)}-${crypto.randomUUID().slice(0, 4)}`;

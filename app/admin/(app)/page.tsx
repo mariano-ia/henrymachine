@@ -44,7 +44,7 @@ export default async function AdminDashboard() {
         <div className="rounded-2xl border border-dashed border-white/10 px-6 py-16 text-center">
           <p className="text-neutral-300">Todavía no creaste ninguna experiencia.</p>
           <p className="mt-1 text-sm text-neutral-500">
-            Escribí un relato en lenguaje natural y dejá que Henry arme el recorrido.
+            Escribe un relato en lenguaje natural y deja que Henry arme el recorrido.
           </p>
           <Link
             href="/admin/nuevo"

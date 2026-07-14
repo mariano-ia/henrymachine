@@ -258,13 +258,13 @@ function traduceDbError(msg: string): string {
   if (msg.includes("regalaria entera") || msg.includes("regalaría entera"))
     return "Una experiencia paga necesita su paso de paywall: sin él se regala entera.";
   if (msg.includes("contenido para vender"))
-    return "El paywall tiene que dejar al menos un paso pago detrás. Bajá el número de \"Gratis hasta el paso\".";
+    return "El paywall tiene que dejar al menos un paso pago detrás. Baja el número de \"Gratis hasta el paso\".";
   if (msg.includes("al menos 2 pasos"))
     return "Se necesitan al menos 2 pasos para poner un paywall.";
   if (msg.includes("estado invalido") || msg.includes("estado inválido"))
-    return "Una experiencia gratis no debe tener paywall. Poné un precio o quitá el paywall.";
+    return "Una experiencia gratis no debe tener paywall. Pon un precio o quita el paywall.";
   if (msg.includes("paywall"))
-    return "Revisá el paywall: una experiencia paga necesita un paso de paywall; una gratis no debe tener.";
-  if (msg.includes("arrival")) return "Hay paradas sin lugar/dirección. Completá el lugar de cada parada.";
+    return "Revisa el paywall: una experiencia paga necesita un paso de paywall; una gratis no debe tener.";
+  if (msg.includes("arrival")) return "Hay paradas sin lugar/dirección. Completa el lugar de cada parada.";
   return msg;
 }

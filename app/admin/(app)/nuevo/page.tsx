@@ -31,7 +31,7 @@ export default function NuevoPage() {
       }
       router.push(`/admin/e/${data.id}`);
     } catch {
-      setError("Error de red. Probá de nuevo.");
+      setError("Error de red. Prueba de nuevo.");
       setLoading(false);
     }
   }
@@ -43,7 +43,7 @@ export default function NuevoPage() {
       </Link>
       <h1 className="mt-3 text-xl font-semibold text-white">Nueva experiencia</h1>
       <p className="mt-1 text-sm text-neutral-500">
-        Escribí el recorrido en lenguaje natural. Henry lo convierte en pasos que después editás.
+        Escribe el recorrido en lenguaje natural. Henry lo convierte en pasos que después editas.
       </p>
 
       <form onSubmit={submit} className="mt-6 space-y-5">
@@ -78,7 +78,7 @@ export default function NuevoPage() {
           />
         </Field>
 
-        <Field label="El recorrido, contado por vos">
+        <Field label="El recorrido, contado por ti">
           <textarea
             value={story}
             onChange={(e) => setStory(e.target.value)}

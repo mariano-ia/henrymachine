@@ -181,7 +181,7 @@ export default function UtilitiesEditor({ rows }: { rows: UtilityRow[] }) {
 
   function add() {
     if (!draft.name.trim()) {
-      setMsg("Poné al menos un nombre.");
+      setMsg("Pon al menos un nombre.");
       return;
     }
     start(async () => {

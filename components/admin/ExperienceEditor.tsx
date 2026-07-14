@@ -236,7 +236,7 @@ export default function ExperienceEditor({
   function unpublish() {
     start(async () => {
       await unpublishExperience(experience.id);
-      setMsg({ kind: "ok", text: "Despublicada — ya podés editar." });
+      setMsg({ kind: "ok", text: "Despublicada — ya puedes editar." });
     });
   }
   // paradas de contenido: el paywall va después de una parada entre 1 y n-1
@@ -311,7 +311,7 @@ export default function ExperienceEditor({
 
       {published && (
         <p className="mb-4 rounded-lg bg-sky-500/10 px-3 py-2 text-sm text-sky-200">
-          Publicada y en vivo. Editá y tocá <span className="font-medium">Guardar</span>: los cambios
+          Publicada y en vivo. Edita y toca <span className="font-medium">Guardar</span>: los cambios
           se aplican al instante para quien la juegue.
         </p>
       )}
@@ -414,7 +414,7 @@ export default function ExperienceEditor({
             onChange={(e) => setHenryTip(e.target.value)}
             disabled={ro}
             className={`${ta} disabled:opacity-70`}
-            placeholder="Vení con hambre y zapatillas cómodas."
+            placeholder="Ven con hambre y zapatillas cómodas."
           />
         </div>
         <CoverSection experienceId={experience.id} coverPath={experience.cover_path} />
@@ -435,7 +435,7 @@ export default function ExperienceEditor({
         <h2 className="text-sm font-medium text-neutral-300">Al terminar</h2>
         <p className="text-xs text-neutral-500">
           Cuando el usuario termina este recorrido, Henry le ofrece el siguiente (con un
-          cupón si querés). Dejalo vacío para no ofrecer nada.
+          cupón si quieres). Déjalo vacío para no ofrecer nada.
         </p>
         <div>
           <span className="mb-1.5 block text-xs text-neutral-500">Siguiente experiencia</span>
@@ -678,7 +678,7 @@ export default function ExperienceEditor({
                     setFreeStops(k);
                     setMsg({
                       kind: "ok",
-                      text: `Paywall después de "${s.title || `parada ${k}`}". Tocá "Guardar" para aplicarlo.`,
+                      text: `Paywall después de "${s.title || `parada ${k}`}". Toca "Guardar" para aplicarlo.`,
                     });
                   }}
                   disabled={pending}
