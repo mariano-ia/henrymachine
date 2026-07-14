@@ -15,11 +15,11 @@ export default function GiftSentBanner({ title }: { title: string }) {
 
   return (
     <div className="mb-6 rotate-[-0.6deg] bg-brand p-5 shadow-lg" style={{ color: "#1A1A1A" }}>
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Nota de Henry · regalo enviado</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Nota de Henry · listo</p>
       <p className="mt-2 font-hand text-[24px] leading-tight">
-        ¡Golazo! Le regalaste “{title}” a {to}.
+        ¡Golazo! “{title}” quedó guardado para {to}.
         <br />
-        Le va a llegar cuando entre con ese email. — H.
+        Entrá con ese email en “Mis recorridos” y arrancás cuando quieras. — H.
       </p>
     </div>
   );
