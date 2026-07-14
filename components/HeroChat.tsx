@@ -1,68 +1,106 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Msg = { from: "henry" | "user"; text: string };
 
-// Charla de un recorrido EN CURSO (sin saludo): loopea con sentido y cualquier
-// mensaje se puede ver repetido. Henry habla en su voz peruana (tú, querubín).
-const SCRIPT: Msg[] = [
-  { from: "henry", text: "Dobla en la esquina, vas bien 👍" },
-  { from: "user", text: "¿Es la próxima cuadra o sigo derecho?" },
-  { from: "henry", text: "La próxima nomás. Cuando llegues, me avisas." },
-  { from: "user", text: "Listo, llegué a la del cartel rojo" },
-  { from: "henry", text: "Esa misma, querubín. Entra que ahí te atienden bien." },
-  { from: "henry", text: "Pídete un slice de pepperoni y seguimos tranquilos." },
-  { from: "user", text: "Riquísima, qué buen dato 🔥" },
-  { from: "henry", text: "Te dije 😄 Ahora cruzamos a un cafecito acá cerquita." },
-  { from: "henry", text: "Tómate tu tiempo, no hay apuro, choche." },
-  { from: "user", text: "Ya, vamos para el café" },
+// Guion de apertura: Henry explica el producto en pocos mensajes y termina
+// invitando a preguntar. Después de esto aparece el input (charla real, con IA).
+const INTRO: string[] = [
+  "¡Hola, querubín! Soy Henry 🤙",
+  "Te llevo a caminar Nueva York por chat: eliges un recorrido y yo te guío parada por parada, a tu ritmo.",
+  "La ciudad que no sale en las guías. Y me preguntas lo que quieras en el camino, como a un pata que conoce cada cuadra.",
+  "¿Y tú? Pregúntame algo antes de arrancar 👇",
 ];
 
-type Item = { id: number; msg: Msg; animate: boolean };
-const KEEP = 9;
+const MAX_USER_MSGS = 4; // teaser: solo unas preguntas
+const CAP_MSG =
+  "Jaja, por acá te doy solo un par de datos, querubín 😉 Lo bueno de verdad es caminando: elige un recorrido y seguimos toda la vuelta.";
+
+function humanDelay(len: number): number {
+  return Math.min(2600, Math.max(900, 500 + len * 18));
+}
 
 export default function HeroChat() {
-  const [items, setItems] = useState<Item[]>(() =>
-    [0, 1, 2].map((i) => ({ id: i, msg: SCRIPT[i], animate: false }))
-  );
-  const [typing, setTyping] = useState(false);
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [typing, setTyping] = useState(true);
+  const [ready, setReady] = useState(false); // terminó la intro → input habilitado
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [userCount, setUserCount] = useState(0);
+  const [capped, setCapped] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [msgs, typing]);
+
+  // reproducir la intro una vez, con "escribiendo…" entre mensajes
   useEffect(() => {
     let active = true;
     const timers: ReturnType<typeof setTimeout>[] = [];
-    const at = (d: number, fn: () => void) =>
-      timers.push(setTimeout(() => active && fn(), d));
-
-    let idx = 3;
-    let id = 3;
-    const add = (msg: Msg) =>
-      setItems((prev) => [...prev, { id: id++, msg, animate: true }].slice(-KEEP));
-
-    function step() {
-      const msg = SCRIPT[idx % SCRIPT.length];
-      idx += 1;
-      if (msg.from === "henry") {
-        setTyping(true);
-        at(1700, () => {
-          setTyping(false);
-          add(msg);
-          at(2600, step);
-        });
-      } else {
-        add(msg);
-        at(2400, step);
+    let i = 0;
+    const play = () => {
+      if (!active || i >= INTRO.length) {
+        if (active) { setTyping(false); setReady(true); }
+        return;
       }
-    }
-    at(2200, step);
+      setTyping(true);
+      const text = INTRO[i];
+      timers.push(
+        setTimeout(() => {
+          if (!active) return;
+          setMsgs((m) => [...m, { from: "henry", text }]);
+          setTyping(false);
+          i += 1;
+          timers.push(setTimeout(play, 550));
+        }, i === 0 ? 700 : 1500)
+      );
+    };
+    play();
     return () => {
       active = false;
       timers.forEach(clearTimeout);
     };
   }, []);
 
+  const send = useCallback(async () => {
+    const text = input.trim();
+    if (!text || sending || !ready || capped) return;
+    // tope de mensajes: al quinto intento, corte elegante
+    if (userCount >= MAX_USER_MSGS) {
+      setCapped(true);
+      setMsgs((m) => [...m, { from: "henry", text: CAP_MSG }]);
+      return;
+    }
+    setInput("");
+    const history = msgs.map((m) => ({ role: m.from, text: m.text }));
+    setMsgs((m) => [...m, { from: "user", text }]);
+    setUserCount((n) => n + 1);
+    setSending(true);
+    setTyping(true);
+    const started = Date.now();
+    let reply = "Uy, se me cruzaron los cables 😅 Pregúntame de nuevo.";
+    try {
+      const res = await fetch("/api/hero", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history }),
+      });
+      const d = await res.json();
+      if (d.reply) reply = d.reply;
+    } catch {
+      /* fallback */
+    }
+    const wait = humanDelay(reply.length) - (Date.now() - started);
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    setMsgs((m) => [...m, { from: "henry", text: reply }]);
+    setTyping(false);
+    setSending(false);
+  }, [input, sending, ready, capped, userCount, msgs]);
+
   return (
-    <div className="w-full max-w-[350px] overflow-hidden rounded-[1.6rem] border border-black/5 bg-[#F4F2EC] shadow-[0_30px_70px_-30px_rgba(0,0,0,0.7)]">
+    <div className="flex h-[420px] w-full max-w-[350px] flex-col overflow-hidden rounded-[1.6rem] border border-black/5 bg-[#F4F2EC] shadow-[0_30px_70px_-30px_rgba(0,0,0,0.7)]">
       {/* header oscuro, igual que el chat real */}
       <div className="flex items-center gap-3 bg-night px-4 py-3 text-white">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -76,24 +114,62 @@ export default function HeroChat() {
         </div>
       </div>
 
-      {/* cuerpo: stream continuo (lo viejo se va por arriba) */}
-      <div className="flex h-[292px] flex-col justify-end gap-2 overflow-hidden px-3.5 py-4">
-        {items.map((it) => (
-          <Bubble key={it.id} from={it.msg.from} text={it.msg.text} animate={it.animate} />
+      {/* cuerpo */}
+      <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-3.5 py-4">
+        {msgs.map((m, i) => (
+          <Bubble key={i} from={m.from} text={m.text} />
         ))}
         {typing && <Typing />}
       </div>
+
+      {/* pie: CTA al capear, o input */}
+      {capped ? (
+        <div className="border-t border-black/5 bg-white/60 px-3 py-3">
+          <a
+            href="#recorridos"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-brand-dark"
+          >
+            Ver los recorridos <span aria-hidden>↓</span>
+          </a>
+        </div>
+      ) : (
+        <div className="flex items-end gap-2 border-t border-black/5 bg-white/60 px-2.5 py-2.5">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            disabled={!ready || sending}
+            placeholder={ready ? "Escríbele a Henry…" : "Henry está escribiendo…"}
+            className="min-w-0 flex-1 rounded-full bg-[#F0EEE7] px-4 py-2.5 text-[14px] text-ink outline-none placeholder:text-ink/40 disabled:opacity-60"
+          />
+          <button
+            onClick={send}
+            disabled={!ready || sending || !input.trim()}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-white transition active:scale-95 disabled:opacity-40"
+            aria-label="Enviar"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-function Bubble({ from, text, animate }: Msg & { animate: boolean }) {
+function Bubble({ from, text }: Msg) {
   const henry = from === "henry";
   return (
-    <div className={(animate ? "henry-bubble " : "") + "flex " + (henry ? "justify-start" : "justify-end")}>
+    <div className={"henry-bubble flex " + (henry ? "justify-start" : "justify-end")}>
       <div
         className={
-          "max-w-[80%] px-3.5 py-2 text-[13px] leading-snug shadow-bubble " +
+          "max-w-[82%] px-3.5 py-2 text-[13px] leading-snug shadow-bubble " +
           (henry
             ? "rounded-2xl rounded-bl-sm bg-white text-ink"
             : "rounded-2xl rounded-br-sm bg-brand text-white")

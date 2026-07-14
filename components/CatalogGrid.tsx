@@ -111,13 +111,13 @@ export default function CatalogGrid({ experiences }: { experiences: Exp[] }) {
         </button>
       </div>
 
-      {/* ---- GRILLA (mobile: 1 col horizontal · desktop: 4 col vertical) ---- */}
+      {/* ---- GRILLA (mobile: 1 col · desktop: 3 col; la 4ª col es la sidebar) ---- */}
       {filtered.length === 0 ? (
         <p className="py-16 text-center text-[15px] text-ink/45">
           Henry todavía no tiene un recorrido con esos filtros.
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
           {filtered.map((e) => {
             const ti = themeInfo(e.theme);
             const free = !e.price_cents || e.price_cents === 0;

@@ -6,7 +6,7 @@ import HeroChat from "@/components/HeroChat";
 import LeadCapture from "@/components/LeadCapture";
 import Leaderboard from "@/components/Leaderboard";
 import TrackView from "@/components/TrackView";
-import { getCountryLeaderboard } from "@/lib/db/leaderboard";
+import { getCountryLeaderboard, SAMPLE_LEADERBOARD } from "@/lib/db/leaderboard";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,11 @@ export default async function Home() {
     )
     .order("published_at", { ascending: false });
   const experiences = (data ?? []) as Exp[];
-  const leaderboard = await getCountryLeaderboard(10);
+  const realLeaderboard = await getCountryLeaderboard(10);
+  // mientras no haya recorridos terminados reales, mostramos datos de ejemplo
+  // (marcados como tales) para que se vea el diseño del ranking.
+  const leaderboard = realLeaderboard.length ? realLeaderboard : SAMPLE_LEADERBOARD;
+  const leaderboardIsSample = realLeaderboard.length === 0;
 
   return (
     <main className="henry-home min-h-[100dvh] overflow-x-hidden bg-paper text-ink antialiased">
@@ -84,13 +88,19 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ===================== CATÁLOGO ===================== */}
-      <div className="mx-auto max-w-editorial px-5 sm:px-10">
-        <CatalogGrid experiences={experiences} />
+      {/* ===================== CATÁLOGO + RANKING (sidebar) ===================== */}
+      <div id="recorridos" className="mx-auto max-w-editorial px-5 sm:px-10">
+        <div className="grid gap-8 lg:grid-cols-4 lg:gap-10">
+          <div className="lg:col-span-3">
+            <CatalogGrid experiences={experiences} />
+          </div>
+          <aside className="lg:col-span-1 lg:pt-[88px]">
+            <div className="lg:sticky lg:top-6">
+              <Leaderboard rows={leaderboard} sample={leaderboardIsSample} />
+            </div>
+          </aside>
+        </div>
       </div>
-
-      {/* ===================== TOP10 PAÍSES ===================== */}
-      <Leaderboard rows={leaderboard} />
 
       {/* ===================== NOVEDADES (captura de leads) ===================== */}
       <section className="border-t border-ink/10 bg-card">
