@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Schibsted_Grotesk, Caveat, Oswald } from "next/font/google";
+import { Schibsted_Grotesk, Caveat, Roboto_Condensed } from "next/font/google";
 import "./globals.css";
 
 // UI / sistema: grotesca con carácter (jerarquía por pesos).
@@ -18,10 +18,10 @@ const hand = Caveat({
   display: "swap",
 });
 
-// Condensada, se conserva para las vistas viejas (/demo).
-const oswald = Oswald({
+// Condensada: el logo ("LA NUEVA YORK DE HENRY") y display. Reemplaza a Oswald.
+const condensed = Roboto_Condensed({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["500", "700", "800"],
   variable: "--font-condensed",
   display: "swap",
 });
@@ -46,7 +46,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${sans.variable} ${hand.variable} ${oswald.variable}`}
+      className={`${sans.variable} ${hand.variable} ${condensed.variable}`}
     >
       <body>{children}</body>
     </html>

@@ -109,9 +109,13 @@ export default async function DetailPage({
       {/* ---- barra superior ---- */}
       <header className="bg-night text-white">
         <div className="mx-auto flex max-w-editorial items-center justify-between px-5 py-4 sm:px-10">
-          <Link href="/" className="text-[14px] font-semibold tracking-tight text-white">
-            La Nueva York de Henry{" "}
-            <span className="hidden font-normal text-white/40 sm:inline">by Resilentos</span>
+          <Link href="/" className="block leading-none">
+            <span className="block font-condensed text-[18px] font-bold uppercase tracking-[0.03em] text-white sm:text-[20px]">
+              La Nueva York de Henry
+            </span>
+            <span className="mt-0.5 block font-hand text-[15px] leading-none text-white/75">
+              by Resilentos
+            </span>
           </Link>
           <Link href="/" className="text-[13px] font-medium text-white/55 transition-colors hover:text-white">
             ← Volver
@@ -291,8 +295,13 @@ export default async function DetailPage({
       {/* ---- pie ---- */}
       <footer className="hidden border-t border-ink/10 lg:block">
         <div className="mx-auto flex max-w-editorial items-center justify-between px-5 py-8 sm:px-10">
-          <p className="text-[14px] font-semibold tracking-tight">
-            La Nueva York de Henry <span className="font-normal text-ink/45">by Resilentos</span>
+          <p className="leading-none">
+            <span className="block font-condensed text-[17px] font-bold uppercase tracking-[0.03em] text-ink">
+              La Nueva York de Henry
+            </span>
+            <span className="mt-0.5 block font-hand text-[15px] leading-none text-ink/55">
+              by Resilentos
+            </span>
           </p>
           <Link href="/" className="text-[13px] font-medium text-ink/45 transition-colors hover:text-ink">
             Ver todos los recorridos
