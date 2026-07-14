@@ -171,17 +171,18 @@ export async function saveExperience(input: {
 
 export async function setCover(input: {
   experienceId: string;
-  path: string | null; // null = quitar portada
+  path: string | null; // null = quitar la imagen
   oldPath: string | null;
+  field?: "cover_path" | "card_image_path"; // portada del detalle (default) o card cuadrada
 }): Promise<{ ok: boolean; error?: string }> {
   const sb = await createClient();
+  const field = input.field ?? "cover_path";
   if (input.path && !input.path.startsWith(`${input.experienceId}/`)) {
-    return { ok: false, error: "Ruta de portada inválida." };
+    return { ok: false, error: "Ruta de imagen inválida." };
   }
-  const { error } = await sb
-    .from("experiences")
-    .update({ cover_path: input.path })
-    .eq("id", input.experienceId);
+  const patch =
+    field === "card_image_path" ? { card_image_path: input.path } : { cover_path: input.path };
+  const { error } = await sb.from("experiences").update(patch).eq("id", input.experienceId);
   if (error) return { ok: false, error: traduceDbError(error.message) };
   if (input.oldPath && input.oldPath !== input.path) {
     await createAdminClient().storage.from("experience-covers").remove([input.oldPath]);

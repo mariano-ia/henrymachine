@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import ThemeBadge from "@/components/ThemeBadge";
 import { themeInfo } from "@/lib/themes";
+import { fmtSteps } from "@/lib/steps";
 
 export type Exp = {
   id: string;
@@ -18,6 +19,7 @@ export type Exp = {
   price_cents: number | null;
   stops_count: number | null;
   cover_path: string | null;
+  card_image_path: string | null;
 };
 
 const ALL = "__all__";
@@ -34,10 +36,6 @@ function fmtDuration(min: number | null): string {
   if (m === 0) return `${h} h`;
   return `${h} h ${m} min`;
 }
-function fmtDistance(m: number | null): string {
-  if (!m) return "—";
-  return `${(m / 1000).toFixed(1).replace(".", ",")} km`;
-}
 function priceLabel(cents: number | null): string {
   return !cents || cents === 0 ? "Gratis" : `$${(cents / 100).toFixed(2)}`;
 }
@@ -46,7 +44,7 @@ const uniq = (vals: (string | null)[]) => [...new Set(vals.filter(Boolean) as st
 function Meta({ e }: { e: Exp }) {
   const bits = [
     fmtDuration(e.expected_minutes),
-    fmtDistance(e.distance_m),
+    fmtSteps(e.distance_m),
     e.neighborhood ?? e.city,
   ].filter(Boolean);
   return (
@@ -124,7 +122,8 @@ export default function CatalogGrid({ experiences }: { experiences: Exp[] }) {
           {filtered.map((e) => {
             const ti = themeInfo(e.theme);
             const free = !e.price_cents || e.price_cents === 0;
-            const cover = coverUrl(e.cover_path);
+            // la card prefiere su imagen cuadrada; si no, el cover del detalle
+            const cover = coverUrl(e.card_image_path ?? e.cover_path);
             return (
               <Link
                 key={e.id}

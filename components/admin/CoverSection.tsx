@@ -11,13 +11,19 @@ function publicUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/experience-covers/${path}`;
 }
 
-/** Portada del hero de la experiencia (imagen o video), bucket público. */
+/** Portada del hero (imagen/video) o imagen cuadrada de card, bucket público. */
 export default function CoverSection({
   experienceId,
   coverPath,
+  field = "cover_path",
+  label = "Portada del hero (imagen o video)",
+  imageOnly = false,
 }: {
   experienceId: string;
   coverPath: string | null;
+  field?: "cover_path" | "card_image_path";
+  label?: string;
+  imageOnly?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -26,8 +32,11 @@ export default function CoverSection({
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
-      setErr("Solo imagen o video.");
+    const okType = imageOnly
+      ? file.type.startsWith("image/")
+      : file.type.startsWith("image/") || file.type.startsWith("video/");
+    if (!okType) {
+      setErr(imageOnly ? "Solo imagen." : "Solo imagen o video.");
       return;
     }
     setBusy(true);
@@ -43,8 +52,8 @@ export default function CoverSection({
       setBusy(false);
       return;
     }
-    const r = await setCover({ experienceId, path, oldPath: coverPath });
-    if (!r.ok) setErr(r.error ?? "Error al guardar la portada.");
+    const r = await setCover({ experienceId, path, oldPath: coverPath, field });
+    if (!r.ok) setErr(r.error ?? "Error al guardar la imagen.");
     setBusy(false);
     e.target.value = "";
     router.refresh();
@@ -54,17 +63,15 @@ export default function CoverSection({
     if (!coverPath || busy) return;
     setBusy(true);
     setErr(null);
-    const r = await setCover({ experienceId, path: null, oldPath: coverPath });
-    if (!r.ok) setErr(r.error ?? "Error al quitar la portada.");
+    const r = await setCover({ experienceId, path: null, oldPath: coverPath, field });
+    if (!r.ok) setErr(r.error ?? "Error al quitar la imagen.");
     setBusy(false);
     router.refresh();
   }
 
   return (
     <div>
-      <span className="mb-1.5 block text-xs text-neutral-500">
-        Portada del hero (imagen o video)
-      </span>
+      <span className="mb-1.5 block text-xs text-neutral-500">{label}</span>
       <div className="flex items-center gap-3">
         {coverPath ? (
           isVideoCover(coverPath) ? (
@@ -94,7 +101,7 @@ export default function CoverSection({
             {busy ? "Subiendo…" : coverPath ? "Cambiar" : "Subir"}
             <input
               type="file"
-              accept="image/*,video/*"
+              accept={imageOnly ? "image/*" : "image/*,video/*"}
               onChange={onFile}
               disabled={busy}
               className="hidden"

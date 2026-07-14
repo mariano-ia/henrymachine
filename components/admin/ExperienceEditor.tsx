@@ -41,6 +41,7 @@ type Experience = {
   distance_m: number | null;
   henry_tip: string | null;
   cover_path: string | null;
+  card_image_path: string | null;
   upsell_experience_id: string | null;
   upsell_message: string | null;
   upsell_promo_code: string | null;
@@ -417,6 +418,13 @@ export default function ExperienceEditor({
           />
         </div>
         <CoverSection experienceId={experience.id} coverPath={experience.cover_path} />
+        <CoverSection
+          experienceId={experience.id}
+          coverPath={experience.card_image_path}
+          field="card_image_path"
+          label="Imagen de la card (cuadrada, solo imagen)"
+          imageOnly
+        />
         <p className="text-xs text-neutral-600">
           /{experience.slug} · la cantidad de paradas se calcula sola desde los pasos
         </p>

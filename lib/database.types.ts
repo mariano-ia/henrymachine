@@ -137,7 +137,7 @@ export type Database = {
     }
     Views: {
       experiences_public: {
-        Row: { city: string | null; cover_path: string | null; currency: string | null; distance_m: number | null; expected_minutes: number | null; id: string | null; language: string | null; neighborhood: string | null; paywall_position: number | null; pitch: string | null; price_cents: number | null; published_at: string | null; slug: string | null; stops_count: number | null; theme: string | null; title: string | null }
+        Row: { card_image_path: string | null; city: string | null; cover_path: string | null; currency: string | null; distance_m: number | null; expected_minutes: number | null; id: string | null; language: string | null; neighborhood: string | null; paywall_position: number | null; pitch: string | null; price_cents: number | null; published_at: string | null; slug: string | null; stops_count: number | null; theme: string | null; title: string | null }
         Relationships: []
       }
     }

@@ -7,6 +7,7 @@ import GiftSentBanner from "@/components/GiftSentBanner";
 import ThemeBadge from "@/components/ThemeBadge";
 import TrackView from "@/components/TrackView";
 import { themeInfo } from "@/lib/themes";
+import { metersToSteps } from "@/lib/steps";
 
 export const dynamic = "force-dynamic";
 const STAR = "#D89A34";
@@ -197,7 +198,11 @@ export default async function DetailPage({
         {/* ---- stats strip ---- */}
         <div className="mt-8 flex flex-wrap gap-x-8 gap-y-4 rounded-2xl border border-ink/10 bg-card px-5 py-4 shadow-card">
           <Stat label="Duración" value={fmtDuration(exp.expectedMinutes)} icon={<Clock />} />
-          <Stat label="Caminata" value={fmtDistance(exp.distanceM)} icon={<Route />} />
+          <Stat
+            label={exp.distanceM ? `Pasos · ${fmtDistance(exp.distanceM)}` : "Pasos"}
+            value={metersToSteps(exp.distanceM)?.toLocaleString("es-AR") ?? "—"}
+            icon={<Route />}
+          />
           <Stat label="Paradas" value={String(exp.stopsCount)} icon={<PinIco />} />
         </div>
 

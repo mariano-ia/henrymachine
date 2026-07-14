@@ -12,7 +12,7 @@ export default async function Home() {
   const { data } = await sb
     .from("experiences_public")
     .select(
-      "id, slug, title, city, neighborhood, theme, pitch, expected_minutes, distance_m, price_cents, stops_count, cover_path"
+      "id, slug, title, city, neighborhood, theme, pitch, expected_minutes, distance_m, price_cents, stops_count, cover_path, card_image_path"
     )
     .order("published_at", { ascending: false });
   const experiences = (data ?? []) as Exp[];
