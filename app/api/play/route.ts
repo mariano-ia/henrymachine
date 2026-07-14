@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPlayableExperience } from "@/lib/db/experiences";
 import { getGlobalPersona } from "@/lib/db/persona";
+import { getUtilitiesBlock } from "@/lib/db/utilities";
 import { buildPlaySystemInstruction, type TourPhase } from "@/lib/engine/play-prompt";
 import { tourReply } from "@/lib/gemini";
 import type { ChatTurn } from "@/lib/types";
@@ -28,9 +29,10 @@ export async function POST(req: NextRequest) {
     if (!slug) return NextResponse.json({ error: "Falta la experiencia." }, { status: 400 });
     if (!message) return NextResponse.json({ error: "Escribí un mensaje." }, { status: 400 });
 
-    const [exp, persona] = await Promise.all([
+    const [exp, persona, utilities] = await Promise.all([
       getPlayableExperience(slug, body.anonId),
       getGlobalPersona(),
+      getUtilitiesBlock(),
     ]);
     if (!exp || exp.stops.length === 0) {
       return NextResponse.json({ error: "Experiencia no disponible." }, { status: 404 });
@@ -49,6 +51,7 @@ export async function POST(req: NextRequest) {
       turnsInStop: Math.max(0, Number(body.turnsInStop ?? 0)),
       nudge: body.nudge === true,
       persona,
+      utilities,
     });
 
     const result = await tourReply({

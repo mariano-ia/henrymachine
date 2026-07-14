@@ -16,6 +16,8 @@ export function buildPlaySystemInstruction(opts: {
   nudge?: boolean;
   /** Dossier global de Henry (bio + perfil de voz destilados de sus videos). */
   persona?: { bio: string | null; voice: string | null } | null;
+  /** Guía útil global (baños, agua, transporte...) — bloque ya formateado. */
+  utilities?: string | null;
 }): string {
   const { stops, grounding, stopIndex, phase, turnsInStop, nudge } = opts;
   const stop = stops[stopIndex];
@@ -84,6 +86,14 @@ ${phaseBlock}
 SALIDA: devolvé EXCLUSIVAMENTE un JSON válido:
 {"reply": "tu mensaje como Henry", "intent": "<arrived | next | pause | resume | finish | question | chat | none>"}
 
-=== ITINERARIO (tu único conocimiento del RECORRIDO) ===
+${
+  opts.utilities
+    ? `=== GUÍA ÚTIL DE LA CIUDAD (para pedidos prácticos: baño, agua, wifi, metro, plata, emergencias) ===
+${opts.utilities}
+Cómo usarla: si piden algo práctico, recomendá lo más útil según dónde están (conocés la parada actual; priorizá ítems de esa zona, los generales valen siempre). Si nada aplica cerca, decilo honesto y da el consejo general de la categoría. Preguntá "¿por dónde andas?" SOLO si de verdad no tenés contexto. No inventes lugares que no estén en esta guía o en el itinerario.
+
+`
+    : ""
+}=== ITINERARIO (tu único conocimiento del RECORRIDO) ===
 ${grounding}`;
 }

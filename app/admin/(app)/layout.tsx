@@ -28,14 +28,24 @@ export default async function AdminAppLayout({
     <div className="min-h-[100dvh] bg-neutral-950">
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href="/admin" className="flex items-center gap-2">
-            <span className="font-semibold tracking-tight text-white">
-              Henry Machine
-            </span>
-            <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-neutral-400">
-              Constructor
-            </span>
-          </Link>
+          <div className="flex items-center gap-5">
+            <Link href="/admin" className="flex items-center gap-2">
+              <span className="font-semibold tracking-tight text-white">
+                Henry Machine
+              </span>
+              <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-neutral-400">
+                Constructor
+              </span>
+            </Link>
+            <nav className="flex items-center gap-4 text-sm text-neutral-400">
+              <Link href="/admin" className="transition hover:text-white">
+                Experiencias
+              </Link>
+              <Link href="/admin/utilidades" className="transition hover:text-white">
+                Guía útil
+              </Link>
+            </nav>
+          </div>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-neutral-500 sm:inline">
               {user.email}
