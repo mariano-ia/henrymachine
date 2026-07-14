@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,11 @@ export async function POST(req: NextRequest) {
   const anonId = typeof body.anonId === "string" ? body.anonId : "";
   if (!slug || anonId.length < 24) {
     return NextResponse.json({ error: "Datos inválidos." }, { status: 400 });
+  }
+
+  const okCheckout = await rateLimit(req, "checkout", anonId, 3600, 10);
+  if (!okCheckout) {
+    return NextResponse.json({ error: "Demasiados intentos. Probá en un rato." }, { status: 429 });
   }
 
   const sb = createAdminClient();

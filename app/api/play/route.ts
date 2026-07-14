@@ -5,6 +5,7 @@ import { getUtilitiesBlock } from "@/lib/db/utilities";
 import { getStopHoursLine } from "@/lib/places";
 import { buildPlaySystemInstruction, type TourPhase } from "@/lib/engine/play-prompt";
 import { tourReply } from "@/lib/gemini";
+import { rateLimit } from "@/lib/rate-limit";
 import type { ChatTurn } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -40,6 +41,17 @@ export async function POST(req: NextRequest) {
       typeof body.message === "string" ? body.message.trim().slice(0, 1200) : "";
     if (!slug) return NextResponse.json({ error: "Falta la experiencia." }, { status: 400 });
     if (!message) return NextResponse.json({ error: "Escribí un mensaje." }, { status: 400 });
+
+    // rate limit: 20 msg/min y 400/día por anonId+IP
+    const anonIdForRl = typeof body.anonId === "string" ? body.anonId : null;
+    const okMin = await rateLimit(req, "play-m", anonIdForRl, 60, 20);
+    const okDay = await rateLimit(req, "play-d", anonIdForRl, 86400, 400);
+    if (!okMin || !okDay) {
+      return NextResponse.json(
+        { reply: "Uy, me están llegando mensajes muy rápido 😅 dame un minutito y seguimos, ¿ya?", intent: "none" },
+        { status: 429 }
+      );
+    }
 
     // límite duro: despedida cálida SIN llamar al modelo
     const totalTurns = Math.max(0, Number(body.totalTurns ?? 0));

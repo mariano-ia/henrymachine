@@ -149,6 +149,10 @@ export type Database = {
         Args: { p_exp: string }
         Returns: Database["public"]["Tables"]["steps"]["Row"][]
       }
+      rl_hit: {
+        Args: { p_key: string; p_window_secs: number; p_max: number }
+        Returns: boolean
+      }
     }
     Enums: {
       content_source_kind: "youtube" | "pdf" | "url" | "text" | "video_file"
