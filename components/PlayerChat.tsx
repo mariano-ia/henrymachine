@@ -89,6 +89,7 @@ export default function PlayerChat({
   locked,
   priceCents,
   paywallMessage,
+  serverProgress,
 }: {
   slug: string;
   anonId: string;
@@ -100,6 +101,7 @@ export default function PlayerChat({
   locked: boolean;
   priceCents: number;
   paywallMessage: string | null;
+  serverProgress?: { stopIndex: number; phase: string; totalTurns: number } | null;
 }) {
   const LAST = stops.length - 1;
 
@@ -145,8 +147,22 @@ export default function PlayerChat({
   // PlayerChat solo monta en el cliente (PlayerLoader lo gatea tras el fetch),
   // así que acá localStorage está disponible.
   const [saved] = useState<SavedPlay | null>(() => loadSaved(slug, stops.length, locked));
+  // reanudar desde el SERVER (otro dispositivo): solo si no hay guardado local
+  // —que tiene el historial completo— y el server marca una parada avanzada.
+  const [serverResume] = useState<State | null>(() => {
+    if (saved || !serverProgress) return null;
+    const { stopIndex, phase, totalTurns } = serverProgress;
+    if (stopIndex <= 0 || stopIndex >= stops.length) return null;
+    const ph: TourPhase = (["CAMINANDO", "EN_PARADA", "EN_PAUSA"] as const).includes(
+      phase as TourPhase
+    )
+      ? (phase as TourPhase)
+      : "CAMINANDO";
+    return { stopIndex, phase: ph, turnsInStop: 0, totalTurns, prevPhase: "CAMINANDO", status: "EN_CURSO" };
+  });
   const [messages, setMessages] = useState<Message[]>(() => {
     if (saved) return [...saved.messages, resumeGreeting(saved.tour, stops)];
+    if (serverResume) return [resumeGreeting(serverResume, stops)];
     const init: Message[] = [{ role: "henry", text: openingMessage, time: now() }];
     // media del paso de apertura (ej. audio de bienvenida de Henry)
     if (openingMedia?.length) init.push({ role: "henry", text: "", time: now(), media: openingMedia });
@@ -154,7 +170,8 @@ export default function PlayerChat({
   });
   const [tour, setTour] = useState<State>(
     () =>
-      saved?.tour ?? {
+      saved?.tour ??
+      serverResume ?? {
         stopIndex: 0,
         phase: "CAMINANDO",
         turnsInStop: 0,

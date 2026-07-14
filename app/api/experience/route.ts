@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPlayableExperience } from "@/lib/db/experiences";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,29 @@ export async function POST(req: NextRequest) {
 
   const exp = await getPlayableExperience(slug, body.anonId);
   if (!exp) return NextResponse.json({ error: "No disponible." }, { status: 404 });
+
+  // progreso server-side (reanudar cross-device): la sesión EN_CURSO de este anon.
+  let serverProgress: { stopIndex: number; phase: string; totalTurns: number } | null = null;
+  if (typeof body.anonId === "string" && body.anonId.length >= 24) {
+    try {
+      const { data: sess } = await createAdminClient()
+        .from("play_sessions")
+        .select("current_step_position, phase, total_turns")
+        .eq("experience_id", exp.id)
+        .eq("anon_id", body.anonId)
+        .eq("status", "EN_CURSO")
+        .maybeSingle();
+      if (sess) {
+        serverProgress = {
+          stopIndex: Math.max(0, (sess.current_step_position ?? 1) - 1),
+          phase: sess.phase,
+          totalTurns: sess.total_turns ?? 0,
+        };
+      }
+    } catch {
+      /* sin progreso server: el cliente usa su localStorage */
+    }
+  }
 
   // subset CLIENT-SAFE (sin grounding ni proposal — eso queda server-side en /api/play)
   return NextResponse.json({
@@ -26,5 +50,6 @@ export async function POST(req: NextRequest) {
     locked: exp.locked,
     priceCents: exp.priceCents,
     paywallMessage: exp.paywallMessage,
+    serverProgress,
   });
 }

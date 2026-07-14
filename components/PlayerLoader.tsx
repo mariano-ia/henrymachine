@@ -15,6 +15,7 @@ type Data = {
   locked: boolean;
   priceCents: number;
   paywallMessage: string | null;
+  serverProgress: { stopIndex: number; phase: string; totalTurns: number } | null;
 };
 
 function Centered({ children }: { children: React.ReactNode }) {
