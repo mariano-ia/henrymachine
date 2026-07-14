@@ -5,7 +5,7 @@ import type { ChatTurn } from "@/lib/types";
 import type { TourPhase } from "@/lib/engine/play-prompt";
 import { mapsDirUrl } from "@/lib/maps";
 import type { PlayMedia } from "@/lib/db/experiences";
-import { track } from "@/lib/track";
+import { track, getUtm } from "@/lib/track";
 
 type StopMeta = { title: string; placeQuery: string | null; media: PlayMedia[] };
 type Message = {
@@ -315,7 +315,7 @@ export default function PlayerChat({
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, anonId }),
+        body: JSON.stringify({ slug, anonId, utm: getUtm() }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;

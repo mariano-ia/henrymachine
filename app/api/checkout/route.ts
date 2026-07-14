@@ -6,9 +6,10 @@ import { rateLimit } from "@/lib/rate-limit";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  const body = (await req.json()) as { slug?: string; anonId?: string };
+  const body = (await req.json()) as { slug?: string; anonId?: string; utm?: Record<string, string> };
   const slug = typeof body.slug === "string" ? body.slug : "";
   const anonId = typeof body.anonId === "string" ? body.anonId : "";
+  const utm = (body as { utm?: Record<string, string> }).utm ?? {};
   if (!slug || anonId.length < 24) {
     return NextResponse.json({ error: "Datos inválidos." }, { status: 400 });
   }
@@ -68,6 +69,9 @@ export async function POST(req: NextRequest) {
         experience_id: exp.id,
         anon_id: anonId,
         purchase_id: purchase?.id ?? "",
+        utm_source: (utm.utm_source ?? "").slice(0, 100),
+        utm_medium: (utm.utm_medium ?? "").slice(0, 100),
+        utm_campaign: (utm.utm_campaign ?? "").slice(0, 100),
       },
       success_url: `${origin}/e/${slug}/chat?purchased=1`,
       cancel_url: `${origin}/e/${slug}`,

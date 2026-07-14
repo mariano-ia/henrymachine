@@ -84,6 +84,9 @@ export async function POST(req: NextRequest) {
         currency: s.currency ?? "usd",
         status: "paid",
         stripe_session_id: s.id,
+        utm_source: s.metadata?.utm_source || null,
+        utm_medium: s.metadata?.utm_medium || null,
+        utm_campaign: s.metadata?.utm_campaign || null,
       });
       if (saleErr && !isDup(saleErr)) return new NextResponse("db sales", { status: 500 });
     }

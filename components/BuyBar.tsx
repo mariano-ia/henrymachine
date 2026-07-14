@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { track } from "@/lib/track";
+import { track, getUtm } from "@/lib/track";
 
 function fmtPrice(cents: number): string {
   return !cents || cents === 0 ? "Gratis" : `$${(cents / 100).toFixed(2)}`;
@@ -51,7 +51,7 @@ export default function BuyBar({
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, anonId }),
+        body: JSON.stringify({ slug, anonId, utm: getUtm() }),
       });
       const d = await res.json();
       if (d.url) window.location.href = d.url;
