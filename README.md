@@ -118,6 +118,9 @@ Costos LLM medidos: ingesta del dossier ~US$0,02; experiencia jugada
 
 ## Pendientes conocidos
 
+- Campo de imagen CUADRADA propia para la card de la home (`card_image_path`,
+  migración 0008 + campo en admin). Hoy la card reusa el cover del detalle;
+  las fotos actuales son placeholders de Wikimedia Commons hasta tener las de Henry.
 - Editor del dossier en el admin (hoy se regenera por script).
 - Flag "paso oculto" para redactar paradas en publicadas sin que se vean al instante.
 - Pasos *Mensaje* intermedios no se narran en el player.

@@ -10,15 +10,24 @@ export default async function Home() {
   const { data } = await sb
     .from("experiences_public")
     .select(
-      "id, slug, title, city, neighborhood, theme, pitch, expected_minutes, distance_m, price_cents, stops_count"
+      "id, slug, title, city, neighborhood, theme, pitch, expected_minutes, distance_m, price_cents, stops_count, cover_path"
     )
     .order("published_at", { ascending: false });
   const experiences = (data ?? []) as Exp[];
 
   return (
     <main className="henry-home min-h-[100dvh] overflow-x-hidden bg-paper text-ink antialiased">
-      {/* ===================== HERO (ciudad de noche) ===================== */}
+      {/* ===================== HERO (skyline al atardecer) ===================== */}
       <section className="henry-grain relative overflow-hidden bg-night text-white">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hero_background.jpg"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover object-[center_30%]"
+        />
+        {/* velo para legibilidad: más oscuro donde vive el texto */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/55 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/25" />
         <div className="relative z-10 mx-auto max-w-editorial px-5 sm:px-10">
           {/* NAV */}
           <header className="flex items-center justify-between py-5">

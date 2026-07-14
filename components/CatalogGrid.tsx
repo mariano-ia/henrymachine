@@ -17,10 +17,15 @@ export type Exp = {
   distance_m: number | null;
   price_cents: number | null;
   stops_count: number | null;
+  cover_path: string | null;
 };
 
 const ALL = "__all__";
 
+function coverUrl(path: string | null): string | null {
+  if (!path) return null;
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/experience-covers/${path}`;
+}
 function fmtDuration(min: number | null): string {
   if (!min) return "—";
   const h = Math.floor(min / 60);
@@ -37,63 +42,6 @@ function priceLabel(cents: number | null): string {
   return !cents || cents === 0 ? "Gratis" : `$${(cents / 100).toFixed(2)}`;
 }
 const uniq = (vals: (string | null)[]) => [...new Set(vals.filter(Boolean) as string[])];
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors " +
-        (active
-          ? "bg-ink text-paper"
-          : "border border-ink/15 text-ink/70 hover:border-ink/40 hover:text-ink")
-      }
-    >
-      {children}
-    </button>
-  );
-}
-
-function FilterRow({
-  label,
-  value,
-  options,
-  onChange,
-  withBadge = false,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (v: string) => void;
-  withBadge?: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="w-12 shrink-0 text-[10px] font-semibold uppercase tracking-label text-ink/40">
-        {label}
-      </span>
-      <div className="flex flex-1 gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <Chip active={value === ALL} onClick={() => onChange(ALL)}>
-          Todos
-        </Chip>
-        {options.map((o) => (
-          <Chip key={o} active={value === o} onClick={() => onChange(o)}>
-            {withBadge && <ThemeBadge theme={o} size={16} />}
-            {o}
-          </Chip>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function Meta({ e }: { e: Exp }) {
   const bits = [
@@ -115,35 +63,56 @@ function Meta({ e }: { e: Exp }) {
 
 export default function CatalogGrid({ experiences }: { experiences: Exp[] }) {
   const [theme, setTheme] = useState(ALL);
-  const [city, setCity] = useState(ALL);
-  const [price, setPrice] = useState(ALL);
+  const [freeOnly, setFreeOnly] = useState(false);
 
   const themes = useMemo(() => uniq(experiences.map((e) => e.theme)), [experiences]);
-  const cities = useMemo(() => uniq(experiences.map((e) => e.city)), [experiences]);
 
   const filtered = experiences.filter((e) => {
     if (theme !== ALL && e.theme !== theme) return false;
-    if (city !== ALL && e.city !== city) return false;
-    if (price === "Gratis" && (e.price_cents ?? 0) !== 0) return false;
-    if (price === "De pago" && (e.price_cents ?? 0) === 0) return false;
+    if (freeOnly && (e.price_cents ?? 0) !== 0) return false;
     return true;
   });
 
   return (
-    <section id="experiencias" className="pb-20">
-      {/* ---- CARD DE FILTROS (flota sobre el hero) ---- */}
-      <div className="relative z-10 -mt-12 sm:-mt-16">
-        <div className="space-y-2.5 rounded-2xl border border-ink/10 bg-card p-3.5 shadow-card sm:p-4">
-          <FilterRow label="Tema" value={theme} options={themes} onChange={setTheme} withBadge />
-          <FilterRow label="Zona" value={city} options={cities} onChange={setCity} />
-          <FilterRow label="Precio" value={price} options={["Gratis", "De pago"]} onChange={setPrice} />
-        </div>
+    <section id="experiencias" className="pb-20 pt-8">
+      {/* ---- FILTROS: una sola fila, sin card flotante ---- */}
+      <div className="mb-7 flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <button
+          onClick={() => setTheme(ALL)}
+          className={
+            "shrink-0 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors " +
+            (theme === ALL ? "bg-ink text-paper" : "text-ink/60 hover:bg-ink/5 hover:text-ink")
+          }
+        >
+          Todos
+        </button>
+        {themes.map((t) => {
+          const active = theme === t;
+          return (
+            <button
+              key={t}
+              onClick={() => setTheme(active ? ALL : t)}
+              className={
+                "inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors " +
+                (active ? "bg-ink text-paper" : "text-ink/60 hover:bg-ink/5 hover:text-ink")
+              }
+            >
+              <ThemeBadge theme={t} size={16} />
+              {t}
+            </button>
+          );
+        })}
+        <span className="mx-1 h-5 w-px shrink-0 bg-ink/15" />
+        <button
+          onClick={() => setFreeOnly(!freeOnly)}
+          className={
+            "shrink-0 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors " +
+            (freeOnly ? "bg-local text-white" : "text-ink/60 hover:bg-ink/5 hover:text-ink")
+          }
+        >
+          Gratis
+        </button>
       </div>
-
-      {/* ---- contador ---- */}
-      <p className="mb-4 mt-7 text-[13px] text-ink/45">
-        {filtered.length} {filtered.length === 1 ? "recorrido" : "recorridos"} para caminar
-      </p>
 
       {/* ---- GRILLA (mobile: 1 col horizontal · desktop: 4 col vertical) ---- */}
       {filtered.length === 0 ? (
@@ -155,21 +124,40 @@ export default function CatalogGrid({ experiences }: { experiences: Exp[] }) {
           {filtered.map((e) => {
             const ti = themeInfo(e.theme);
             const free = !e.price_cents || e.price_cents === 0;
+            const cover = coverUrl(e.cover_path);
             return (
               <Link
                 key={e.id}
                 href={`/e/${e.slug}`}
                 className="group flex overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-ink/20 hover:shadow-card-hover sm:flex-col"
               >
-                {/* cover: bloque de color del tema (placeholder — nunca stock) */}
+                {/* cover: foto real (o bloque de color como fallback) */}
                 <div
                   className="relative aspect-square w-[104px] shrink-0 overflow-hidden sm:aspect-[4/3] sm:w-full"
-                  style={{ background: ti.color }}
+                  style={cover ? undefined : { background: ti.color }}
                 >
-                  <span className="absolute inset-0 flex items-center justify-center opacity-90">
-                    <ThemeBadge theme={e.theme} size={46} className="ring-2 ring-white/25" />
+                  {cover ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={cover}
+                      alt={e.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                    />
+                  ) : (
+                    <span className="absolute inset-0 flex items-center justify-center opacity-90">
+                      <ThemeBadge theme={e.theme} size={46} className="ring-2 ring-white/25" />
+                    </span>
+                  )}
+                  {/* badge del tema SOBRE la imagen */}
+                  <span className="absolute left-2 top-2">
+                    <ThemeBadge
+                      theme={e.theme}
+                      size={26}
+                      className="shadow-[0_1px_6px_rgba(0,0,0,0.35)] ring-2 ring-white"
+                    />
                   </span>
-                  <span className="absolute right-2 top-2 rounded-full bg-black/25 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
+                  <span className="absolute right-2 top-2 rounded-full bg-black/45 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
                     {priceLabel(e.price_cents)}
                   </span>
                   {/* hover (desktop): más info */}
