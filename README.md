@@ -77,6 +77,12 @@ supabase/migrations/        0001–0007 (todas aplicadas a la DB remota)
   eventos de embudo (view_home, view_detail, open_chat, begin_checkout,
   finish_tour) + país por IP; UTM del aterrizaje viaja a `sales.utm_*`;
   Vercel Analytics. OG por experiencia (cover como preview) + sitemap + robots.
+- **Comunidad** (Fase 3): pasos en vez de km (metros×1,3, en cards y detalle);
+  top10 de países que más caminaron (función `country_leaderboard` sobre
+  sesiones TERMINADAS, sección en la home, se oculta sin datos); reviews reales
+  con moderación (`/api/review` al terminar el chat, ABM `/admin/resenas`,
+  detalle con bandera de país + ✓ compra verificada) — **las reseñas mock
+  fueron eliminadas**. Imagen cuadrada de card en el admin. Migraciones 0012-0014.
 - **Monetización** (Fase 2): upsell por experiencia (al terminar, Henry ofrece
   la siguiente con cupón opcional — config en el admin, card en el chat);
   cupones sobre Stripe promotion codes (`/admin/cupones`, Stripe = fuente de

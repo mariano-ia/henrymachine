@@ -84,20 +84,23 @@ FIX crítico incluido: consent_collection rompía TODOS los checkouts (exigía T
       remitente propio (Resend), voz de Henry, 3 emails: recibo+link de acceso,
       "compraste y no arrancaste" (día 7), post-tour (review + cupón upsell).
 
-## Fase 3 — Comunidad (≈2-3 jornadas)
+## Fase 3 — Comunidad ✅ COMPLETADA 2026-07-14
 
-- [ ] **3.1 Pasos en vez de km**: pasos ≈ metros × 1,3 en cards y detalle
+Build OK (21 páginas). Migraciones 0012/0013/0014. Plan: docs/superpowers/plans/2026-07-14-fase3-comunidad.md
+Las reseñas mock del detalle FUERON ELIMINADAS (reemplazadas por reales con moderación).
+
+- [x] **3.1 Pasos en vez de km**: pasos ≈ metros × 1,3 en cards y detalle
       ("~7.000 pasos", km chico al lado). Copy honesto: pasos estimados.
-- [ ] **3.2 Top10 países**: agregación de sesiones TERMINADAS server-side ×
+- [x] **3.2 Top10 países**: agregación de sesiones TERMINADAS server-side ×
       pasos de la experiencia; país de sesión (IP) con override de tarjeta;
       sección en la home ("¿Qué país camina más Nueva York?").
-- [ ] **3.3 Reviews reales**: migración 0011 (rating, texto, país, persona,
+- [x] **3.3 Reviews reales**: migración 0011 (rating, texto, país, persona,
       experiencia, estado pending/approved/featured, verified_purchase);
       pedido dentro del chat al terminar; ABM de moderación en admin;
       **recién acá se borran las mock del detalle** (decisión del dueño).
-- [ ] **3.4 Detalle muestra reviews reales** con banderita de país + badge
+- [x] **3.4 Detalle muestra reviews reales** con banderita de país + badge
       compra verificada; "Mis recorridos" suma posición de tu país.
-- [ ] **3.5 Campo card_image cuadrada en admin** (columna ya existe de 0008).
+- [x] **3.5 Campo card_image cuadrada en admin** (columna ya existe de 0008).
 
 ## Fuera del plan, esperando insumos
 
@@ -109,7 +112,7 @@ FIX crítico incluido: consent_collection rompía TODOS los checkouts (exigía T
   borrador disponible si lo piden).
 - Términos + privacidad + asunción de riesgo (borradores los redacto yo;
   revisión legal liviana de ellos).
-- Reseñas mock: SE QUEDAN por decisión del dueño hasta 3.3.
+- ~~Reseñas mock~~: ELIMINADAS en 3.3 (reemplazadas por reales con moderación).
 
 ## Necesito de Mariano
 
@@ -128,5 +131,8 @@ FIX crítico incluido: consent_collection rompía TODOS los checkouts (exigía T
 - **Fase 0**: ✅ completa (commits `76e8da1`..`b33a2c6`, 2026-07-14).
 - **Fase 1**: ✅ completa. Migración 0010.
 - **Fase 2**: ✅ completa. Migración 0011. Pendiente 2.7 (emails, bloqueado por dominio).
-  Próxima: Fase 3 (pasos, top10 países, reviews reales).
+- **Fase 3**: ✅ completa. Migraciones 0012/0013/0014. Reseñas mock eliminadas.
+
+**Roadmap del plan COMPLETO (fases 0-3).** Quedan solo los ítems 'esperando insumos'
+(dominio, cuenta Stripe definitiva, acuerdo con Henry, términos/privacidad, emails).
 - Todo en `main` local, sin deployar (el dueño pide subir solo a pedido explícito).
