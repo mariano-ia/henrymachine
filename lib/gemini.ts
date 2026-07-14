@@ -6,8 +6,8 @@ const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 // "thinking" solo existe en los modelos 2.5; en 2.0 pasar thinkingConfig falla.
 const THINKING = /2\.5/.test(MODEL) ? { thinkingConfig: { thinkingBudget: 0 } } : {};
 
-function client(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
+function client(key?: string): GoogleGenAI {
+  const apiKey = key ?? process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("Falta GEMINI_API_KEY en el entorno.");
   return new GoogleGenAI({ apiKey });
 }
@@ -32,10 +32,25 @@ async function withRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
   throw lastErr;
 }
 
+const QUOTA_RE = /429|RESOURCE_EXHAUSTED|quota|billing|prepa|exhaust/i;
+
+/** Corre con la key primaria; si se agotó cuota/crédito y existe
+ *  GEMINI_API_KEY_FALLBACK, reintenta con la key de respaldo. */
+async function withFailover<T>(fn: (ai: GoogleGenAI) => Promise<T>): Promise<T> {
+  try {
+    return await withRetry(() => fn(client()));
+  } catch (e) {
+    const fb = process.env.GEMINI_API_KEY_FALLBACK;
+    if (fb && QUOTA_RE.test(String((e as Error)?.message ?? e))) {
+      return await withRetry(() => fn(client(fb)));
+    }
+    throw e;
+  }
+}
+
 /** Destila un perfil de voz a partir del texto combinado de las transcripciones. */
 export async function distillVoiceProfile(corpusText: string): Promise<string> {
-  const ai = client();
-  const res = await withRetry(() =>
+  const res = await withFailover((ai) =>
     ai.models.generateContent({
       model: MODEL,
       contents: corpusText,
@@ -56,7 +71,6 @@ export async function chatWithHenry(params: {
   history: ChatTurn[];
   message: string;
 }): Promise<ChatResponse> {
-  const ai = client();
 
   const contents = [
     ...params.history.map(
@@ -68,7 +82,7 @@ export async function chatWithHenry(params: {
     { role: "user" as const, parts: [{ text: params.message }] },
   ];
 
-  const res = await withRetry(() =>
+  const res = await withFailover((ai) =>
     ai.models.generateContent({
       model: MODEL,
       contents,
@@ -93,8 +107,7 @@ export async function generateJson<T = unknown>(
   prompt: string,
   maxOutputTokens = 6000
 ): Promise<T> {
-  const ai = client();
-  const res = await withRetry(() =>
+  const res = await withFailover((ai) =>
     ai.models.generateContent({
       model: MODEL,
       contents: prompt,
@@ -121,7 +134,6 @@ export async function tourReply(params: {
   history: ChatTurn[];
   message: string;
 }): Promise<{ reply: string; intent: string }> {
-  const ai = client();
   const contents = [
     ...params.history.map(
       (t): { role: "user" | "model"; parts: { text: string }[] } => ({
@@ -132,7 +144,7 @@ export async function tourReply(params: {
     { role: "user" as const, parts: [{ text: params.message }] },
   ];
 
-  const res = await withRetry(() =>
+  const res = await withFailover((ai) =>
     ai.models.generateContent({
       model: MODEL,
       contents,

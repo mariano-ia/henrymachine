@@ -111,6 +111,9 @@ export default async function Home() {
           </p>
           <p className="font-hand text-[19px] leading-none text-ink/50">nos vemos en la esquina</p>
         </div>
+        <p className="mx-auto max-w-editorial px-5 pb-4 text-[10px] text-ink/30 sm:px-10">
+          Henry virtual · IA entrenada con la personalidad de Henry
+        </p>
       </footer>
     </main>
   );

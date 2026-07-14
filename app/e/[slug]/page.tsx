@@ -276,6 +276,10 @@ export default async function DetailPage({
         </div>
       </div>
 
+      <p className="mx-auto max-w-editorial px-5 pb-6 text-[10px] text-ink/30 sm:px-10">
+        Henry virtual · IA entrenada con la personalidad de Henry
+      </p>
+
       {/* ---- BARRA DE COMPRA FIJA (mobile) ---- */}
       <div
         className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-card/95 shadow-bar backdrop-blur lg:hidden"
