@@ -98,6 +98,12 @@ export type Database = {
         Update: { bucket?: string; caption?: string | null; created_at?: string; duration_sec?: number | null; experience_id?: string; external_url?: string | null; gated?: boolean; height?: number | null; id?: string; kind?: Database["public"]["Enums"]["media_kind"]; position?: number; step_id?: string; step_position?: number; storage_path?: string | null; width?: number | null }
         Relationships: []
       }
+      reviews: {
+        Row: { anon_id: string | null; author_name: string | null; body: string | null; country: string | null; created_at: string; experience_id: string; id: string; rating: number; status: string; updated_at: string; user_id: string | null; verified_purchase: boolean }
+        Insert: { anon_id?: string | null; author_name?: string | null; body?: string | null; country?: string | null; created_at?: string; experience_id: string; id?: string; rating: number; status?: string; updated_at?: string; user_id?: string | null; verified_purchase?: boolean }
+        Update: { anon_id?: string | null; author_name?: string | null; body?: string | null; country?: string | null; created_at?: string; experience_id?: string; id?: string; rating?: number; status?: string; updated_at?: string; user_id?: string | null; verified_purchase?: boolean }
+        Relationships: []
+      }
       steps: {
         Row: { address: string | null; arrive_script: string | null; body: string | null; created_at: string; experience_id: string; id: string; is_paywall: boolean; knowledge_scope: Json; lat: number | null; lng: number | null; meta: Json; meta_verified: boolean; orientation_hint: string | null; payoff: string | null; paywall_message: string | null; place_query: string | null; position: number; proposal: string | null; title: string | null; type: Database["public"]["Enums"]["step_type"]; updated_at: string; walk_to_next: string | null }
         Insert: { address?: string | null; arrive_script?: string | null; body?: string | null; created_at?: string; experience_id: string; id?: string; is_paywall?: boolean; knowledge_scope?: Json; lat?: number | null; lng?: number | null; meta?: Json; meta_verified?: boolean; orientation_hint?: string | null; payoff?: string | null; paywall_message?: string | null; place_query?: string | null; position: number; proposal?: string | null; title?: string | null; type?: Database["public"]["Enums"]["step_type"]; updated_at?: string; walk_to_next?: string | null }
