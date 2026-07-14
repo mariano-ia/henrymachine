@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import CatalogGrid, { type Exp } from "@/components/CatalogGrid";
 import HeroChat from "@/components/HeroChat";
+import TrackView from "@/components/TrackView";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export default async function Home() {
 
   return (
     <main className="henry-home min-h-[100dvh] overflow-x-hidden bg-paper text-ink antialiased">
+      <TrackView name="view_home" />
       {/* ===================== HERO (skyline al atardecer) ===================== */}
       <section className="henry-grain relative overflow-hidden bg-night text-white">
         {/* eslint-disable-next-line @next/next/no-img-element */}

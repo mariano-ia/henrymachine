@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getExperienceDetail } from "@/lib/db/detail";
 import BuyBar from "@/components/BuyBar";
 import ThemeBadge from "@/components/ThemeBadge";
+import TrackView from "@/components/TrackView";
 import { themeInfo } from "@/lib/themes";
 
 export const dynamic = "force-dynamic";
@@ -123,6 +124,7 @@ export default async function DetailPage({
 
   return (
     <main className="henry-home min-h-[100dvh] bg-paper pb-24 text-ink antialiased lg:pb-0">
+      <TrackView name="view_detail" slug={exp.slug} />
       {/* ---- barra superior ---- */}
       <header className="bg-night text-white">
         <div className="mx-auto flex max-w-editorial items-center justify-between px-5 py-4 sm:px-10">

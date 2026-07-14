@@ -5,6 +5,7 @@ import type { ChatTurn } from "@/lib/types";
 import type { TourPhase } from "@/lib/engine/play-prompt";
 import { mapsDirUrl } from "@/lib/maps";
 import type { PlayMedia } from "@/lib/db/experiences";
+import { track } from "@/lib/track";
 
 type StopMeta = { title: string; placeQuery: string | null; media: PlayMedia[] };
 type Message = {
@@ -259,6 +260,7 @@ export default function PlayerChat({
       }
       return out;
     });
+    if (next.status === "TERMINADO" && tour.status !== "TERMINADO") track("finish_tour", slug);
     setTour(next);
     setSending(false);
   }
@@ -306,6 +308,7 @@ export default function PlayerChat({
   }, [messages, tour.phase, tour.status, nudged, sending, sendNudge]);
 
   async function buy() {
+    track("begin_checkout", slug);
     if (buying) return;
     setBuying(true);
     try {

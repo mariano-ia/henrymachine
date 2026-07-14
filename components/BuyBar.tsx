@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { track } from "@/lib/track";
 
 function fmtPrice(cents: number): string {
   return !cents || cents === 0 ? "Gratis" : `$${(cents / 100).toFixed(2)}`;
@@ -43,6 +44,7 @@ export default function BuyBar({
   const start = () => router.push(`/e/${slug}/chat`);
 
   async function buy() {
+    track("begin_checkout", slug);
     if (!anonId) return;
     setBusy(true);
     try {

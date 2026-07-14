@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import PlayerChat from "./PlayerChat";
 import type { PlayMedia } from "@/lib/db/experiences";
+import { track } from "@/lib/track";
 
 type Data = {
   slug: string;
@@ -38,6 +39,7 @@ export default function PlayerLoader({ slug }: { slug: string }) {
       localStorage.setItem("henry_anon", id);
     }
     setAnonId(id);
+    track("open_chat", slug);
     const purchased = new URLSearchParams(location.search).get("purchased") === "1";
     if (purchased) setConfirming(true);
     let cancelled = false;

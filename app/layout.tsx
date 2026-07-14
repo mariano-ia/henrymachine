@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Schibsted_Grotesk, Caveat, Roboto_Condensed } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 // UI / sistema: grotesca con carácter (jerarquía por pesos).
@@ -59,7 +60,10 @@ export default function RootLayout({
       lang="es"
       className={`${sans.variable} ${hand.variable} ${condensed.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }

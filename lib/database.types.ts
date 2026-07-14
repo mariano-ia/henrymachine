@@ -38,6 +38,12 @@ export type Database = {
         Update: { anon_id?: string | null; created_at?: string; experience_id?: string; grant_email?: string | null; id?: string; purchase_id?: string | null; revoked_at?: string | null; source?: Database["public"]["Enums"]["entitlement_source"]; user_id?: string | null }
         Relationships: []
       }
+      events: {
+        Row: { anon_id: string | null; country: string | null; created_at: string; id: string; name: string; props: Json; slug: string | null }
+        Insert: { anon_id?: string | null; country?: string | null; created_at?: string; id?: string; name: string; props?: Json; slug?: string | null }
+        Update: { anon_id?: string | null; country?: string | null; created_at?: string; id?: string; name?: string; props?: Json; slug?: string | null }
+        Relationships: []
+      }
       experiences: {
         Row: { author_id: string; card_image_path: string | null; city: string | null; cover_path: string | null; created_at: string; currency: string; distance_m: number | null; expected_minutes: number | null; generated_from: string | null; henry_tip: string | null; id: string; language: string; neighborhood: string | null; pitch: string | null; price_cents: number; published_at: string | null; resume_window_hours: number; slug: string; status: Database["public"]["Enums"]["experience_status"]; stripe_price_id: string | null; theme: string | null; title: string; updated_at: string; voice_override: Json | null; voice_profile_id: string | null }
         Insert: { author_id: string; card_image_path?: string | null; city?: string | null; cover_path?: string | null; created_at?: string; currency?: string; distance_m?: number | null; expected_minutes?: number | null; generated_from?: string | null; henry_tip?: string | null; id?: string; language?: string; neighborhood?: string | null; pitch?: string | null; price_cents?: number; published_at?: string | null; resume_window_hours?: number; slug: string; status?: Database["public"]["Enums"]["experience_status"]; stripe_price_id?: string | null; theme?: string | null; title: string; updated_at?: string; voice_override?: Json | null; voice_profile_id?: string | null }
