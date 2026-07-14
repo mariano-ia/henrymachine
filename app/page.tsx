@@ -65,6 +65,9 @@ export default async function Home() {
                   <circle cx="17.4" cy="6.6" r="1.15" fill="currentColor" stroke="none" />
                 </svg>
               </a>
+              <Link href="/cuenta" className="ml-2 rounded-full border border-white/25 px-3.5 py-1.5 text-[12px] font-semibold text-white/85 transition hover:bg-white/10">
+                Mis recorridos
+              </Link>
             </div>
           </header>
 
