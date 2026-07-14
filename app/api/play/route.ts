@@ -6,6 +6,7 @@ import { getStopHoursLine } from "@/lib/places";
 import { buildPlaySystemInstruction, type TourPhase } from "@/lib/engine/play-prompt";
 import { tourReply } from "@/lib/gemini";
 import { rateLimit } from "@/lib/rate-limit";
+import { recordTurn, sessionTotalTurns } from "@/lib/db/sessions";
 import type { ChatTurn } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -53,12 +54,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // límite duro: despedida cálida SIN llamar al modelo
-    const totalTurns = Math.max(0, Number(body.totalTurns ?? 0));
-    if (totalTurns >= HARD_TURN_LIMIT) {
-      return NextResponse.json({ reply: FAREWELL_AT_LIMIT, intent: "finish", limit: true });
-    }
-
     const [exp, persona, utilities] = await Promise.all([
       getPlayableExperience(slug, body.anonId),
       getGlobalPersona(),
@@ -66,6 +61,15 @@ export async function POST(req: NextRequest) {
     ]);
     if (!exp || exp.stops.length === 0) {
       return NextResponse.json({ error: "Experiencia no disponible." }, { status: 404 });
+    }
+
+    // límite duro server-side: el mayor entre lo que dice el cliente y la sesión
+    // real (un cliente que resetea su contador no evade el tope). Despedida sin LLM.
+    const clientTurns = Math.max(0, Number(body.totalTurns ?? 0));
+    const serverTurns = anonIdForRl ? await sessionTotalTurns(exp.id, anonIdForRl) : 0;
+    const totalTurns = Math.max(clientTurns, serverTurns);
+    if (totalTurns >= HARD_TURN_LIMIT) {
+      return NextResponse.json({ reply: FAREWELL_AT_LIMIT, intent: "finish", limit: true });
     }
 
     const stopIndex = Math.min(Math.max(0, Number(body.stopIndex ?? 0)), exp.stops.length - 1);
@@ -100,7 +104,21 @@ export async function POST(req: NextRequest) {
       message,
     });
 
-    return NextResponse.json(result);
+    // progreso + costo server-side (fire-and-forget; nunca rompe el chat)
+    await recordTurn({
+      experienceId: exp.id,
+      anonId: anonIdForRl,
+      stopIndex,
+      phase,
+      intent: result.intent,
+      finished: result.intent === "finish",
+      replyText: result.reply,
+      country: req.headers.get("x-vercel-ip-country"),
+      promptTokens: result.usage.prompt,
+      outputTokens: result.usage.output,
+    });
+
+    return NextResponse.json({ reply: result.reply, intent: result.intent });
   } catch {
     return NextResponse.json({ error: "Se me trabó 😅 probá de nuevo." }, { status: 500 });
   }

@@ -128,12 +128,14 @@ export async function generateJson<T = unknown>(
   return JSON.parse(text) as T;
 }
 
-/** Turno de recorrido: devuelve la respuesta de Henry + la intención clasificada. */
+export type TourUsage = { prompt: number | null; output: number | null };
+
+/** Turno de recorrido: respuesta de Henry + intención + tokens (para costo por sesión). */
 export async function tourReply(params: {
   systemInstruction: string;
   history: ChatTurn[];
   message: string;
-}): Promise<{ reply: string; intent: string }> {
+}): Promise<{ reply: string; intent: string; usage: TourUsage }> {
   const contents = [
     ...params.history.map(
       (t): { role: "user" | "model"; parts: { text: string }[] } => ({
@@ -158,6 +160,10 @@ export async function tourReply(params: {
     })
   );
 
+  const usage: TourUsage = {
+    prompt: res.usageMetadata?.promptTokenCount ?? null,
+    output: res.usageMetadata?.candidatesTokenCount ?? null,
+  };
   const text = (res.text ?? "").trim();
   const cleaned = text
     .replace(/^```(?:json)?/i, "")
@@ -171,6 +177,7 @@ export async function tourReply(params: {
           ? o.reply
           : "Perdón, se me cruzaron los cables 😅 dale de nuevo.",
       intent: typeof o.intent === "string" ? o.intent : "none",
+      usage,
     };
   } catch {
     // JSON malformado: rescatar reply/intent por regex; NUNCA mostrar llaves crudas
@@ -183,12 +190,13 @@ export async function tourReply(params: {
       } catch {
         /* usar tal cual */
       }
-      return { reply, intent: intentMatch?.[1] ?? "none" };
+      return { reply, intent: intentMatch?.[1] ?? "none", usage };
     }
     const looksJson = cleaned.startsWith("{") || cleaned.includes('"reply"');
     return {
       reply: looksJson || !text ? "Perdón, se me trabó 😅 dale de nuevo." : text,
       intent: "none",
+      usage,
     };
   }
 }
