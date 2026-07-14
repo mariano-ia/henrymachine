@@ -77,6 +77,14 @@ supabase/migrations/        0001–0007 (todas aplicadas a la DB remota)
   eventos de embudo (view_home, view_detail, open_chat, begin_checkout,
   finish_tour) + país por IP; UTM del aterrizaje viaja a `sales.utm_*`;
   Vercel Analytics. OG por experiencia (cover como preview) + sitemap + robots.
+- **Monetización** (Fase 2): upsell por experiencia (al terminar, Henry ofrece
+  la siguiente con cupón opcional — config en el admin, card en el chat);
+  cupones sobre Stripe promotion codes (`/admin/cupones`, Stripe = fuente de
+  verdad, cliente pineado a API 2024-06-20 porque dahlia rompe `coupon`);
+  regalar un recorrido (entitlement al email del regalado, source 'grant');
+  captura de leads (`/api/lead` + tabla `leads`). Migración 0011.
+  ⚠️ El checkout usa `allow_promotion_codes` (NO `consent_collection.promotions`,
+  que exige aceptar ToS en el dashboard y rompía todos los pagos).
 - **Identidad** (Fase 1): login sin contraseña por OTP de email (`/cuenta`,
   Supabase Auth), página `/mis-recorridos` (terminados/en curso), merge
   anon↔user vía `/api/claim` (por anon_id del dispositivo + grant_email

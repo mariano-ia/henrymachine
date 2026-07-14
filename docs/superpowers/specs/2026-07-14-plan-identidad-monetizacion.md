@@ -59,23 +59,26 @@ Build OK (19 páginas). Migración 0010 aplicada. Rutas nuevas /cuenta y /mis-re
 - [x] **1.5 Límite de turnos server-side** (desde play_sessions; deja de confiar
       en el contador del cliente).
 
-## Fase 2 — Plata (≈2 jornadas)
+## Fase 2 — Plata ✅ COMPLETADA 2026-07-14
 
-- [ ] **2.1 Upsell por experiencia**: columnas upsell_experience_id +
+Build OK (20 páginas). Migración 0011 aplicada. Plan: docs/superpowers/plans/2026-07-14-fase2-plata.md
+FIX crítico incluido: consent_collection rompía TODOS los checkouts (exigía ToS en el dashboard); reemplazado por allow_promotion_codes.
+
+- [x] **2.1 Upsell por experiencia**: columnas upsell_experience_id +
       upsell_message + upsell_coupon (migración 0010) + sección "Al terminar"
       en el admin.
-- [ ] **2.2 Cupones = cáscara sobre Stripe promotion codes**: ABM en admin
+- [x] **2.2 Cupones = cáscara sobre Stripe promotion codes**: ABM en admin
       (crear %-o-monto, vencimiento, límite de usos, desactivar); Stripe es la
       única fuente de verdad de redenciones.
-- [ ] **2.3 Checkout con descuento**: el link del upsell aplica el código;
+- [x] **2.3 Checkout con descuento**: el link del upsell aplica el código;
       allow_promotion_codes activado.
-- [ ] **2.4 El momento post-final en el chat**: Henry pide la reseña (fase 3
+- [x] **2.4 El momento post-final en el chat**: Henry pide la reseña (fase 3
       adelanta acá su gancho) y agradece con el cupón de la siguiente
       experiencia (card comprable en el hilo).
-- [ ] **2.5 Regalar recorrido**: checkout "es un regalo" → email del regalado →
+- [x] **2.5 Regalar recorrido**: checkout "es un regalo" → email del regalado →
       entitlement por grant_email (ya existe en schema) + la nota amarilla de
       Henry como "tarjeta de regalo" compartible.
-- [ ] **2.6 Leads no compradores**: "avisame del próximo recorrido" en home +
+- [x] **2.6 Leads no compradores**: "avisame del próximo recorrido" en home +
       paywall del gratis (tabla leads con consent, migración 0010).
 - [ ] **2.7 Emails transaccionales** — BLOQUEADO por dominio. Diseño listo:
       remitente propio (Resend), voz de Henry, 3 emails: recibo+link de acceso,
@@ -123,6 +126,7 @@ Build OK (19 páginas). Migración 0010 aplicada. Rutas nuevas /cuenta y /mis-re
 ## Estado de ejecución
 
 - **Fase 0**: ✅ completa (commits `76e8da1`..`b33a2c6`, 2026-07-14).
-- **Fase 1**: ✅ completa (commits hasta ~2026-07-14). Migración 0010 aplicada.
-  Próxima: Fase 2 (upsell, cupones Stripe, regalo, leads).
+- **Fase 1**: ✅ completa. Migración 0010.
+- **Fase 2**: ✅ completa. Migración 0011. Pendiente 2.7 (emails, bloqueado por dominio).
+  Próxima: Fase 3 (pasos, top10 países, reviews reales).
 - Todo en `main` local, sin deployar (el dueño pide subir solo a pedido explícito).
