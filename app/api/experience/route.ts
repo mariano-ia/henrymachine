@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
     upsell: exp.upsell,
     distanceM: exp.distanceM,
     neighborhood: exp.neighborhood,
+    detectedCountry: req.headers.get("x-vercel-ip-country"),
     serverProgress,
   });
 }

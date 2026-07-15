@@ -11,6 +11,7 @@ import { metersToSteps } from "@/lib/steps";
 import ReviewPrompt from "@/components/ReviewPrompt";
 import ShareButton from "@/components/ShareButton";
 import EmailCaptureCard from "@/components/EmailCaptureCard";
+import NationalityPicker from "@/components/NationalityPicker";
 import { getCapturedEmail } from "@/lib/email-capture";
 
 type StopMeta = {
@@ -106,6 +107,7 @@ export default function PlayerChat({
   serverProgress,
   distanceM,
   neighborhood,
+  detectedCountry,
 }: {
   slug: string;
   anonId: string;
@@ -128,6 +130,7 @@ export default function PlayerChat({
   serverProgress?: { stopIndex: number; phase: string; totalTurns: number } | null;
   distanceM?: number | null;
   neighborhood?: string | null;
+  detectedCountry?: string | null;
 }) {
   const LAST = stops.length - 1;
   // texto de compartir al terminar (pasos + barrio reales)
@@ -632,6 +635,8 @@ export default function PlayerChat({
             url={`https://caminaconhenry.com/e/${slug}?ref=compartir`}
             className="mx-auto mt-3 block rounded-full bg-ink px-5 py-2.5 text-[14px] font-semibold text-white transition hover:opacity-90"
           />
+
+          <NationalityPicker anonId={anonId} detectedCountry={detectedCountry ?? null} />
 
           {/* si ya dejó reseña inline durante el recorrido, no la volvemos a pedir */}
           {!reviewed && <ReviewPrompt slug={slug} anonId={anonId} onDone={markReviewed} />}

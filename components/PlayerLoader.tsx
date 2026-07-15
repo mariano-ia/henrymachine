@@ -32,6 +32,7 @@ type Data = {
   } | null;
   distanceM: number | null;
   neighborhood: string | null;
+  detectedCountry: string | null;
   serverProgress: { stopIndex: number; phase: string; totalTurns: number } | null;
 };
 
