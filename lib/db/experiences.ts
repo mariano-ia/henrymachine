@@ -42,6 +42,7 @@ export type PlayableExperience = {
   priceCents: number;
   paywallMessage: string | null;
   upsell: UpsellOffer | null; // qué ofrecer al terminar
+  purchaseExpired: boolean; // compró pero no empezó y pasaron 90 días
 };
 
 /**
@@ -85,15 +86,39 @@ export async function getPlayableExperience(
   }
 
   let hasAccess = exp.price_cents === 0;
+  let purchaseExpired = false;
   if (!hasAccess && anonId) {
     const { data: ent } = await sb
       .from("entitlements")
-      .select("id")
+      .select("id, purchase_id, created_at")
       .eq("experience_id", exp.id)
       .eq("anon_id", anonId)
       .is("revoked_at", null)
       .maybeSingle();
-    hasAccess = !!ent;
+    if (ent) {
+      // ¿empezó? si sí, es para siempre. si no, vence a los 90 días de pagar.
+      const { data: started } = await sb.rpc("entitlement_started", {
+        p_experience_id: exp.id,
+        p_anon_id: anonId,
+        p_user_id: null,
+        p_grant_email: null,
+      });
+      let paidAt: string | null = ent.created_at;
+      if (ent.purchase_id) {
+        const { data: pur } = await sb
+          .from("purchases")
+          .select("paid_at")
+          .eq("id", ent.purchase_id)
+          .maybeSingle();
+        paidAt = pur?.paid_at ?? ent.created_at;
+      }
+      const ageDays = paidAt ? (Date.now() - new Date(paidAt).getTime()) / 86400000 : 0;
+      if (started === true || ageDays <= 90) {
+        hasAccess = true;
+      } else {
+        purchaseExpired = true; // no empezó y venció
+      }
+    }
   }
 
   const { data: allSteps } = await sb
@@ -162,6 +187,7 @@ export async function getPlayableExperience(
     // sin esto, pedirle a Henry "adelántame el resto" filtraba el contenido pago.
     grounding: hasAccess ? source?.inline_text ?? "" : "",
     locked: exp.price_cents > 0 && !hasAccess,
+    purchaseExpired,
     priceCents: exp.price_cents,
     paywallMessage: paywallStep?.paywall_message ?? null,
     upsell,
