@@ -67,7 +67,8 @@ export async function recordTurn(opts: {
           last_active_at: new Date().toISOString(),
           expires_at: expiresAt,
           ...(opts.finished ? { status: "TERMINADO" as never } : {}),
-          ...(opts.country ? { country: opts.country } : {}),
+          // country NO se re-escribe por turno: se fija al crear la sesión, y si el
+          // usuario declara su nacionalidad al terminar, no queremos pisársela.
           ...(opts.userId ? { user_id: opts.userId } : {}),
         })
         .eq("id", sessionId);
