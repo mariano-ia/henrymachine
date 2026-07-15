@@ -187,6 +187,22 @@ export default function PlayerChat({
   // PlayerChat solo monta en el cliente (PlayerLoader lo gatea tras el fetch),
   // así que acá localStorage está disponible.
   const [saved] = useState<SavedPlay | null>(() => loadSaved(slug, stops.length, locked));
+  // ¿había un guardado que venció (>7 días)? El acceso sigue; se avisa al arrancar de
+  // cero. Va en el initializer (una lectura, antes de que el efecto pise el guardado).
+  const [resumeExpired] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(saveKey(slug));
+      if (!raw) return false;
+      const s = JSON.parse(raw) as SavedPlay;
+      return (
+        s.v === SAVE_VERSION &&
+        s.tour?.status !== "TERMINADO" &&
+        Date.now() - s.savedAt > RESUME_WINDOW_MS
+      );
+    } catch {
+      return false;
+    }
+  });
   // reanudar desde el SERVER (otro dispositivo): solo si no hay guardado local
   // —que tiene el historial completo— y el server marca una parada avanzada.
   const [serverResume] = useState<State | null>(() => {
@@ -475,6 +491,11 @@ export default function PlayerChat({
         <p className="pb-1 text-center text-[10px] leading-tight text-ink/30">
           Chat con IA en la voz de Henry
         </p>
+        {resumeExpired && (
+          <div className="rounded-xl bg-[#F4F2EC] px-3.5 py-2.5 text-[13px] leading-snug text-ink/70">
+            Pasó más de una semana y perdí el rastro de dónde quedamos 😅 pero tu recorrido sigue siendo tuyo — arrancamos de nuevo, ¿va?
+          </div>
+        )}
         {askEmail && (
           <EmailCaptureCard
             title="¿Te guardo el link por si se te corta la señal? Te lo mando al correo y lo retomas cuando quieras."
