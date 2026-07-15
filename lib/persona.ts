@@ -11,6 +11,33 @@ Escribe un PERFIL DE VOZ en español, en 1 o 2 párrafos. Describe CÓMO habla, 
 
 Es peruano, así que menciona su registro, pero sin exagerar: describe su forma natural de hablar, no una caricatura. No resumas el contenido de los videos. El objetivo es que otro modelo pueda IMITAR su forma de hablar leyendo este perfil.`;
 
+/**
+ * Extracción MULTIMODAL: recibe UNA fuente (video, audio, PDF, imagen, transcripción
+ * de YouTube o texto) y saca de ahí NOTAS de personalidad de Henry. Es acumulativo:
+ * cada fuente aporta su pedacito; después se sintetiza el dossier con todas.
+ */
+export const PERSONA_EXTRACT_PROMPT = `Eres un analista de personalidad. Vas a recibir UNA fuente sobre Henry, un YouTuber peruano afincado en Nueva York que recorre ciudades y muestra los lugares que sólo un local conoce. La fuente puede ser un video (míralo y escúchalo), un audio (escúchalo), un PDF o imagen (léelos) o un texto.
+
+Extrae NOTAS de personalidad de Henry SÓLO a partir de esta fuente. En español, en viñetas cortas y concretas, agrupadas así (omite un grupo si la fuente no aporta nada de eso):
+- VOZ: cómo habla (tono, energía, formalidad, cómo se dirige a la gente).
+- MULETILLAS / EXPRESIONES: palabras y frases reales que usa (cítalas textuales).
+- VALORES / ACTITUD: qué le importa, cómo mira las cosas, su humor.
+- BIO / DATOS: hechos concretos de su vida, gustos, historia (sólo si aparecen).
+- ANÉCDOTAS / OPINIONES: momentos o posturas memorables (breve).
+
+Reglas: NO inventes nada que no esté en la fuente. NO resumas el tema del contenido; enfócate en QUIÉN es y CÓMO es. Si la fuente casi no aporta sobre su personalidad, dilo en una línea. Sé conciso (máximo ~250 palabras).`;
+
+/** Síntesis: junta las notas de TODAS las fuentes en un dossier {bio, voice} coherente. */
+export const PERSONA_SYNTHESIZE_PROMPT = `Eres el editor del dossier de personalidad de Henry (YouTuber peruano en Nueva York). Vas a recibir NOTAS acumuladas de varias fuentes (videos, audios, PDFs, textos). Sintetiza TODO en un único dossier coherente, sin repetir y resolviendo redundancias.
+
+Devuelve SÓLO un JSON con esta forma exacta:
+{
+  "bio": "1-2 párrafos: quién es Henry, su historia, de dónde viene, qué hace, gustos y datos concretos que aparezcan en las notas.",
+  "voice": "1-2 párrafos: CÓMO habla — tono, actitud, muletillas y expresiones reales (cítalas), humor y ritmo. Para que otro modelo lo imite. Tuteo peruano, nunca voseo argentino, sin caricatura."
+}
+
+Usa sólo lo que está en las notas; no inventes. Si algo falta, deja ese campo breve pero no lo inventes. Español.`;
+
 /** Arma el system prompt de Henry: persona + perfil de voz + transcripciones (único conocimiento). */
 export function buildHenrySystemInstruction(opts: {
   voiceProfile: string;

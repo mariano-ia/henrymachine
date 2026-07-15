@@ -41,6 +41,9 @@ export default async function AdminAppLayout({
               <Link href="/admin" className="transition hover:text-white">
                 Experiencias
               </Link>
+              <Link href="/admin/personalidad" className="transition hover:text-white">
+                Personalidad
+              </Link>
               <Link href="/admin/utilidades" className="transition hover:text-white">
                 Guía útil
               </Link>

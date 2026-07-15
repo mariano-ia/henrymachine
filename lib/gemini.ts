@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import type { ChatTurn, ChatResponse } from "./types";
-import { VOICE_DISTILL_PROMPT } from "./persona";
+import { VOICE_DISTILL_PROMPT, PERSONA_EXTRACT_PROMPT, PERSONA_SYNTHESIZE_PROMPT } from "./persona";
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 // "thinking" solo existe en los modelos 2.5; en 2.0 pasar thinkingConfig falla.
@@ -63,6 +63,94 @@ export async function distillVoiceProfile(corpusText: string): Promise<string> {
     })
   );
   return (res.text ?? "").trim();
+}
+
+/** Fuente multimodal para extraer notas de personalidad. */
+export type PersonaSourceInput =
+  | { kind: "youtube"; url: string }
+  | { kind: "text"; text: string }
+  | { kind: "file"; bytes: Blob; mimeType: string; displayName?: string };
+
+const EXTRACT_CFG = { temperature: 0.4, maxOutputTokens: 700, ...THINKING };
+const NUDGE = "Analiza esta fuente y extrae las notas de personalidad de Henry.";
+
+/**
+ * Extrae NOTAS de personalidad de UNA fuente (video/audio/pdf/imagen/youtube/texto).
+ * Para archivos usa el File API de Gemini (sube + espera ACTIVE) con la misma key
+ * que después genera, para que el archivo sea accesible.
+ */
+export async function extractPersonaNotes(input: PersonaSourceInput): Promise<string> {
+  if (input.kind === "text") {
+    const res = await withFailover((ai) =>
+      ai.models.generateContent({
+        model: MODEL,
+        contents: input.text.slice(0, 100000),
+        config: { systemInstruction: PERSONA_EXTRACT_PROMPT, ...EXTRACT_CFG },
+      })
+    );
+    return (res.text ?? "").trim();
+  }
+  if (input.kind === "youtube") {
+    const res = await withFailover((ai) =>
+      ai.models.generateContent({
+        model: MODEL,
+        contents: [{ fileData: { fileUri: input.url } }, { text: NUDGE }],
+        config: { systemInstruction: PERSONA_EXTRACT_PROMPT, ...EXTRACT_CFG },
+      })
+    );
+    return (res.text ?? "").trim();
+  }
+  // archivo: subir al File API → esperar ACTIVE → generar (todo con la misma key)
+  return await withFailover(async (ai) => {
+    const uploaded = await ai.files.upload({
+      file: input.bytes,
+      config: { mimeType: input.mimeType, displayName: input.displayName },
+    });
+    let f = uploaded;
+    const name = f.name!;
+    for (let i = 0; i < 80 && f.state !== "ACTIVE"; i++) {
+      if (f.state === "FAILED") throw new Error("Gemini no pudo procesar el archivo.");
+      await new Promise((r) => setTimeout(r, 3000));
+      f = await ai.files.get({ name });
+    }
+    if (f.state !== "ACTIVE") throw new Error("El archivo tardó demasiado en procesarse.");
+    const res = await ai.models.generateContent({
+      model: MODEL,
+      contents: [{ fileData: { fileUri: f.uri!, mimeType: f.mimeType ?? input.mimeType } }, { text: NUDGE }],
+      config: { systemInstruction: PERSONA_EXTRACT_PROMPT, ...EXTRACT_CFG },
+    });
+    return (res.text ?? "").trim();
+  });
+}
+
+/** Sintetiza el dossier {bio, voice} juntando las notas de TODAS las fuentes. */
+export async function synthesizePersonaDossier(
+  notesList: string[]
+): Promise<{ bio: string; voice: string }> {
+  const corpus = notesList
+    .filter(Boolean)
+    .map((n, i) => `## Fuente ${i + 1}\n${n}`)
+    .join("\n\n")
+    .slice(0, 100000);
+  const res = await withFailover((ai) =>
+    ai.models.generateContent({
+      model: MODEL,
+      contents: corpus || "(sin fuentes)",
+      config: {
+        systemInstruction: PERSONA_SYNTHESIZE_PROMPT,
+        temperature: 0.5,
+        maxOutputTokens: 1400,
+        responseMimeType: "application/json",
+        ...THINKING,
+      },
+    })
+  );
+  try {
+    const j = JSON.parse((res.text ?? "{}").trim()) as { bio?: string; voice?: string };
+    return { bio: String(j.bio ?? "").trim(), voice: String(j.voice ?? "").trim() };
+  } catch {
+    return { bio: "", voice: (res.text ?? "").trim() };
+  }
 }
 
 /** Una respuesta de Henry, groundeada en los videos (system instruction). */

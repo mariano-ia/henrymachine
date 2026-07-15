@@ -128,6 +128,12 @@ export type Database = {
         Update: { created_at?: string; email?: string | null; experience_id?: string | null; id?: string; reason?: string; resolved?: boolean; session_id?: string | null; user_id?: string | null }
         Relationships: []
       }
+      personality_sources: {
+        Row: { id: string; kind: string; title: string | null; storage_path: string | null; external_url: string | null; raw_text: string | null; mime_type: string | null; status: string; notes: string | null; error: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; kind: string; title?: string | null; storage_path?: string | null; external_url?: string | null; raw_text?: string | null; mime_type?: string | null; status?: string; notes?: string | null; error?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; kind?: string; title?: string | null; storage_path?: string | null; external_url?: string | null; raw_text?: string | null; mime_type?: string | null; status?: string; notes?: string | null; error?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
       utilities: {
         Row: { active: boolean; address: string | null; category: string; created_at: string; henry_note: string | null; hours: string | null; id: string; is_free: boolean; name: string; neighborhood: string | null; place_query: string | null; position: number; updated_at: string }
         Insert: { active?: boolean; address?: string | null; category: string; created_at?: string; henry_note?: string | null; hours?: string | null; id?: string; is_free?: boolean; name: string; neighborhood?: string | null; place_query?: string | null; position?: number; updated_at?: string }
