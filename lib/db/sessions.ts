@@ -27,8 +27,8 @@ export async function recordTurn(opts: {
     const sb = createAdminClient();
     const position = opts.stopIndex + 1;
     // constraint session_active_has_expiry: EN_CURSO exige expires_at (ventana
-    // deslizante de 48 h, igual que el resume del cliente).
-    const expiresAt = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
+    // deslizante de 7 días, igual que el resume del cliente).
+    const expiresAt = new Date(Date.now() + 168 * 3600 * 1000).toISOString();
 
     const { data: existing } = await sb
       .from("play_sessions")

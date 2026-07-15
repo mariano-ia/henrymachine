@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
         .eq("experience_id", exp.id)
         .eq("anon_id", body.anonId)
         .eq("status", "EN_CURSO")
+        .gt("expires_at", new Date().toISOString()) // ventana 7d: no reanudar vencidas
         .maybeSingle();
       if (sess) {
         serverProgress = {
