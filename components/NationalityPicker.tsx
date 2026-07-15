@@ -1,12 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { flagEmoji, countryName } from "@/lib/country";
 import { COUNTRY_OPTIONS, getCountry, setCountry } from "@/lib/nationality";
 
+async function postCountry(anonId: string, iso: string): Promise<boolean> {
+  try {
+    const r = await fetch("/api/nationality", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ anonId, country: iso }),
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Al terminar: "¿a qué bandera sumamos tus pasos?". Pre-cargado con el país por
- * IP; opcional. Al confirmar, reescribe el país de las sesiones del anon.
+ * IP (si está en la lista); opcional. Al confirmar reescribe el país de las
+ * sesiones del anon. Si ya declaró en un tour anterior, re-aplica su país a este
+ * (sus sesiones nuevas se crean con el país de la IP hasta este resync).
  */
 export default function NationalityPicker({
   anonId,
@@ -16,24 +31,28 @@ export default function NationalityPicker({
   detectedCountry: string | null;
 }) {
   const [saved, setSaved] = useState<string | null>(() => getCountry());
-  const [sel, setSel] = useState<string>(() => getCountry() ?? detectedCountry ?? "");
+  const [sel, setSel] = useState<string>(() => {
+    const g = getCountry();
+    if (g) return g;
+    const d = detectedCountry?.toUpperCase() ?? "";
+    return COUNTRY_OPTIONS.includes(d) ? d : ""; // detectado fuera de la lista → sin preselección
+  });
   const [busy, setBusy] = useState(false);
+
+  // ya declaró antes (otro tour): re-aplica su país a las sesiones de este anon
+  useEffect(() => {
+    const g = getCountry();
+    if (g && anonId) void postCountry(anonId, g);
+  }, [anonId]);
 
   async function confirm() {
     if (!/^[A-Z]{2}$/i.test(sel)) return;
     const iso = sel.toUpperCase();
     setBusy(true);
-    setCountry(iso);
-    try {
-      await fetch("/api/nationality", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ anonId, country: iso }),
-      });
-    } catch {
-      /* no romper la UX */
-    }
+    const ok = await postCountry(anonId, iso);
     setBusy(false);
+    if (!ok) return; // falló (429/500): no marcar guardado, permitir reintento
+    setCountry(iso);
     setSaved(iso);
   }
 
