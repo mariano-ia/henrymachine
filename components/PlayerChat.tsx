@@ -460,7 +460,7 @@ export default function PlayerChat({
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-semibold leading-tight text-white">Henry</p>
           <p className="text-[11px] leading-tight text-white/55">
-            {sending ? "escribiendo…" : "en línea"}
+            {sending ? "escribiendo…" : "en línea · se guarda solo"}
           </p>
         </div>
         {tour.status === "EN_CURSO" && stops.length > 0 && (
@@ -521,6 +521,16 @@ export default function PlayerChat({
           </svg>
           {tour.phase === "CAMINANDO" ? `Cómo llegar a ${target.title}` : `Ver ${target.title} en el mapa`}
         </a>
+      )}
+
+      {tour.phase === "EN_PAUSA" && (
+        <div className="mx-3 mb-1.5 rounded-xl border border-ink/10 bg-white px-3.5 py-2.5 text-[12.5px] leading-snug text-ink/70">
+          <b className="text-ink">Se guarda solo.</b> Tu acceso no vence. Dónde quedaste se guarda 7 días en este teléfono — o entra con tu correo y lo retomas desde cualquier lado, en{" "}
+          <a href="/mis-recorridos" className="font-semibold text-brand underline underline-offset-2">
+            Mis recorridos
+          </a>
+          .
+        </div>
       )}
 
       {/* footer: paywall / terminado / input */}
