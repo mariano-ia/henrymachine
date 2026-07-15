@@ -36,9 +36,18 @@ export async function POST(req: NextRequest) {
     /* no romper la UX por un lead */
   }
 
-  // captura al arrancar → le mandamos el link para volver desde el correo
+  // captura al arrancar → le mandamos el link para volver desde el correo.
+  // Validamos que el slug sea una experiencia PUBLICADA y pasamos el slug canónico
+  // de la DB: evita usar /api/lead como relay de correo con contenido arbitrario /
+  // inyección de HTML vía un slug inventado.
   if (body.source === "player_start" && typeof body.slug === "string" && body.slug) {
-    await sendTourLinkEmail(email, body.slug.slice(0, 80));
+    const { data: exp } = await createAdminClient()
+      .from("experiences")
+      .select("slug")
+      .eq("slug", body.slug.slice(0, 80))
+      .eq("status", "published")
+      .maybeSingle();
+    if (exp) await sendTourLinkEmail(email, exp.slug);
   }
 
   return NextResponse.json({ ok: true });

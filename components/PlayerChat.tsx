@@ -492,11 +492,11 @@ export default function PlayerChat({
           Chat con IA en la voz de Henry
         </p>
         {resumeExpired && (
-          <div className="rounded-xl bg-[#F4F2EC] px-3.5 py-2.5 text-[13px] leading-snug text-ink/70">
+          <div className="rounded-xl border border-ink/10 bg-white px-3.5 py-2.5 text-[13px] leading-snug text-ink/70 shadow-bubble">
             Pasó más de una semana y perdí el rastro de dónde quedamos 😅 pero tu recorrido sigue siendo tuyo — arrancamos de nuevo, ¿va?
           </div>
         )}
-        {askEmail && (
+        {askEmail && tour.status === "EN_CURSO" && !getCapturedEmail() && (
           <EmailCaptureCard
             title="¿Te guardo el link por si se te corta la señal? Te lo mando al correo y lo retomas cuando quieras."
             source="player_start"

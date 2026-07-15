@@ -84,7 +84,7 @@ export async function sendTourLinkEmail(to: string, slug: string): Promise<void>
     return;
   }
   try {
-    const url = `${SITE}/e/${slug}/chat`;
+    const url = `${SITE}/e/${encodeURIComponent(slug)}/chat`;
     const html = `
 <div style="font-family:system-ui,-apple-system,sans-serif;max-width:480px;margin:0 auto;color:#1A1A1A">
   <p style="font-size:16px;line-height:1.5">¡Aquí te dejo tu recorrido, querubín! Retómalo cuando quieras — se guarda donde lo dejaste.</p>

@@ -99,7 +99,7 @@ export async function getPlayableExperience(
       .maybeSingle();
     if (ent) {
       // ¿empezó? si sí, es para siempre. si no, vence a los 90 días de pagar.
-      const { data: started } = await sb.rpc("entitlement_started", {
+      const { data: started, error: startedErr } = await sb.rpc("entitlement_started", {
         p_experience_id: exp.id,
         p_anon_id: anonId,
         p_user_id: null,
@@ -115,10 +115,14 @@ export async function getPlayableExperience(
         paidAt = pur?.paid_at ?? ent.created_at;
       }
       const ageDays = paidAt ? (Date.now() - new Date(paidAt).getTime()) / 86400000 : 0;
-      if (started === true || ageDays <= 90) {
-        hasAccess = true;
+      // fail-OPEN: solo vence si el RPC confirmó EXPLÍCITAMENTE que no empezó y pasaron
+      // 90 días. Ante error/null del RPC (o migración no aplicada) conservamos el acceso:
+      // nunca dejar a un comprador legítimo sin su recorrido por un blip de la DB.
+      const confirmedNotStarted = startedErr == null && started === false;
+      if (confirmedNotStarted && ageDays > 90) {
+        purchaseExpired = true;
       } else {
-        purchaseExpired = true; // no empezó y venció
+        hasAccess = true;
       }
     }
   }
