@@ -106,8 +106,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     openGraph: {
       title: `${exp.title} · ${price}`,
       description: exp.pitch ?? "",
-      images: cover ? [cover] : ["/hero_background.jpg"],
-      // el OG hijo reemplaza al del root: reponemos locale/type para no perderlos.
+      // la imagen la aporta app/e/[slug]/opengraph-image.tsx (pasos + barrio).
       locale: "es",
       type: "website",
     },
