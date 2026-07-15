@@ -1,5 +1,6 @@
 import type { LeaderRow } from "@/lib/db/leaderboard";
 import { flagEmoji, countryName } from "@/lib/country";
+import LeaderboardShare from "@/components/LeaderboardShare";
 
 /**
  * Ranking de países (sidebar delicada, a la derecha de las experiencias).
@@ -9,7 +10,7 @@ export default function Leaderboard({ rows, sample = false }: { rows: LeaderRow[
   if (rows.length === 0) return null; // sin datos aún: no mostrar nada
 
   return (
-    <div className="rounded-2xl border border-ink/10 bg-card p-5 shadow-card">
+    <div id="ranking" className="rounded-2xl border border-ink/10 bg-card p-5 shadow-card">
       <div className="flex items-center gap-2">
         <h2 className="text-[14px] font-semibold tracking-tight text-ink">Los que más caminan</h2>
         {sample && (
@@ -40,6 +41,7 @@ export default function Leaderboard({ rows, sample = false }: { rows: LeaderRow[
       <p className="mt-3.5 border-t border-ink/8 pt-3 text-[10px] uppercase tracking-label text-ink/30">
         pasos caminados
       </p>
+      <LeaderboardShare />
     </div>
   );
 }
