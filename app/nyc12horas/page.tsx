@@ -1,9 +1,7 @@
-import TourChat from "@/components/TourChat";
+import { notFound } from "next/navigation";
 
-export const metadata = {
-  title: "12 horas en Nueva York con Henry",
-};
-
+// Prototipo retirado antes del lanzamiento (competía en SEO con el producto real
+// y tenía copy con voseo). La página queda en 404.
 export default function NYC12Page() {
-  return <TourChat />;
+  notFound();
 }

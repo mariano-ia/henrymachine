@@ -210,6 +210,8 @@ export default function PlayerChat({
   const [sending, setSending] = useState(false);
   const [nudged, setNudged] = useState(false);
   const [buying, setBuying] = useState(false);
+  const [buyError, setBuyError] = useState<string | null>(null);
+  const [promoInvalid, setPromoInvalid] = useState(false);
   // ¿ya dejó una reseña? (inline o al final). Persiste para no volver a pedirla.
   const [reviewed, setReviewed] = useState<boolean>(() => {
     try {
@@ -380,20 +382,48 @@ export default function PlayerChat({
     return () => clearTimeout(id);
   }, [messages, tour.phase, tour.status, nudged, sending, sendNudge]);
 
-  async function buy() {
+  async function buy(ignorePromo = false) {
     track("begin_checkout", slug);
     if (buying) return;
     setBuying(true);
+    setBuyError(null);
+    setPromoInvalid(false);
     try {
+      // el cupón del upsell: ?promo en la URL, o el que BuyBar guardó por experiencia.
+      let promo: string | null = null;
+      if (!ignorePromo) {
+        try {
+          promo =
+            new URLSearchParams(window.location.search).get("promo") ||
+            localStorage.getItem(`henry_promo_${slug}`);
+        } catch {
+          promo = null;
+        }
+      }
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, anonId, utm: getUtm() }),
+        body: JSON.stringify({ slug, anonId, utm: getUtm(), promo }),
       });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setBuying(false);
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      // cupón vencido/desactivado: lo limpiamos y ofrecemos seguir sin descuento
+      // (en vez de cobrar precio completo en silencio).
+      if (data.code === "invalid_promo") {
+        setPromoInvalid(true);
+        try {
+          localStorage.removeItem(`henry_promo_${slug}`);
+        } catch {
+          /* noop */
+        }
+      }
+      setBuyError(data.error ?? "No se pudo abrir el pago. Prueba de nuevo.");
+      setBuying(false);
     } catch {
+      setBuyError("No se pudo abrir el pago. Revisa tu conexión y prueba de nuevo.");
       setBuying(false);
     }
   }
@@ -478,12 +508,26 @@ export default function PlayerChat({
             </p>
           </div>
           <button
-            onClick={buy}
+            onClick={() => buy()}
             disabled={buying}
             className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-6 py-3.5 text-[15px] font-semibold text-white transition hover:bg-brand-dark active:scale-[0.99] disabled:opacity-60"
           >
             {buying ? "Abriendo el pago…" : `Desbloquea el resto · ${fmtUsd(priceCents)}`}
           </button>
+          {/* kit de confianza: qué te llevas y la garantía (compra impulsiva) */}
+          <p className="mt-2 text-center text-[11px] leading-tight text-ink/50">
+            Acceso para siempre con tu correo · si no te gustó, te devuelvo tu dinero
+          </p>
+          {buyError && <p className="mt-2 text-center text-[12px] text-red-600">{buyError}</p>}
+          {promoInvalid && (
+            <button
+              onClick={() => buy(true)}
+              disabled={buying}
+              className="mt-1 w-full text-center text-[12px] font-semibold text-brand underline underline-offset-2 disabled:opacity-60"
+            >
+              Continuar sin descuento
+            </button>
+          )}
         </div>
       ) : tour.status === "TERMINADO" ? (
         <div

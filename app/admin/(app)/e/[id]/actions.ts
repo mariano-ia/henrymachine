@@ -5,6 +5,15 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
+import { isAdmin } from "@/lib/auth/admin";
+
+// El home y el detalle pasaron a ISR (revalidate 60). Tras un cambio del admin
+// (publicar, precio, contenido) hay que revalidarlos o el catálogo/precio quedan
+// stale hasta 60 s. "page" revalida todas las URLs del segmento dinámico /e/[slug].
+function revalidatePublic() {
+  revalidatePath("/");
+  revalidatePath("/e/[slug]", "page");
+}
 
 export async function setPricing(input: {
   experienceId: string;
@@ -13,11 +22,11 @@ export async function setPricing(input: {
   message: string | null;
   title: string;
 }): Promise<{ ok: boolean; error?: string }> {
+  // autorización ANTES de crear nada en Stripe (las actions son endpoints públicos).
+  // Admin, no "autor": el autor de su propia experiencia generada sería cualquier
+  // comprador; solo Henry/Mariano fijan precios y publican.
+  if (!(await isAdmin())) return { ok: false, error: "No autorizado." };
   const sb = await createClient();
-
-  // autorización barata ANTES de crear nada en Stripe (las actions son endpoints públicos)
-  const { data: isAuthor } = await sb.rpc("is_experience_author", { exp: input.experienceId });
-  if (!isAuthor) return { ok: false, error: "No autorizado." };
 
   // El precio de Stripe se crea ANTES del RPC: en publicadas, el constraint
   // exp_paid_needs_price exige stripe_price_id junto con el precio pago.
@@ -59,6 +68,7 @@ export async function setPricing(input: {
   }
 
   revalidatePath(`/admin/e/${input.experienceId}`);
+  revalidatePublic();
   return { ok: true };
 }
 
@@ -67,6 +77,7 @@ export async function addStep(input: {
   afterPosition: number;
   type: "message" | "arrival";
 }): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdmin())) return { ok: false, error: "No autorizado." };
   const sb = await createClient();
   const { error } = await sb.rpc("admin_add_step", {
     p_exp: input.experienceId,
@@ -82,6 +93,7 @@ export async function deleteStep(input: {
   stepId: string;
   experienceId: string;
 }): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdmin())) return { ok: false, error: "No autorizado." };
   const sb = await createClient();
   // los archivos de media del paso: la fila cae por cascade, el storage se limpia acá
   const { data: media } = await sb
@@ -127,6 +139,7 @@ export async function saveExperience(input: {
   upsellPromoCode: string | null;
   steps: StepEdit[];
 }): Promise<{ ok: boolean; error?: string; warning?: string }> {
+  if (!(await isAdmin())) return { ok: false, error: "No autorizado." };
   const sb = await createClient();
 
   const meta = {
@@ -170,6 +183,7 @@ export async function saveExperience(input: {
   }
 
   revalidatePath(`/admin/e/${input.id}`);
+  revalidatePublic();
   return { ok: true, warning };
 }
 
@@ -179,6 +193,7 @@ export async function setCover(input: {
   oldPath: string | null;
   field?: "cover_path" | "card_image_path"; // portada del detalle (default) o card cuadrada
 }): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdmin())) return { ok: false, error: "No autorizado." };
   const sb = await createClient();
   const field = input.field ?? "cover_path";
   if (input.path && !input.path.startsWith(`${input.experienceId}/`)) {
@@ -196,27 +211,33 @@ export async function setCover(input: {
 }
 
 export async function publishExperience(id: string): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdmin())) return { ok: false, error: "No autorizado." };
   const sb = await createClient();
   const { error } = await sb.from("experiences").update({ status: "published" }).eq("id", id);
   if (error) return { ok: false, error: traduceDbError(error.message) };
   revalidatePath(`/admin/e/${id}`);
   revalidatePath("/admin");
+  revalidatePublic();
   return { ok: true };
 }
 
 export async function unpublishExperience(id: string): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdmin())) return { ok: false, error: "No autorizado." };
   const sb = await createClient();
   const { error } = await sb.from("experiences").update({ status: "draft" }).eq("id", id);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/admin/e/${id}`);
   revalidatePath("/admin");
+  revalidatePublic();
   return { ok: true };
 }
 
 export async function deleteExperience(id: string): Promise<void> {
+  if (!(await isAdmin())) redirect("/");
   const sb = await createClient();
   await sb.from("experiences").delete().eq("id", id);
   revalidatePath("/admin");
+  revalidatePublic();
   redirect("/admin");
 }
 
@@ -227,6 +248,7 @@ export async function addStepMedia(input: {
   storagePath: string;
   caption?: string;
 }): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdmin())) return { ok: false, error: "No autorizado." };
   const sb = await createClient();
   const { error } = await sb.from("step_media").insert({
     experience_id: input.experienceId,
@@ -247,6 +269,7 @@ export async function deleteStepMedia(input: {
   experienceId: string;
   storagePath: string | null;
 }): Promise<void> {
+  if (!(await isAdmin())) return;
   const sb = await createClient();
   await sb.from("step_media").delete().eq("id", input.mediaId);
   if (input.storagePath) {

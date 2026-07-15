@@ -27,6 +27,14 @@ REGLAS:
 
 export async function POST(req: NextRequest) {
   try {
+    // mismo kill-switch que /api/play: apaga el teaser sin deploy.
+    if (process.env.CHAT_DISABLED === "1" || process.env.CHAT_DISABLED === "true") {
+      return NextResponse.json(
+        { reply: "Ahorita ando desconectado un ratito 😴 elige un recorrido y arrancamos apenas vuelva." },
+        { status: 200 }
+      );
+    }
+
     const ok = await rateLimit(req, "hero", null, 3600, 12);
     if (!ok) {
       return NextResponse.json(

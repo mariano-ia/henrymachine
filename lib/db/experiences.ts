@@ -157,7 +157,10 @@ export async function getPlayableExperience(
       askReview: !!a.ask_review,
       reviewMessage: a.review_message ?? null,
     })),
-    grounding: source?.inline_text ?? "", // server-only; NO se manda al cliente
+    // server-only; NO se manda al cliente. Además, si el viewer NO compró, el
+    // grounding (relato completo, incluye las paradas pagas) NO entra al prompt:
+    // sin esto, pedirle a Henry "adelántame el resto" filtraba el contenido pago.
+    grounding: hasAccess ? source?.inline_text ?? "" : "",
     locked: exp.price_cents > 0 && !hasAccess,
     priceCents: exp.price_cents,
     paywallMessage: paywallStep?.paywall_message ?? null,

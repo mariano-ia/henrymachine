@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
   let event: Stripe.Event;
   try {
     event = getStripe().webhooks.constructEvent(raw, sig, secret);
-  } catch {
+  } catch (e) {
+    console.error("[webhook] firma de Stripe inválida", e);
     return new NextResponse("firma inválida", { status: 400 });
   }
 
@@ -65,7 +66,14 @@ export async function POST(req: NextRequest) {
           marketing_consent: s.consent?.promotions === "opt_in",
         })
         .eq("id", purchaseId);
-      if (error) return new NextResponse("db purchases", { status: 500 });
+      if (error) {
+        console.error("[webhook] no se pudo marcar la compra pagada", {
+          eventId: event.id,
+          purchaseId,
+          error: error.message,
+        });
+        return new NextResponse("db purchases", { status: 500 });
+      }
     }
 
     // regalo: el acceso va al email del regalado (source 'grant'), NO al comprador
@@ -81,7 +89,13 @@ export async function POST(req: NextRequest) {
         source: "grant",
         purchase_id: purchaseId,
       });
-      if (giftErr && !isDup(giftErr)) return new NextResponse("db gift entitlement", { status: 500 });
+      if (giftErr && !isDup(giftErr)) {
+        console.error("[webhook] no se pudo crear el entitlement de regalo", {
+          eventId: event.id,
+          error: giftErr.message,
+        });
+        return new NextResponse("db gift entitlement", { status: 500 });
+      }
     } else if (experienceId && (anonId || email)) {
       const { error: entErr } = await sb.from("entitlements").insert({
         experience_id: experienceId,
@@ -90,7 +104,13 @@ export async function POST(req: NextRequest) {
         source: "purchase",
         purchase_id: purchaseId,
       });
-      if (entErr && !isDup(entErr)) return new NextResponse("db entitlements", { status: 500 });
+      if (entErr && !isDup(entErr)) {
+        console.error("[webhook] no se pudo crear el entitlement de compra", {
+          eventId: event.id,
+          error: entErr.message,
+        });
+        return new NextResponse("db entitlements", { status: 500 });
+      }
     }
 
     // 2) la venta se registra siempre (un regalo también es una venta)

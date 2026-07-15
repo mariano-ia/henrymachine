@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import SiteHeader from "@/components/SiteHeader";
 
 export const dynamic = "force-dynamic";
+// página privada del usuario: no indexar.
+export const metadata = { robots: { index: false } };
 
 export default async function MisRecorridosPage() {
   const { data: { user } } = await (await createClient()).auth.getUser();

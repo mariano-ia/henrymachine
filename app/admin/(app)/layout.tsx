@@ -16,6 +16,12 @@ export default async function AdminAppLayout({
   } = await sb.auth.getUser();
   if (!user) redirect("/admin/login");
 
+  // Gate de rol: cualquiera se loguea por OTP (así entran los compradores a
+  // /cuenta), pero SOLO un admin entra al constructor. Sin esto, un comprador
+  // podía generar y publicar experiencias en el catálogo público.
+  const { data: admin } = await sb.rpc("is_admin");
+  if (admin !== true) redirect("/");
+
   // Asegura la fila de author (sin pisar is_henry/is_admin si ya existe).
   await sb
     .from("authors")

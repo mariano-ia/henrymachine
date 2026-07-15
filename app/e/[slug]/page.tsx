@@ -1,3 +1,4 @@
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getExperienceDetail } from "@/lib/db/detail";
@@ -12,7 +13,10 @@ import { metersToSteps } from "@/lib/steps";
 import { flagEmoji } from "@/lib/country";
 import { fmtUsd } from "@/lib/price";
 
-export const dynamic = "force-dynamic";
+// ISR: el detalle es contenido público que cambia lento. React.cache dedupe la
+// carga entre generateMetadata y la página (antes se pedía DOS veces por vista).
+export const revalidate = 60;
+const getDetail = cache(getExperienceDetail);
 const STAR = "#D89A34";
 
 function coverUrl(path: string | null): string | null {
@@ -91,17 +95,21 @@ const STEPS = [
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const exp = await getExperienceDetail(slug);
+  const exp = await getDetail(slug);
   if (!exp) return {};
   const price = fmtUsd(exp.priceCents);
   const cover = coverUrl(exp.coverPath); // helper ya existente en este archivo
   return {
     title: `${exp.title} · ${price} — La Nueva York de Henry`,
     description: exp.pitch ?? "Un recorrido a pie por Nueva York, guiado por chat por Henry.",
+    alternates: { canonical: `/e/${slug}` },
     openGraph: {
       title: `${exp.title} · ${price}`,
       description: exp.pitch ?? "",
       images: cover ? [cover] : ["/hero_background.jpg"],
+      // el OG hijo reemplaza al del root: reponemos locale/type para no perderlos.
+      locale: "es",
+      type: "website",
     },
   };
 }
@@ -112,7 +120,7 @@ export default async function DetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const exp = await getExperienceDetail(slug);
+  const exp = await getDetail(slug);
   if (!exp) notFound();
 
   const ti = themeInfo(exp.theme);

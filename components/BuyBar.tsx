@@ -30,6 +30,15 @@ export default function BuyBar({
       localStorage.setItem("henry_anon", id);
     }
     setAnonId(id);
+    // el cupón del upsell llega como ?promo=CODE. Lo guardamos por experiencia para
+    // que el paywall DENTRO del chat (caso paradas gratis → chat) también lo aplique;
+    // si no, se prometía el descuento y se cobraba precio completo.
+    try {
+      const promo = new URLSearchParams(window.location.search).get("promo");
+      if (promo) localStorage.setItem(`henry_promo_${slug}`, promo);
+    } catch {
+      /* storage bloqueado */
+    }
     if (free) return;
     fetch("/api/experience", {
       method: "POST",

@@ -35,7 +35,11 @@ export async function sendAccessEmail(opts: {
   giftMessage?: string | null;
 }): Promise<void> {
   const r = client();
-  if (!r) return; // sin key configurada: no-op silencioso
+  if (!r) {
+    // en producción esto significa que un comprador NO recibe su link de acceso.
+    console.warn("[email] RESEND_API_KEY ausente: no se envió el email de acceso", { to: opts.to });
+    return;
+  }
   try {
     const title = esc(opts.experienceTitle);
     const url = `${SITE}/cuenta`;
@@ -66,8 +70,9 @@ export async function sendAccessEmail(opts: {
       subject: opts.isGift ? `Te regalaron: ${opts.experienceTitle}` : `Tu recorrido: ${opts.experienceTitle}`,
       html,
     });
-  } catch {
-    /* email nunca rompe el flujo de compra */
+  } catch (e) {
+    // el email nunca rompe la compra, pero SÍ queremos enterarnos: comprador sin acceso.
+    console.error("[email] falló el envío del email de acceso", { to: opts.to, error: e });
   }
 }
 
@@ -86,11 +91,13 @@ export async function sendLoginCode(to: string, code: string): Promise<boolean> 
     const res = await r.emails.send({
       from: FROM,
       to,
-      subject: `Tu código: ${code}`,
+      subject: "Tu código para entrar",
       html,
     });
+    if (res.error) console.error("[email] Resend rechazó el código de login", { error: res.error });
     return !res.error;
-  } catch {
+  } catch (e) {
+    console.error("[email] falló el envío del código de login", { error: e });
     return false;
   }
 }

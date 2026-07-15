@@ -42,6 +42,9 @@ export const metadata: Metadata = {
     type: "website",
   },
   twitter: { card: "summary_large_image" },
+  // canonical: con el dominio vercel.app y el propio conviviendo, evita contenido
+  // duplicado. metadataBase resuelve el absoluto desde NEXT_PUBLIC_SITE_URL.
+  alternates: { canonical: "/" },
 };
 
 export const viewport: Viewport = {

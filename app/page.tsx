@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import CatalogGrid, { type Exp } from "@/components/CatalogGrid";
 import SocialLinks from "@/components/SocialLinks";
 import HeroChat from "@/components/HeroChat";
@@ -8,10 +8,14 @@ import Leaderboard from "@/components/Leaderboard";
 import TrackView from "@/components/TrackView";
 import { getCountryLeaderboard, SAMPLE_LEADERBOARD } from "@/lib/db/leaderboard";
 
-export const dynamic = "force-dynamic";
+// ISR: el catálogo y el leaderboard cambian lento. En vez de pegar a Supabase en
+// CADA visita (crítico en el pico del lanzamiento), se sirve cacheado y se
+// revalida cada 60 s. Datos 100% públicos → admin client sin cookies (no fuerza
+// render dinámico). country_leaderboard deja de correr por request.
+export const revalidate = 60;
 
 export default async function Home() {
-  const sb = await createClient();
+  const sb = createAdminClient();
   const { data } = await sb
     .from("experiences_public")
     .select(
@@ -133,9 +137,13 @@ export default async function Home() {
             <p className="hidden font-hand text-[19px] leading-none text-ink/50 sm:block">nos vemos en la esquina</p>
           </div>
         </div>
-        <p className="mx-auto max-w-editorial px-5 pb-4 text-[10px] text-ink/30 sm:px-10">
-          Henry virtual · IA entrenada con la personalidad de Henry
-        </p>
+        <div className="mx-auto flex max-w-editorial items-center gap-3 px-5 pb-4 text-[10px] text-ink/30 sm:px-10">
+          <span>Henry virtual · IA entrenada con la personalidad de Henry</span>
+          <span aria-hidden>·</span>
+          <Link href="/terminos" className="underline underline-offset-2 hover:text-ink/60">
+            Términos y reembolsos
+          </Link>
+        </div>
       </footer>
     </main>
   );

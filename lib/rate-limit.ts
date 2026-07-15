@@ -26,3 +26,26 @@ export async function rateLimit(
     return true;
   }
 }
+
+/**
+ * Contador GLOBAL de todo el sitio (sin IP ni anonId): presupuesto agregado, p.
+ * ej. tope diario de turnos de LLM como backstop de costo ante abuso distribuido.
+ * fail-open igual que rateLimit (un hipo de la DB no debe apagar el chat).
+ */
+export async function globalLimit(
+  key: string,
+  windowSecs: number,
+  max: number
+): Promise<boolean> {
+  try {
+    const { data, error } = await createAdminClient().rpc("rl_hit", {
+      p_key: `global:${key}`,
+      p_window_secs: windowSecs,
+      p_max: max,
+    });
+    if (error) return true;
+    return data === true;
+  } catch {
+    return true;
+  }
+}

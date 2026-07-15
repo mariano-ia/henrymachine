@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
   }
 
   // purchase 'pending' (puente checkout→identidad antes del webhook)
-  const { data: purchase } = await sb
+  const { data: purchase, error: purchaseErr } = await sb
     .from("purchases")
     .insert({
       experience_id: exp.id,
@@ -133,6 +133,15 @@ export async function POST(req: NextRequest) {
     })
     .select("id")
     .single();
+  // si el registro de compra no se creó, abortar ANTES de cobrar: con purchase_id
+  // vacío el webhook no puede marcar la compra como pagada ni evitar doble cargo.
+  if (purchaseErr || !purchase) {
+    console.error("[checkout] no se pudo crear el purchase pending", {
+      slug,
+      error: purchaseErr?.message,
+    });
+    return NextResponse.json({ error: "No se pudo iniciar el pago." }, { status: 500 });
+  }
 
   const origin = originEarly || "https://henry-demo-zeta.vercel.app";
 
@@ -150,7 +159,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         experience_id: exp.id,
         anon_id: anonId,
-        purchase_id: purchase?.id ?? "",
+        purchase_id: purchase.id,
         utm_source: (utm.utm_source ?? "").slice(0, 100),
         utm_medium: (utm.utm_medium ?? "").slice(0, 100),
         utm_campaign: (utm.utm_campaign ?? "").slice(0, 100),
@@ -163,14 +172,13 @@ export async function POST(req: NextRequest) {
         : `${origin}/e/${slug}/chat?purchased=1`,
       cancel_url: `${origin}/e/${slug}`,
     });
-    if (purchase) {
-      await sb
-        .from("purchases")
-        .update({ stripe_checkout_session_id: session.id })
-        .eq("id", purchase.id);
-    }
+    await sb
+      .from("purchases")
+      .update({ stripe_checkout_session_id: session.id })
+      .eq("id", purchase.id);
     return NextResponse.json({ url: session.url });
-  } catch {
+  } catch (e) {
+    console.error("[checkout] no se pudo crear la sesión de Stripe", { slug, error: e });
     return NextResponse.json({ error: "No se pudo iniciar el pago." }, { status: 502 });
   }
 }

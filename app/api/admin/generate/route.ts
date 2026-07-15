@@ -12,6 +12,10 @@ export async function POST(req: NextRequest) {
   } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
 
+  // gate de rol: el generador cuesta tokens de Gemini y crea filas; solo admin.
+  const { data: admin } = await sb.rpc("is_admin");
+  if (admin !== true) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+
   // asegura author
   await sb
     .from("authors")
