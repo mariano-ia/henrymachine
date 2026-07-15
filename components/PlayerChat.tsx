@@ -10,6 +10,8 @@ import { fmtUsd } from "@/lib/price";
 import { metersToSteps } from "@/lib/steps";
 import ReviewPrompt from "@/components/ReviewPrompt";
 import ShareButton from "@/components/ShareButton";
+import EmailCaptureCard from "@/components/EmailCaptureCard";
+import { getCapturedEmail } from "@/lib/email-capture";
 
 type StopMeta = {
   title: string;
@@ -132,6 +134,8 @@ export default function PlayerChat({
   const pasosNum = metersToSteps(distanceM ?? null);
   const sharePasos = pasosNum ? `${pasosNum.toLocaleString("es-PE")} pasos` : "un buen tramo";
   const shareTexto = `Caminé ${sharePasos} por ${neighborhood ?? "Nueva York"} con Henry`;
+  // ya lo tiene (paga y no bloqueada) → nunca pedir email
+  const ownsIt = priceCents > 0 && !locked;
   const upsellCover = upsell?.coverPath
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/experience-covers/${upsell.coverPath}`
     : null;
@@ -222,6 +226,10 @@ export default function PlayerChat({
   const [buying, setBuying] = useState(false);
   const [buyError, setBuyError] = useState<string | null>(null);
   const [promoInvalid, setPromoInvalid] = useState(false);
+  // captura de email al arrancar (momento 1): salteable y deduplicada
+  const [askEmail, setAskEmail] = useState<boolean>(
+    () => !getCapturedEmail() && !ownsIt && stops.length > 0 && tour.status === "EN_CURSO"
+  );
   // ¿ya dejó una reseña? (inline o al final). Persiste para no volver a pedirla.
   const [reviewed, setReviewed] = useState<boolean>(() => {
     try {
@@ -465,6 +473,15 @@ export default function PlayerChat({
         <p className="pb-1 text-center text-[10px] leading-tight text-ink/30">
           Chat con IA en la voz de Henry
         </p>
+        {askEmail && (
+          <EmailCaptureCard
+            title="¿Te guardo el link por si se te corta la señal? Te lo mando al correo y lo retomas cuando quieras."
+            source="player_start"
+            slug={slug}
+            onDone={() => setAskEmail(false)}
+            onSkip={() => setAskEmail(false)}
+          />
+        )}
         {messages.map((m, i) => {
           if (m.kind === "review") {
             return (
