@@ -62,31 +62,48 @@ evalúa en v2.
 
 ---
 
-## Feature 2 — Captura de email al arrancar + recuperación del recorrido
+## Feature 2 — Captura de email + recuperación del recorrido
 
-**Qué:** un prompt suave y **descartable** temprano en el tour gratis, y el
-cableado para que dejar el email sea una forma real de volver.
+**Dos momentos de captura**, ambos **opcionales** y **deduplicados**: si ya
+tenemos el email (por Stripe, por un momento anterior, o porque ya tiene el
+recorrido), no se vuelve a pedir.
 
-**Comportamiento:**
-- Aparece **una sola vez**, temprano (p. ej. tras el primer par de turnos o al
-  llegar a la primera parada), como tarjeta inline no bloqueante: *"¿Te guardo el
-  recorrido? Te mando el link al correo y lo retomas cuando quieras — por si se te
-  corta la señal."* Con input de email + "Guardar" y una X para descartar.
-- Al enviar: se guarda en `leads` (source `player_start`) **y** se le manda un
-  correo con el link del recorrido (`/e/{slug}/chat`). Reusa `sendAccessEmail` o
-  un template hermano ("tu recorrido te espera").
+**Momento 1 — al arrancar la experiencia (gratis o paga-con-preview):**
+- Al iniciar el chat, una tarjeta inline **salteable** (NO bloquea el arranque —
+  proteger el arranque del recorrido, que es lo que alimenta los compartidos):
+  *"¿Te guardo el link por si se te corta la señal? Te lo mando al correo y lo
+  retomas cuando quieras."* Con "Guardar" y "Ahora no".
+- No aparece en la paga **sin** preview (esa va derecho a Stripe, que ya pide el
+  email) ni a quien ya tiene el recorrido.
+- Si lo deja: se guarda en `leads` (source `player_start`) + local + se le manda el
+  correo con el link. Y queda para **pre-completar Stripe** (`customer_email`) si
+  más tarde compra — no re-tipear el email.
+
+**Momento 2 — en el paywall, para el que NO dejó email antes:**
+- Justo cuando el tramo gratis se corta, **secundario al botón de compra** (que
+  sigue siendo el CTA dominante — NO canibalizar la venta): un ask suave, debajo,
+  como salida del que no compra hoy. *"¿Quieres que te avisemos de nuevos
+  recorridos y descuentos?"* + input.
+- Si lo deja: `leads` (source `paywall`). Es el lead de **más alta intención**
+  (jugó todo el tramo gratis y llegó a la pared).
+- **La promesa de "descuentos" hay que cumplirla:** habilita recontactar con un
+  cupón para volver (reusa los promotion codes de Stripe que ya existen). El envío
+  automático del "vuelve con este descuento" es fast-follow (ver decisión
+  pendiente). Si no se construye, el copy se suaviza a "novedades y nuevos
+  recorridos" para no prometer de más.
+
+**Recuperación (alimentada por ambos momentos):**
 - **Aviso de autoguardado** discreto y permanente en el chat ("Se guarda solo").
-- **Tarjeta de pausa (UI, no Henry):** cuando el usuario pausa o vuelve, una
-  tarjeta determinística dice las formas de volver y los relojes:
-  *"Tu acceso no vence. Dónde quedaste se guarda 7 días en este teléfono — o entra
-  con tu correo y lo retomas desde cualquier lado, en Mis recorridos."*
-- **Fix técnico:** hoy el retomar server-side solo funciona si avanzaste más de la
-  parada 1. Se corrige para retomar también desde la parada 1, así "Mis
-  recorridos" sirve aunque hayas dejado temprano.
+- **Tarjeta de pausa (UI determinística, no Henry):** al pausar/volver dice las
+  formas de volver y los relojes: *"Tu acceso no vence. Dónde quedaste se guarda 7
+  días en este teléfono — o entra con tu correo y lo retomas desde cualquier lado,
+  en Mis recorridos."*
+- **Fix técnico:** retomar server-side también desde la parada 1 (hoy solo si
+  avanzaste más), para que "Mis recorridos" sirva aunque hayas dejado temprano.
 
-**Ventana de progreso:** **7 días corridos** (antes 48 h), tanto en `localStorage`
-como en el server (`play_sessions`, campo `resume_window_hours`). La media firmada
-se regenera fresca al reabrir (el player ya descarta las burbujas vencidas).
+**Ventana de progreso:** **7 días corridos** (antes 48 h), en `localStorage` y en
+el server (`play_sessions`, `resume_window_hours`). La media firmada se regenera
+fresca al reabrir (el player ya descarta las burbujas vencidas).
 
 ---
 
@@ -152,7 +169,9 @@ se regenera fresca al reabrir (el player ya descarta las burbujas vencidas).
 
 ## Cambios de datos (resumen; el detalle va en el plan)
 
-- `leads`: nuevo valor de `source` (`player_start`). Sin cambio de esquema.
+- `leads`: nuevos valores de `source` (`player_start`, `paywall`). Sin cambio de
+  esquema.
+- Checkout: pasar `customer_email` a Stripe cuando ya tenemos el email (prefill).
 - `play_sessions`: usar y enforcar `resume_window_hours` = 7 días (server-side).
 - `entitlements`: soporte de vencimiento de no-empezados a 90 días (campo de
   compra ya existe vía `purchases.paid_at`; "empezado" se deriva de
@@ -169,6 +188,14 @@ se regenera fresca al reabrir (el player ya descarta las burbujas vencidas).
 - El ranking de la home se puede compartir.
 - Nadie ve "7 días"/"90 días" sin saber a qué reloj corresponde; ninguna compra
   empezada vence; toda compra no empezada avisa antes de vencer.
+
+## Decisión pendiente
+
+- **Envío automático del cupón de recontacto al abandonador del paywall.** El copy
+  del Momento 2 promete "descuentos". Opciones: (a) construir ya un correo simple
+  "vuelve con este descuento" reusando los promotion codes de Stripe, o (b)
+  diferirlo y suavizar el copy a "novedades y nuevos recorridos". Recomendación:
+  (a), porque cierra el loop abandono→conversión, pero es una pieza extra.
 
 ## Fuera de alcance (v2+)
 
