@@ -230,6 +230,8 @@ export default function PlayerChat({
   const [askEmail, setAskEmail] = useState<boolean>(
     () => !getCapturedEmail() && !ownsIt && stops.length > 0 && tour.status === "EN_CURSO"
   );
+  // captura de email en el paywall (momento 2): para el que no lo dejó antes
+  const [askEmailPaywall, setAskEmailPaywall] = useState(false);
   // ¿ya dejó una reseña? (inline o al final). Persiste para no volver a pedirla.
   const [reviewed, setReviewed] = useState<boolean>(() => {
     try {
@@ -554,6 +556,24 @@ export default function PlayerChat({
             >
               Continuar sin descuento
             </button>
+          )}
+          {!getCapturedEmail() && !askEmailPaywall && (
+            <button
+              onClick={() => setAskEmailPaywall(true)}
+              className="mt-3 block w-full text-center text-[12px] font-medium text-ink/50 underline underline-offset-2"
+            >
+              ¿Todavía no? Déjame tu correo y te aviso de nuevos recorridos y descuentos
+            </button>
+          )}
+          {!getCapturedEmail() && askEmailPaywall && (
+            <div className="mt-3">
+              <EmailCaptureCard
+                title="Te aviso de nuevos recorridos y descuentos, ¿va?"
+                source="paywall"
+                slug={slug}
+                onDone={() => setAskEmailPaywall(false)}
+              />
+            </div>
           )}
         </div>
       ) : tour.status === "TERMINADO" ? (
