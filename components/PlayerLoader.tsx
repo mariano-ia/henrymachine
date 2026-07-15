@@ -29,6 +29,8 @@ type Data = {
     message: string | null;
     promoCode: string | null;
   } | null;
+  distanceM: number | null;
+  neighborhood: string | null;
   serverProgress: { stopIndex: number; phase: string; totalTurns: number } | null;
 };
 

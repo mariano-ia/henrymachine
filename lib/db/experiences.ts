@@ -43,6 +43,8 @@ export type PlayableExperience = {
   paywallMessage: string | null;
   upsell: UpsellOffer | null; // qué ofrecer al terminar
   purchaseExpired: boolean; // compró pero no empezó y pasaron 90 días
+  distanceM: number | null; // para el texto/imagen de compartir
+  neighborhood: string | null;
 };
 
 /**
@@ -58,7 +60,7 @@ export async function getPlayableExperience(
 
   const { data: exp } = await sb
     .from("experiences")
-    .select("id, slug, title, status, price_cents, upsell_experience_id, upsell_message, upsell_promo_code")
+    .select("id, slug, title, status, price_cents, upsell_experience_id, upsell_message, upsell_promo_code, distance_m, neighborhood")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
@@ -188,6 +190,8 @@ export async function getPlayableExperience(
     grounding: hasAccess ? source?.inline_text ?? "" : "",
     locked: exp.price_cents > 0 && !hasAccess,
     purchaseExpired,
+    distanceM: exp.distance_m,
+    neighborhood: exp.neighborhood,
     priceCents: exp.price_cents,
     paywallMessage: paywallStep?.paywall_message ?? null,
     upsell,

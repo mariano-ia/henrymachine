@@ -7,7 +7,9 @@ import { mapsDirUrl } from "@/lib/maps";
 import type { PlayMedia } from "@/lib/db/experiences";
 import { track, getUtm } from "@/lib/track";
 import { fmtUsd } from "@/lib/price";
+import { metersToSteps } from "@/lib/steps";
 import ReviewPrompt from "@/components/ReviewPrompt";
+import ShareButton from "@/components/ShareButton";
 
 type StopMeta = {
   title: string;
@@ -100,6 +102,8 @@ export default function PlayerChat({
   paywallMessage,
   upsell,
   serverProgress,
+  distanceM,
+  neighborhood,
 }: {
   slug: string;
   anonId: string;
@@ -120,8 +124,14 @@ export default function PlayerChat({
     promoCode: string | null;
   } | null;
   serverProgress?: { stopIndex: number; phase: string; totalTurns: number } | null;
+  distanceM?: number | null;
+  neighborhood?: string | null;
 }) {
   const LAST = stops.length - 1;
+  // texto de compartir al terminar (pasos + barrio reales)
+  const pasosNum = metersToSteps(distanceM ?? null);
+  const sharePasos = pasosNum ? `${pasosNum.toLocaleString("es-PE")} pasos` : "un buen tramo";
+  const shareTexto = `Caminé ${sharePasos} por ${neighborhood ?? "Nueva York"} con Henry`;
   const upsellCover = upsell?.coverPath
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/experience-covers/${upsell.coverPath}`
     : null;
@@ -547,6 +557,13 @@ export default function PlayerChat({
           >
             ¿Terminó sin querer? Volver al recorrido
           </button>
+
+          <ShareButton
+            label="Compartir mi recorrido 🗽"
+            text={shareTexto}
+            url={`https://caminaconhenry.com/e/${slug}?ref=compartir`}
+            className="mx-auto mt-3 block rounded-full bg-ink px-5 py-2.5 text-[14px] font-semibold text-white transition hover:opacity-90"
+          />
 
           {/* si ya dejó reseña inline durante el recorrido, no la volvemos a pedir */}
           {!reviewed && <ReviewPrompt slug={slug} anonId={anonId} onDone={markReviewed} />}

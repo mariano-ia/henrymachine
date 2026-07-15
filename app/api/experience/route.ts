@@ -54,6 +54,8 @@ export async function POST(req: NextRequest) {
     priceCents: exp.priceCents,
     paywallMessage: exp.paywallMessage,
     upsell: exp.upsell,
+    distanceM: exp.distanceM,
+    neighborhood: exp.neighborhood,
     serverProgress,
   });
 }
