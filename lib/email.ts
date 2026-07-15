@@ -10,7 +10,7 @@ import { Resend } from "resend";
  */
 
 const FROM = process.env.EMAIL_FROM || "La Nueva York de Henry <henry@storyhunt.city>";
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://henry-demo-zeta.vercel.app";
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://caminaconhenry.com";
 
 let _resend: Resend | null = null;
 function client(): Resend | null {

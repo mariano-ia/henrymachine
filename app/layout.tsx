@@ -27,7 +27,7 @@ const condensed = Roboto_Condensed({
   display: "swap",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://henry-demo-zeta.vercel.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://caminaconhenry.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No se pudo iniciar el pago." }, { status: 500 });
   }
 
-  const origin = originEarly || "https://henry-demo-zeta.vercel.app";
+  const origin = originEarly || "https://caminaconhenry.com";
 
   try {
     const session = await getStripe().checkout.sessions.create({
