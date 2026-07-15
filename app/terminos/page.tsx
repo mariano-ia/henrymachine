@@ -33,13 +33,15 @@ export default function TerminosPage() {
         <section className="mt-6 space-y-2">
           <h2 className="text-[17px] font-semibold">Qué incluye tu compra</h2>
           <p className="text-[15px] leading-relaxed text-ink/75">
-            Al comprar un recorrido, desbloqueas todas sus paradas. El acceso queda ligado
-            a tu correo: entras cuando quieras desde{" "}
+            Al comprar un recorrido, desbloqueas todas sus paradas. <b>Una vez que lo empiezas,
+            es tuyo para siempre</b>: entras cuando quieras desde{" "}
             <Link href="/cuenta" className="font-semibold text-brand underline underline-offset-2">
               tu cuenta
             </Link>
-            , desde cualquier dispositivo, sin límite de tiempo. Los recorridos gratis no
-            necesitan compra.
+            , desde cualquier dispositivo. Si lo compras para otro día y no llegas a empezarlo,
+            tienes <b>90 días</b> para hacerlo. Mientras juegas, guardamos dónde quedaste por{" "}
+            <b>7 días</b> en tu teléfono (o siempre, si entras con tu correo). Los recorridos
+            gratis no necesitan compra.
           </p>
         </section>
 

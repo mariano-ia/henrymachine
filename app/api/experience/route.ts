@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
       reviewMessage: s.reviewMessage,
     })),
     locked: exp.locked,
+    purchaseExpired: exp.purchaseExpired,
     priceCents: exp.priceCents,
     paywallMessage: exp.paywallMessage,
     upsell: exp.upsell,

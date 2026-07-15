@@ -19,7 +19,8 @@ export default function GiftSentBanner({ title }: { title: string }) {
       <p className="mt-2 font-hand text-[24px] leading-tight">
         ¡Golazo! “{title}” quedó guardado para {to}.
         <br />
-        Entra con ese email en “Mis recorridos” y empiezas cuando quieras. — H.
+        Tiene 90 días para empezarlo; una vez que arranca, es suyo para siempre. Entra con ese
+        email en “Mis recorridos”. — H.
       </p>
     </div>
   );

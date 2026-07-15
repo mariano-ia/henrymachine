@@ -19,6 +19,7 @@ type Data = {
     reviewMessage: string | null;
   }[];
   locked: boolean;
+  purchaseExpired: boolean;
   priceCents: number;
   paywallMessage: string | null;
   upsell: {
@@ -148,6 +149,24 @@ export default function PlayerLoader({ slug }: { slug: string }) {
     );
   if (confirming && !data) return <Centered>Confirmando tu compra…</Centered>;
   if (!data || !anonId) return <Centered>Cargando…</Centered>;
+
+  // compra vencida (no empezó en 90 días): el acceso caducó → volver a comprar
+  if (data.purchaseExpired)
+    return (
+      <Centered>
+        <span>
+          Este recorrido lo compraste hace más de 90 días y no llegaste a empezarlo, así que
+          venció.
+          <br />
+          <a
+            href={`/e/${slug}`}
+            className="mt-4 inline-block rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900"
+          >
+            Volver a comprar
+          </a>
+        </span>
+      </Centered>
+    );
 
   return <PlayerChat anonId={anonId} {...data} />;
 }

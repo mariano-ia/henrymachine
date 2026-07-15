@@ -55,8 +55,8 @@ export async function sendAccessEmail(opts: {
   <p style="font-size:16px;line-height:1.5">${intro}</p>
   ${note}
   <p style="font-size:15px;line-height:1.6;color:#444">
-    Entra cuando quieras con <b>este email</b> y arrancas a caminar Nueva York conmigo,
-    parada por parada. Desde cualquier dispositivo.
+    Es tuyo <b>para siempre</b>, no vence. Entra cuando quieras con <b>este email</b> y arrancas
+    a caminar Nueva York conmigo, parada por parada. Desde cualquier dispositivo.
   </p>
   <p style="margin:24px 0">
     <a href="${url}" style="display:inline-block;background:#CC4E2A;color:#fff;text-decoration:none;
