@@ -289,7 +289,10 @@ export default function PlayerChat({
         reply = data.reply;
         intent = data.intent || "none";
         if (data.limit) limitFarewell = true;
-      } else reply = data.error || "uff, algo se me trabó. prueba de nuevo";
+      } else {
+        // 429 (rate-limit) trae un mensaje amable en data.reply — no lo perdamos
+        reply = data.reply || data.error || "uff, algo se me trabó. prueba de nuevo";
+      }
     } catch {
       /* fallback */
     }
@@ -305,7 +308,9 @@ export default function PlayerChat({
 
     setMessages((prev) => {
       const out: Message[] = [...prev, { role: "henry", text: shown, time: now() }];
-      if (intent === "arrived") {
+      // solo si REALMENTE llegó recién (transición a EN_PARADA): si el modelo
+      // repite 'arrived' estando ya en la parada, no duplicamos tarjeta ni media.
+      if (intent === "arrived" && tour.phase !== "EN_PARADA") {
         const st = stops[next.stopIndex];
         out.push({
           role: "henry",
@@ -491,6 +496,13 @@ export default function PlayerChat({
           <p className="mt-1 text-center text-[13px] text-ink/45">
             Recorrido terminado · gracias por caminar conmigo
           </p>
+          {/* red de seguridad: si el cierre fue sin querer, se puede retomar */}
+          <button
+            onClick={() => setTour((t) => ({ ...t, status: "EN_CURSO" }))}
+            className="mx-auto mt-2 block text-[12px] font-medium text-ink/45 underline underline-offset-2 transition hover:text-ink"
+          >
+            ¿Terminó sin querer? Volver al recorrido
+          </button>
 
           {/* si ya dejó reseña inline durante el recorrido, no la volvemos a pedir */}
           {!reviewed && <ReviewPrompt slug={slug} anonId={anonId} onDone={markReviewed} />}

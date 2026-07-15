@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Esta experiencia no está a la venta." }, { status: 400 });
   }
 
+  const originEarly = req.headers.get("origin") || process.env.NEXT_PUBLIC_SITE_URL || "";
+
   // guard server-side: si YA tiene acceso, no dejar que pague dos veces
   // (solo compra propia; un regalo se puede comprar aunque el comprador ya la tenga)
   if (!isGift) {
@@ -56,8 +58,64 @@ export async function POST(req: NextRequest) {
       .is("revoked_at", null)
       .maybeSingle();
     if (existing) {
-      return NextResponse.json({ alreadyOwned: true, url: `${req.headers.get("origin") || ""}/e/${slug}/chat` });
+      return NextResponse.json({ alreadyOwned: true, url: `${originEarly}/e/${slug}/chat` });
     }
+
+    // anti doble-cargo: si ya hay un checkout pendiente para este anon+exp, no creamos
+    // otro. Si sigue abierto, reusamos su URL; si ya se pagó (webhook demorado), lo
+    // mandamos al chat a esperar la confirmación en vez de cobrar de nuevo.
+    const { data: pend } = await sb
+      .from("purchases")
+      .select("stripe_checkout_session_id")
+      .eq("experience_id", exp.id)
+      .eq("anon_id", anonId)
+      .eq("status", "pending")
+      .not("stripe_checkout_session_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (pend?.stripe_checkout_session_id) {
+      try {
+        const prev = await getStripe().checkout.sessions.retrieve(pend.stripe_checkout_session_id);
+        if (prev.status === "open" && prev.url) {
+          return NextResponse.json({ url: prev.url });
+        }
+        if (prev.status === "complete") {
+          return NextResponse.json({ alreadyOwned: true, url: `${originEarly}/e/${slug}/chat?purchased=1` });
+        }
+      } catch {
+        /* la sesión previa no se pudo leer: seguimos y creamos una nueva */
+      }
+    }
+  }
+
+  // regalo a quien YA la tiene: no cobrar de gusto
+  if (isGift) {
+    const { data: alreadyGifted } = await sb
+      .from("entitlements")
+      .select("id")
+      .eq("experience_id", exp.id)
+      .eq("grant_email", recipientEmail)
+      .is("revoked_at", null)
+      .maybeSingle();
+    if (alreadyGifted) {
+      return NextResponse.json(
+        { error: "Esa persona ya tiene este recorrido. No hace falta comprarlo de nuevo." },
+        { status: 400 }
+      );
+    }
+  }
+
+  // cupón del upsell (?promo=CODE): se resuelve a un promotion code de Stripe.
+  // Si vino un código pero no resuelve (vencido/desactivado), avisamos en vez de
+  // cobrar precio completo en silencio.
+  const promoRaw = typeof body.promo === "string" ? body.promo.trim() : "";
+  const promoId = promoRaw ? await resolvePromotionCode(promoRaw) : null;
+  if (promoRaw && !promoId) {
+    return NextResponse.json(
+      { error: "Ese cupón ya no está disponible.", code: "invalid_promo" },
+      { status: 400 }
+    );
   }
 
   // purchase 'pending' (puente checkout→identidad antes del webhook)
@@ -76,16 +134,7 @@ export async function POST(req: NextRequest) {
     .select("id")
     .single();
 
-  const origin =
-    req.headers.get("origin") ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://henry-demo-zeta.vercel.app";
-
-  // cupón del upsell (?promo=CODE): se resuelve a un promotion code de Stripe
-  const promoId =
-    typeof body.promo === "string" && body.promo.trim()
-      ? await resolvePromotionCode(body.promo)
-      : null;
+  const origin = originEarly || "https://henry-demo-zeta.vercel.app";
 
   try {
     const session = await getStripe().checkout.sessions.create({

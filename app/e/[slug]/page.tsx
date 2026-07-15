@@ -208,12 +208,12 @@ export default async function DetailPage({
               </ol>
             </section>
 
-            {/* itinerario — timeline con bullets tipo subte */}
-            <section className="mt-11 border-t border-ink/10 pt-9">
+            {/* itinerario — timeline con bullets tipo subte (oculto si aún no hay paradas) */}
+            <section className={"mt-11 border-t border-ink/10 pt-9" + (exp.itinerary.length === 0 ? " hidden" : "")}>
               <div className="flex items-baseline justify-between">
                 <h2 className="text-[11px] font-bold uppercase tracking-label text-ink/45">El recorrido</h2>
                 <span className="text-[11px] font-medium uppercase tracking-label text-ink/40">
-                  {exp.stopsCount} paradas
+                  {exp.stopsCount} {exp.stopsCount === 1 ? "parada" : "paradas"}
                 </span>
               </div>
               <ol className="mt-6">

@@ -25,7 +25,9 @@ export async function getCountryLeaderboard(limit = 10): Promise<LeaderRow[]> {
   try {
     const { data, error } = await createAdminClient().rpc("country_leaderboard", { p_limit: limit });
     if (error || !data) return [];
-    return data.map((r) => ({ country: r.country, steps: Number(r.steps), tours: Number(r.tours) }));
+    return data
+      .map((r) => ({ country: r.country, steps: Number(r.steps), tours: Number(r.tours) }))
+      .filter((r) => r.country && r.steps > 0); // sin país o con 0 pasos: no listar
   } catch {
     return [];
   }

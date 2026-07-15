@@ -11,6 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function recordTurn(opts: {
   experienceId: string;
   anonId: string | null;
+  userId?: string | null; // si el que juega está logueado: linkea la sesión (cross-device)
   stopIndex: number; // 0-based del cliente
   phase: string; // CAMINANDO | EN_PARADA | EN_PAUSA
   intent: string;
@@ -49,6 +50,7 @@ export async function recordTurn(opts: {
           current_step_position: position,
           total_turns: 1,
           country: opts.country,
+          user_id: opts.userId ?? null,
           started_at: new Date().toISOString(),
           expires_at: expiresAt,
         })
@@ -66,6 +68,7 @@ export async function recordTurn(opts: {
           expires_at: expiresAt,
           ...(opts.finished ? { status: "TERMINADO" as never } : {}),
           ...(opts.country ? { country: opts.country } : {}),
+          ...(opts.userId ? { user_id: opts.userId } : {}),
         })
         .eq("id", sessionId);
     }

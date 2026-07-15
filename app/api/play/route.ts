@@ -7,6 +7,7 @@ import { buildPlaySystemInstruction, type TourPhase } from "@/lib/engine/play-pr
 import { tourReply } from "@/lib/gemini";
 import { rateLimit } from "@/lib/rate-limit";
 import { recordTurn, sessionTotalTurns } from "@/lib/db/sessions";
+import { createClient } from "@/lib/supabase/server";
 import type { ChatTurn } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -104,10 +105,21 @@ export async function POST(req: NextRequest) {
       message,
     });
 
+    // ¿está logueado el que juega? entonces linkeamos la sesión a su cuenta,
+    // así "Mis recorridos" refleja el progreso aunque juegue desde otro dispositivo.
+    let userId: string | null = null;
+    try {
+      const { data } = await (await createClient()).auth.getUser();
+      userId = data.user?.id ?? null;
+    } catch {
+      /* sin sesión: queda anónimo */
+    }
+
     // progreso + costo server-side (fire-and-forget; nunca rompe el chat)
     await recordTurn({
       experienceId: exp.id,
       anonId: anonIdForRl,
+      userId,
       stopIndex,
       phase,
       intent: result.intent,

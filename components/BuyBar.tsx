@@ -21,6 +21,7 @@ export default function BuyBar({
   const [checking, setChecking] = useState(!free);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [promoInvalid, setPromoInvalid] = useState(false);
 
   useEffect(() => {
     let id = localStorage.getItem("henry_anon");
@@ -43,17 +44,18 @@ export default function BuyBar({
 
   const start = () => router.push(`/e/${slug}/chat`);
 
-  async function buy() {
+  async function buy(ignorePromo = false) {
     track("begin_checkout", slug);
     if (!anonId) return;
     setBusy(true);
     setErr(null);
+    setPromoInvalid(false);
     try {
       // cupón del upsell (llega como ?promo=CODE en la URL del detalle)
       const promo =
-        typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search).get("promo")
-          : null;
+        ignorePromo || typeof window === "undefined"
+          ? null
+          : new URLSearchParams(window.location.search).get("promo");
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -62,6 +64,7 @@ export default function BuyBar({
       const d = await res.json();
       if (d.url) window.location.href = d.url;
       else {
+        if (d.code === "invalid_promo") setPromoInvalid(true);
         setErr(d.error ?? "No se pudo iniciar el pago. Inténtalo de nuevo.");
         setBusy(false);
       }
@@ -109,13 +112,22 @@ export default function BuyBar({
   return (
     <div>
       <button
-        onClick={buy}
+        onClick={() => buy()}
         disabled={busy}
         className={`${base} bg-brand text-white hover:bg-brand-dark disabled:opacity-70`}
       >
         {busy ? "Abriendo el pago…" : `Compra y arranca · ${fmtUsd(priceCents)}`}
       </button>
       {err && <p className="mt-2 text-center text-[12px] text-red-600">{err}</p>}
+      {promoInvalid && (
+        <button
+          onClick={() => buy(true)}
+          disabled={busy}
+          className="mt-1 w-full text-center text-[12px] font-semibold text-brand underline underline-offset-2 disabled:opacity-60"
+        >
+          Comprar sin descuento
+        </button>
+      )}
     </div>
   );
 }

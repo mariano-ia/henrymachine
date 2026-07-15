@@ -126,9 +126,10 @@ export async function getPlayableExperience(
     if (!visibleIds.has(m.step_id)) continue;
     let url: string | null = m.external_url ?? null;
     if (!url && m.storage_path) {
+      // 24 h: cubre sesiones largas o con pausas (la de 2 h se rompía en tours largos)
       const { data: signed } = await sb.storage
         .from("experience-media")
-        .createSignedUrl(m.storage_path, 7200);
+        .createSignedUrl(m.storage_path, 86400);
       url = signed?.signedUrl ?? null;
     }
     if (url) (mediaByStep[m.step_id] ??= []).push({ kind: m.kind, url, caption: m.caption });

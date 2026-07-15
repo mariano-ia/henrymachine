@@ -43,7 +43,7 @@ export default async function MisRecorridosPage() {
                 <div>
                   <p className="text-[15px] font-semibold">{e.title}</p>
                   <p className="text-[12px] text-ink/50">
-                    {done ? `Terminado · ${pasos(e.distance_m)}` : s ? `En curso · parada ${s.current_step_position}` : "Sin empezar"}
+                    {done ? `Terminado · ${pasos(e.distance_m)}` : s ? `En curso · parada ${s.current_step_position}` : "Listo para empezar"}
                   </p>
                 </div>
                 <Link href={`/e/${e.slug}/chat`} className="rounded-full bg-brand px-4 py-2 text-[13px] font-semibold text-white">
