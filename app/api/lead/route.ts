@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
+import { sendTourLinkEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -34,5 +35,11 @@ export async function POST(req: NextRequest) {
   } catch {
     /* no romper la UX por un lead */
   }
+
+  // captura al arrancar → le mandamos el link para volver desde el correo
+  if (body.source === "player_start" && typeof body.slug === "string" && body.slug) {
+    await sendTourLinkEmail(email, body.slug.slice(0, 80));
+  }
+
   return NextResponse.json({ ok: true });
 }

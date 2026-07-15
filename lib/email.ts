@@ -76,6 +76,27 @@ export async function sendAccessEmail(opts: {
   }
 }
 
+/** "Tu recorrido te espera": link para retomar, al capturar el email al arrancar. */
+export async function sendTourLinkEmail(to: string, slug: string): Promise<void> {
+  const r = client();
+  if (!r) {
+    console.warn("[email] sin RESEND_API_KEY: no se envió el link del recorrido", { to });
+    return;
+  }
+  try {
+    const url = `${SITE}/e/${slug}/chat`;
+    const html = `
+<div style="font-family:system-ui,-apple-system,sans-serif;max-width:480px;margin:0 auto;color:#1A1A1A">
+  <p style="font-size:16px;line-height:1.5">¡Aquí te dejo tu recorrido, querubín! Retómalo cuando quieras — se guarda donde lo dejaste.</p>
+  <p style="margin:22px 0"><a href="${url}" style="display:inline-block;background:#CC4E2A;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;font-size:15px">Seguir caminando</a></p>
+  <p style="font-size:14px;color:#888;line-height:1.5">Nos vemos en la esquina.<br>— Henry</p>
+</div>`;
+    await r.emails.send({ from: FROM, to, subject: "Tu recorrido te espera", html });
+  } catch (e) {
+    console.error("[email] falló el envío del link del recorrido", { to, error: e });
+  }
+}
+
 /** Código de login (OTP de 6 dígitos) en la voz de Henry. Devuelve si se envió. */
 export async function sendLoginCode(to: string, code: string): Promise<boolean> {
   const r = client();
