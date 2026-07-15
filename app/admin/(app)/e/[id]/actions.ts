@@ -108,6 +108,8 @@ export type StepEdit = {
   walk_to_next: string | null;
   place_query: string | null;
   address: string | null;
+  ask_review: boolean;
+  review_message: string | null;
 };
 
 export async function saveExperience(input: {
@@ -160,6 +162,8 @@ export async function saveExperience(input: {
         walk_to_next: s.walk_to_next,
         place_query: s.place_query,
         address: s.address,
+        ask_review: s.ask_review,
+        review_message: s.review_message,
       })
       .eq("id", s.id);
     if (error) return { ok: false, error: traduceDbError(error.message) };

@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
       title: s.title,
       placeQuery: s.placeQuery,
       media: s.media,
+      askReview: s.askReview,
+      reviewMessage: s.reviewMessage,
     })),
     locked: exp.locked,
     priceCents: exp.priceCents,

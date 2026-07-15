@@ -9,13 +9,19 @@ import { track, getUtm } from "@/lib/track";
 import { fmtUsd } from "@/lib/price";
 import ReviewPrompt from "@/components/ReviewPrompt";
 
-type StopMeta = { title: string; placeQuery: string | null; media: PlayMedia[] };
+type StopMeta = {
+  title: string;
+  placeQuery: string | null;
+  media: PlayMedia[];
+  askReview: boolean;
+  reviewMessage: string | null;
+};
 type Message = {
   role: "user" | "henry";
   text: string;
   time: string;
   media?: PlayMedia[];
-  kind?: "arrival";
+  kind?: "arrival" | "review";
   arrival?: { n: number; title: string };
 };
 type Status = "EN_CURSO" | "TERMINADO" | "PAYWALL";
@@ -58,8 +64,9 @@ function loadSaved(slug: string, stopsLen: number, locked: boolean): SavedPlay |
       if (locked) return null;
       s.tour = { ...s.tour, status: "EN_CURSO" };
     }
-    // las signed URLs de media caducan: se quitan esas burbujas del historial restaurado
-    s.messages = s.messages.filter((m) => !(m.media?.length ?? 0));
+    // las signed URLs de media caducan: se quitan esas burbujas del historial restaurado;
+    // el pedido de reseña inline tampoco se restaura como interactivo (se usa el flag).
+    s.messages = s.messages.filter((m) => !(m.media?.length ?? 0) && m.kind !== "review");
     if (s.messages.length === 0) return null;
     return s;
   } catch {
@@ -203,6 +210,22 @@ export default function PlayerChat({
   const [sending, setSending] = useState(false);
   const [nudged, setNudged] = useState(false);
   const [buying, setBuying] = useState(false);
+  // ¿ya dejó una reseña? (inline o al final). Persiste para no volver a pedirla.
+  const [reviewed, setReviewed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(`henry_reviewed_${slug}`) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const markReviewed = useCallback(() => {
+    setReviewed(true);
+    try {
+      localStorage.setItem(`henry_reviewed_${slug}`, "1");
+    } catch {
+      /* storage bloqueado: igual queda en memoria esta sesión */
+    }
+  }, [slug]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
@@ -293,6 +316,15 @@ export default function PlayerChat({
         });
         const m = st?.media ?? [];
         if (m.length) out.push({ role: "henry", text: "", time: now(), media: m });
+        // pedido de reseña inline: si esta parada lo tiene marcado y todavía no reseñó
+        if (st?.askReview && !reviewed && !out.some((x) => x.kind === "review")) {
+          out.push({
+            role: "henry",
+            time: now(),
+            kind: "review",
+            text: st.reviewMessage?.trim() || "¿Qué te está pareciendo hasta acá, querubín?",
+          });
+        }
       }
       return out;
     });
@@ -389,6 +421,18 @@ export default function PlayerChat({
           Chat con IA en la voz de Henry
         </p>
         {messages.map((m, i) => {
+          if (m.kind === "review") {
+            return (
+              <InlineReview
+                key={i}
+                slug={slug}
+                anonId={anonId}
+                message={m.text}
+                done={reviewed}
+                onDone={markReviewed}
+              />
+            );
+          }
           const isGroupStart =
             m.role === "henry" &&
             !m.kind &&
@@ -448,7 +492,8 @@ export default function PlayerChat({
             Recorrido terminado · gracias por caminar conmigo
           </p>
 
-          <ReviewPrompt slug={slug} anonId={anonId} />
+          {/* si ya dejó reseña inline durante el recorrido, no la volvemos a pedir */}
+          {!reviewed && <ReviewPrompt slug={slug} anonId={anonId} onDone={markReviewed} />}
 
           {/* upsell: la siguiente experiencia, en la voz de Henry */}
           {upsell && (
@@ -620,5 +665,93 @@ function MediaCard({ m }: { m: PlayMedia }) {
       <audio src={m.url} controls className="w-[240px]" />
       {caption}
     </figure>
+  );
+}
+
+/** Pedido de reseña INLINE, en medio del recorrido: mensaje de Henry + estrellas
+ * + comentario opcional. Un submit y el recorrido sigue. No bloquea el chat. */
+function InlineReview({
+  slug,
+  anonId,
+  message,
+  done,
+  onDone,
+}: {
+  slug: string;
+  anonId: string;
+  message: string;
+  done: boolean;
+  onDone: () => void;
+}) {
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  async function submit() {
+    if (rating < 1 || busy) return;
+    setBusy(true);
+    try {
+      await fetch("/api/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, anonId, rating, body: text.trim() }),
+      });
+    } catch {
+      /* igual agradecemos */
+    }
+    setSent(true);
+    setBusy(false);
+    onDone();
+  }
+
+  return (
+    <div className="flex items-end gap-2">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/henry.jpg" alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
+      <div className="max-w-[86%] rounded-2xl rounded-tl-sm bg-white px-3.5 py-3 shadow-bubble">
+        <p className="text-[16px] leading-snug text-ink">{message}</p>
+        {sent || done ? (
+          <p className="mt-2 font-hand text-[18px] leading-tight text-brand">¡Gracias, querubín! 🙏</p>
+        ) : (
+          <>
+            <div className="mt-2 flex gap-1.5">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <button
+                  key={i}
+                  onMouseEnter={() => setHover(i)}
+                  onMouseLeave={() => setHover(0)}
+                  onClick={() => setRating(i)}
+                  className="text-[26px] leading-none transition-transform hover:scale-110"
+                  style={{ color: (hover || rating) >= i ? "#D89A34" : "#00000022" }}
+                  aria-label={`${i} estrella${i > 1 ? "s" : ""}`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            {rating > 0 && (
+              <>
+                <textarea
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  rows={2}
+                  placeholder="¿Quieres agregar algo? (opcional)"
+                  className="mt-2 w-full rounded-lg border border-ink/15 bg-[#F4F2EC] px-3 py-2 text-[14px] text-ink outline-none focus:border-ink/40"
+                />
+                <button
+                  onClick={submit}
+                  disabled={busy}
+                  className="mt-2 w-full rounded-full bg-brand py-2 text-[14px] font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
+                >
+                  {busy ? "Enviando…" : "Enviar"}
+                </button>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
   );
 }

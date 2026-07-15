@@ -15,6 +15,8 @@ export type PlayableStop = {
   address: string | null;
   meta: unknown; // steps.meta (caché de Places, etc.) — server-only
   media: PlayMedia[];
+  askReview: boolean; // al llegar acá, Henry pide una reseña inline
+  reviewMessage: string | null;
 };
 
 export type UpsellOffer = {
@@ -96,7 +98,7 @@ export async function getPlayableExperience(
 
   const { data: allSteps } = await sb
     .from("steps")
-    .select("id, type, title, body, proposal, walk_to_next, place_query, address, position, is_paywall, paywall_message, meta")
+    .select("id, type, title, body, proposal, walk_to_next, place_query, address, position, is_paywall, paywall_message, meta, ask_review, review_message")
     .eq("experience_id", exp.id)
     .order("position");
   const steps = allSteps ?? [];
@@ -151,6 +153,8 @@ export async function getPlayableExperience(
       address: a.address,
       meta: a.meta,
       media: mediaByStep[a.id] ?? [],
+      askReview: !!a.ask_review,
+      reviewMessage: a.review_message ?? null,
     })),
     grounding: source?.inline_text ?? "", // server-only; NO se manda al cliente
     locked: exp.price_cents > 0 && !hasAccess,

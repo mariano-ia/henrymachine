@@ -3,7 +3,15 @@
 import { useState } from "react";
 
 /** Al terminar el recorrido, Henry pide una reseña (estrellas + texto + nombre). */
-export default function ReviewPrompt({ slug, anonId }: { slug: string; anonId: string }) {
+export default function ReviewPrompt({
+  slug,
+  anonId,
+  onDone,
+}: {
+  slug: string;
+  anonId: string;
+  onDone?: () => void;
+}) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [text, setText] = useState("");
@@ -25,6 +33,7 @@ export default function ReviewPrompt({ slug, anonId }: { slug: string; anonId: s
     }
     setDone(true);
     setBusy(false);
+    onDone?.();
   }
 
   if (done) {

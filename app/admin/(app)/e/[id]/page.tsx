@@ -24,7 +24,7 @@ export default async function EditorPage({
 
   const { data: steps } = await sb
     .from("steps")
-    .select("id, position, type, title, body, proposal, walk_to_next, place_query, address, is_paywall, paywall_message")
+    .select("id, position, type, title, body, proposal, walk_to_next, place_query, address, is_paywall, paywall_message, ask_review, review_message")
     .eq("experience_id", id)
     .order("position");
 

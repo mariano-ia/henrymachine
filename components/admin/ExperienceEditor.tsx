@@ -28,6 +28,8 @@ type Step = {
   address: string | null;
   is_paywall: boolean;
   paywall_message: string | null;
+  ask_review: boolean;
+  review_message: string | null;
 };
 type Experience = {
   id: string;
@@ -103,6 +105,9 @@ export default function ExperienceEditor({
   function patch(id: string, field: keyof Step, value: string) {
     setSteps((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
   }
+  function toggleReview(id: string) {
+    setSteps((prev) => prev.map((s) => (s.id === id ? { ...s, ask_review: !s.ask_review } : s)));
+  }
 
   function savePayload() {
     const mins = parseInt(durationMin, 10);
@@ -128,6 +133,8 @@ export default function ExperienceEditor({
         walk_to_next: s.walk_to_next,
         place_query: s.place_query,
         address: s.address,
+        ask_review: s.ask_review,
+        review_message: s.review_message,
       })),
     };
   }
@@ -634,6 +641,36 @@ export default function ExperienceEditor({
                     placeholder="Dirección (opcional)"
                     className={`${ta} disabled:opacity-70`}
                   />
+                </div>
+
+                {/* pedido de reseña inline: al llegar a esta parada, Henry pide estrellas */}
+                <div className="rounded-lg border border-white/10 bg-neutral-900/40 p-2.5">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-300">
+                    <input
+                      type="checkbox"
+                      checked={s.ask_review}
+                      onChange={() => toggleReview(s.id)}
+                      disabled={ro}
+                      className="h-4 w-4 rounded accent-indigo-500"
+                    />
+                    Pedir reseña al llegar a esta parada
+                  </label>
+                  {s.ask_review && (
+                    <>
+                      <input
+                        value={s.review_message ?? ""}
+                        onChange={(e) => patch(s.id, "review_message", e.target.value)}
+                        disabled={ro}
+                        placeholder="Mensaje de Henry (ej. ¿Qué te está pareciendo hasta acá?)"
+                        className={`${ta} mt-2 disabled:opacity-70`}
+                      />
+                      {arrivalOrdinal.get(s.id)! > freeStops && Number(priceDollars) > 0 && (
+                        <p className="mt-1.5 text-[11px] leading-snug text-amber-400/80">
+                          Ojo: esta parada es paga. Quienes no compraron no la ven — conviene pedir la reseña en una parada gratis.
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             )}

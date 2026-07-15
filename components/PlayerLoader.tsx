@@ -11,7 +11,13 @@ type Data = {
   openingMessage: string;
   openingMedia: PlayMedia[];
   closingMessage: string | null;
-  stops: { title: string; placeQuery: string | null; media: PlayMedia[] }[];
+  stops: {
+    title: string;
+    placeQuery: string | null;
+    media: PlayMedia[];
+    askReview: boolean;
+    reviewMessage: string | null;
+  }[];
   locked: boolean;
   priceCents: number;
   paywallMessage: string | null;
