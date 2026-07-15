@@ -164,6 +164,15 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: { country: string; steps: number; tours: number }[]
       }
+      entitlement_started: {
+        Args: {
+          p_experience_id: string
+          p_anon_id: string | null
+          p_user_id: string | null
+          p_grant_email: string | null
+        }
+        Returns: boolean
+      }
       set_experience_pricing: {
         Args: {
           p_exp: string
