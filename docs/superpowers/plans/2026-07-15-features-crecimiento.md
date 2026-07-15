@@ -25,7 +25,7 @@
 
 ## File Structure (qué toca cada cosa)
 
-- `supabase/migrations/0018_crecimiento.sql` — ventana de progreso 7d + helper `entitlement_started`.
+- `supabase/migrations/0019_crecimiento.sql` — ventana de progreso 7d + helper `entitlement_started`.
 - `lib/db/experiences.ts` — vencimiento 90d lazy (`purchaseExpired`), grounding ya gateado.
 - `lib/db/sessions.ts` / `app/api/experience/route.ts` — exponer `purchaseExpired`, ventana 7d server.
 - `lib/share.ts` (nuevo) — helper `shareOrCopy(text, url)`.
@@ -46,15 +46,16 @@
 
 ## FASE A — Datos y ventanas (base, sin UI nueva)
 
-### Task A1: Migración 0018 — ventana 7d + helper "empezado"
+### Task A1: Migración 0019 — ventana 7d + helper "empezado"
 
 **Files:**
-- Create: `supabase/migrations/0018_crecimiento.sql`
+- Create: `supabase/migrations/0019_crecimiento.sql`
+- Modify: `lib/database.types.ts` (registrar la función nueva)
 
 - [ ] **Step 1: Escribir la migración**
 
 ```sql
--- 0018: ventana de progreso a 7 días + helper para saber si un entitlement fue "empezado".
+-- 0019: ventana de progreso a 7 días + helper para saber si un entitlement fue "empezado".
 
 -- Progreso: la ventana de reanudación pasa de 24h a 7 días (168h). Aplica a
 -- experiencias existentes y nuevas.
@@ -86,7 +87,7 @@ create index if not exists entitlements_created_active_idx
 
 - [ ] **Step 2: Correr la migración**
 
-Run: `node --env-file=.env.local scripts/db-run.mjs supabase/migrations/0018_crecimiento.sql`
+Run: `node --env-file=.env.local scripts/db-run.mjs supabase/migrations/0019_crecimiento.sql`
 Expected: `OK` sin errores (DDL transaccional).
 
 - [ ] **Step 3: Verificar**
@@ -94,11 +95,18 @@ Expected: `OK` sin errores (DDL transaccional).
 Run: `node --env-file=.env.local scripts/db-run.mjs <(echo "select resume_window_hours from experiences limit 3; select entitlement_started('00000000-0000-0000-0000-000000000000','x',null,null);")`
 Expected: `resume_window_hours = 168` y la función devuelve `false` (no rompe).
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Registrar la función en los tipos** (sin esto, `sb.rpc("entitlement_started")` de A2 rompe `tsc`: las RPC se validan contra `Database["public"]["Functions"]`)
+
+En `lib/database.types.ts`, dentro de `Functions: { ... }` (junto a `is_admin`, ~línea 179), agregar:
+```ts
+      entitlement_started: { Args: { p_experience_id: string; p_anon_id: string | null; p_user_id: string | null; p_grant_email: string | null }; Returns: boolean }
+```
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/0018_crecimiento.sql
-git commit -m "Migración 0018: ventana de progreso 7d + helper entitlement_started"
+git add supabase/migrations/0019_crecimiento.sql lib/database.types.ts
+git commit -m "Migración 0019: ventana de progreso 7d + helper entitlement_started"
 ```
 
 ### Task A2: Vencimiento 90d lazy en getPlayableExperience
@@ -204,6 +212,36 @@ Verificación manual: en el navegador, jugar `domingo-williamsburg`, avanzar a l
 ```bash
 git add components/PlayerChat.tsx
 git commit -m "Progreso: ventana 7 días + reanudar desde la parada 1"
+```
+
+### Task A4: Ventana de progreso 7d **server-side** (real)
+
+Hoy `lib/db/sessions.ts` escribe `expires_at` con 48h hardcodeado y `/api/experience` lee la sesión EN_CURSO sin filtrar por vencimiento — así que la ventana server no está acotada. Esta task la entrega de verdad.
+
+**Files:**
+- Modify: `lib/db/sessions.ts` (cálculo de `expires_at`, ~línea 31, usado en insert ~55 y update ~68), `app/api/experience/route.ts` (lectura de `serverProgress`, ~líneas 19-25)
+
+- [ ] **Step 1: 7 días en `sessions.ts`** — donde hoy calcula `Date.now() + 48 * 3600 * 1000`, cambiar a 168h:
+
+```ts
+  const expiresAt = new Date(Date.now() + 168 * 3600 * 1000).toISOString(); // 7 días
+```
+Usar `expiresAt` en el `expires_at` del insert y del update de la sesión (reemplaza el valor de 48h).
+
+- [ ] **Step 2: No reanudar sesiones vencidas** — en `app/api/experience/route.ts`, la query de la sesión EN_CURSO (serverProgress) filtra solo por status; agregar el filtro de no-vencida:
+
+```ts
+    .eq("status", "EN_CURSO")
+    .gt("expires_at", new Date().toISOString())
+```
+
+- [ ] **Step 3: Verificar** — `npx tsc --noEmit` → 0. Smoke `/api/experience` (POST con slug+anonId) → 200.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add lib/db/sessions.ts app/api/experience/route.ts
+git commit -m "Progreso: ventana de 7 días también server-side (expires_at a 168h + filtro al leer)"
 ```
 
 ---
@@ -329,32 +367,56 @@ git add app/e/[slug]/opengraph-image.tsx app/e/[slug]/page.tsx
 git commit -m "Imagen OG dinámica del recorrido (pasos + barrio) para compartir"
 ```
 
-### Task B3: Botón "Compartir mi recorrido" al terminar
+### Task B3: Plomería de pasos/barrio + botón "Compartir mi recorrido"
+
+El texto de compartir necesita los pasos y el barrio REALES. Hoy NO llegan al player: la ruta de chat renderiza solo `<PlayerLoader slug=.../>`, que se nutre de `POST /api/experience` → `getPlayableExperience`, cuyo SELECT (experiences.ts:60) no trae `distance_m` ni `neighborhood`. Hay que plumbearlos por toda la cadena (el detalle sí los tiene, pero es OTRA ruta).
 
 **Files:**
-- Modify: `components/PlayerChat.tsx` (bloque `TERMINADO`, arriba de `ReviewPrompt`)
+- Modify: `lib/db/experiences.ts` (SELECT + tipo `PlayableExperience` + return), `app/api/experience/route.ts` (exponer client-safe), `components/PlayerLoader.tsx` (tipo `Data`), `components/PlayerChat.tsx` (props + botón)
 
-- [ ] **Step 1: Importar** `ShareButton` y `metersToSteps` en `PlayerChat.tsx`, y calcular pasos+barrio desde props. El player recibe `slug`, `title`, `stops`; necesita también `distanceM` y `neighborhood`: agregarlos a las props del componente y pasarlos desde `PlayerLoader`/la página (donde ya se carga el detalle). Si no están disponibles, usar el conteo de paradas como fallback.
+- [ ] **Step 1: `lib/db/experiences.ts`** — agregar `distance_m, neighborhood` al SELECT de `experiences` (~línea 60), al tipo `PlayableExperience` (~línea 40) y al return (~línea 160):
 
-- [ ] **Step 2: Insertar el botón** dentro del bloque `tour.status === "TERMINADO"`, antes de `{!reviewed && <ReviewPrompt .../>}`:
+```ts
+  // SELECT (agregar al string): ..., distance_m, neighborhood
+  // tipo PlayableExperience (agregar): distanceM: number | null; neighborhood: string | null;
+  // return (agregar): distanceM: exp.distance_m, neighborhood: exp.neighborhood,
+```
+
+- [ ] **Step 2: `app/api/experience/route.ts`** — sumar `distanceM` y `neighborhood` al objeto client-safe que se devuelve.
+
+- [ ] **Step 3: `components/PlayerLoader.tsx`** — agregar al tipo `Data` (que ya hace `{...data}` hacia `PlayerChat`, así se propaga solo con tiparlo):
+
+```ts
+  distanceM: number | null;
+  neighborhood: string | null;
+```
+
+- [ ] **Step 4: `components/PlayerChat.tsx`** — agregar a las props `distanceM: number | null; neighborhood: string | null;`, importar `ShareButton` y `metersToSteps` (de `@/lib/steps`), y calcular:
+
+```ts
+  const pasosNum = metersToSteps(distanceM);
+  const sharePasos = pasosNum ? `${pasosNum.toLocaleString("es-PE")} pasos` : "un buen tramo";
+  const shareTexto = `Caminé ${sharePasos} por ${neighborhood ?? "Nueva York"} con Henry`;
+```
+
+- [ ] **Step 5: Insertar el botón** dentro del bloque `tour.status === "TERMINADO"`, antes de `{!reviewed && <ReviewPrompt .../>}`:
 
 ```tsx
           <ShareButton
             label="Compartir mi recorrido 🗽"
-            text={`Caminé ${sharePasos} por ${shareBarrio} con Henry`}
+            text={shareTexto}
             url={`https://caminaconhenry.com/e/${slug}?ref=compartir`}
             className="mx-auto mt-3 block rounded-full bg-ink px-5 py-2.5 text-[14px] font-semibold text-white transition hover:opacity-90"
           />
 ```
-donde `sharePasos = fmtSteps(distanceM)` (o `"un buen tramo"` si null) y `shareBarrio = neighborhood ?? "Nueva York"`.
 
-- [ ] **Step 3: Verificar** — `npx tsc --noEmit` → 0. Manual: terminar un tour en el navegador, ver el botón, tocarlo (en desktop copia el link).
+- [ ] **Step 6: Verificar** — `npx tsc --noEmit` → 0. Manual: terminar un tour; el botón muestra los pasos reales; en desktop copia el link.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add components/PlayerChat.tsx components/PlayerLoader.tsx
-git commit -m "Compartir al terminar el recorrido (share nativo + ?ref)"
+git add lib/db/experiences.ts app/api/experience/route.ts components/PlayerLoader.tsx components/PlayerChat.tsx
+git commit -m "Compartir al terminar: plomería de pasos/barrio + botón (share nativo + ?ref)"
 ```
 
 ---
@@ -446,13 +508,13 @@ git commit -m "Captura de email: util de dedupe + tarjeta reutilizable"
 **Files:**
 - Modify: `components/PlayerChat.tsx`
 
-- [ ] **Step 1: Estado** — importar `EmailCaptureCard`, `getCapturedEmail`. Agregar:
+- [ ] **Step 1: Estado** — importar `EmailCaptureCard` y `getCapturedEmail` en `PlayerChat.tsx`. La captura aparece en juego gratis o con preview pago, y NUNCA a quien ya tiene el recorrido. "Ya lo tiene" = experiencia paga y no bloqueada (`priceCents > 0 && !locked`). Una sola condición:
 ```tsx
+  const ownsIt = priceCents > 0 && !locked; // ya compró o se lo regalaron
   const [askEmail, setAskEmail] = useState<boolean>(
-    () => !getCapturedEmail() && !locked && stops.length > 0 && tour.status === "EN_CURSO"
+    () => !getCapturedEmail() && !ownsIt && stops.length > 0 && tour.status === "EN_CURSO"
   );
 ```
-`!locked` acá significa "no lo tiene comprado ya" (para gratis y paga-con-preview, `locked` es true solo si hay pasos pagos sin comprar; para el que ya compró, `locked` es false → no mostramos). *Ajuste:* mostrar solo cuando `priceCents === 0 || locked` (o sea, en juego gratis o con preview pago), y NUNCA si ya tiene acceso. Concretamente: `const ownsIt = priceCents > 0 && !locked; ... !ownsIt`.
 
 - [ ] **Step 2: Render** — insertar la tarjeta como primer mensaje del chat (después del saludo de apertura), condicionada a `askEmail`:
 
@@ -646,21 +708,50 @@ git commit -m "Botón de compartir el ranking de países en la home"
       )}
 ```
 
-- [ ] **Step 2: Verificar** — `npx tsc --noEmit` → 0. Manual: en el chat, pedirle a Henry pausar; aparece la tarjeta.
+- [ ] **Step 2: Aviso de autoguardado permanente** — el spec lo pide como elemento aparte (visible SIEMPRE, no solo al pausar). En el header del chat, reemplazar el `<p>` de estado ("en línea / escribiendo…") por:
 
-- [ ] **Step 3: Commit**
+```tsx
+          <p className="text-[11px] leading-tight text-white/55">
+            {sending ? "escribiendo…" : "en línea · se guarda solo"}
+          </p>
+```
+
+- [ ] **Step 3: Verificar** — `npx tsc --noEmit` → 0. Manual: "se guarda solo" siempre visible en el header; al pausar aparece además la tarjeta.
+
+- [ ] **Step 4: Commit**
 
 ```bash
 git add components/PlayerChat.tsx
-git commit -m "Tarjeta de pausa: formas de volver + los dos relojes (UI determinística)"
+git commit -m "Tarjeta de pausa + aviso permanente de autoguardado (formas de volver, dos relojes)"
 ```
 
 ### Task E2: Empty state — progreso vencido (7 días)
 
 **Files:**
-- Modify: `components/PlayerChat.tsx` (`loadSaved` ya devuelve null si venció; agregar aviso al arrancar de cero tras un guardado vencido)
+- Modify: `components/PlayerChat.tsx`
 
-- [ ] **Step 1:** En `loadSaved`, distinguir "venció" de "no había nada": si existe el raw pero `Date.now() - savedAt > RESUME_WINDOW_MS`, devolver un flag. Simplest: guardar en un `sessionStorage`/estado `resumeExpired` cuando se detecta y mostrar un banner cálido la primera pantalla:
+`loadSaved` devuelve `null` cuando el guardado venció (no distingue "venció" de "nunca hubo"), y el efecto que persiste el estado pisa el guardado viejo apenas monta. Por eso la detección va en el **initializer de un `useState`** (se lee una vez, antes de que el efecto reescriba), no en un efecto.
+
+- [ ] **Step 1: Detectar el vencimiento** — junto a los otros `useState` de `PlayerChat` (usa `saveKey`, `SAVE_VERSION`, `RESUME_WINDOW_MS`, tipo `SavedPlay`, ya definidos arriba en el archivo):
+
+```tsx
+  const [resumeExpired] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(saveKey(slug));
+      if (!raw) return false;
+      const s = JSON.parse(raw) as SavedPlay;
+      return (
+        s.v === SAVE_VERSION &&
+        s.tour?.status !== "TERMINADO" &&
+        Date.now() - s.savedAt > RESUME_WINDOW_MS
+      );
+    } catch {
+      return false;
+    }
+  });
+```
+
+- [ ] **Step 2: Render del banner** — al principio del área de mensajes (primera pantalla):
 
 ```tsx
       {resumeExpired && (
@@ -670,9 +761,9 @@ git commit -m "Tarjeta de pausa: formas de volver + los dos relojes (UI determin
       )}
 ```
 
-- [ ] **Step 2: Verificar** — `npx tsc --noEmit` → 0. Manual (opcional): forzar `savedAt` viejo en localStorage y recargar → ver el banner.
+- [ ] **Step 3: Verificar** — `npx tsc --noEmit` → 0. Manual (opcional): en la consola del navegador, editar `henry_play_<slug>` poniendo un `savedAt` viejo y recargar → ver el banner.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add components/PlayerChat.tsx
@@ -686,12 +777,17 @@ git commit -m "Empty state de progreso vencido (7 días): el acceso sigue, arran
 
 - [ ] **Step 1: `app/api/experience/route.ts`** — incluir `purchaseExpired` en la respuesta client-safe (ya viene de `getPlayableExperience`).
 
-- [ ] **Step 2: `components/PlayerLoader.tsx`** — si `purchaseExpired`, mostrar empty state con CTA a volver a comprar (a `/e/{slug}`):
+- [ ] **Step 2: `components/PlayerLoader.tsx`** — (a) agregar `purchaseExpired: boolean;` al tipo `Data` del loader (si no, `data.purchaseExpired` no compila); (b) si `data.purchaseExpired`, renderizar el empty state ANTES de `<PlayerChat>`, con CTA a volver a comprar:
 
 ```tsx
-  // si data.purchaseExpired:
-  //   "Este recorrido lo compraste hace más de 90 días y no llegaste a empezarlo, así que venció."
-  //   + botón "Volver a comprar" → router.push(`/e/${slug}`)
+  // tipo Data (agregar): purchaseExpired: boolean;
+  // en el render, antes de montar PlayerChat:
+  //   if (data.purchaseExpired) return (
+  //     <div className="...pantalla centrada...">
+  //       <p>Este recorrido lo compraste hace más de 90 días y no llegaste a empezarlo, así que venció.</p>
+  //       <button onClick={() => router.push(`/e/${slug}`)}>Volver a comprar</button>
+  //     </div>
+  //   );
 ```
 
 - [ ] **Step 3: Copy "no vence"** — en `lib/email.ts` `sendAccessEmail`, cambiar "Entra cuando quieras" por *"Es tuyo para siempre, no vence. Entra cuando quieras con este email"*.
@@ -761,14 +857,17 @@ git commit -m "Cron de vencimiento: recordatorio a los ~83d + recontacto del aba
 
 ## Self-Review (cobertura del spec)
 
-- Compartir al terminar + imagen OG → Fase B ✅
+- Compartir al terminar + imagen OG → Fase B (B3 incluye la plomería de pasos/barrio hasta el player) ✅
 - Captura email momento 1 (arranque, salteable, dedupe, correo con link, prefill Stripe) → C1, C2, C4, C5 ✅
 - Captura email momento 2 (paywall, secundaria, dedupe) → C3 ✅
 - Leaderboard compartible → Fase D ✅
-- Dos relojes: progreso 7d → A1, A3, E1; acceso para siempre + compra 90d → A1, A2, E3; empty states → E1, E2/E3 ✅
-- Tarjeta de pausa (formas de volver) → E1 ✅
+- Dos relojes: progreso 7d → A1 (local default), A3 (cliente), **A4 (server real)**, E1; acceso para siempre + compra 90d → A1, A2, E3; empty states → E2 (progreso), E3 (compra) ✅
+- Tarjeta de pausa (formas de volver) + aviso de autoguardado → E1 ✅
 - Resume desde parada 1 → A3 ✅
 - Recontacto con descuento (separable) → Fase F ✅
 - Copy consistente (email, GiftSentBanner, /terminos) → E3 ✅
 
-**Orden recomendado de ejecución:** A → B → C → D → E → (F opcional). A es base (datos); B, C, D son independientes entre sí; E cierra copy/empty states; F es diferible.
+**Correcciones aplicadas tras el review adversarial del plan (16 hallazgos → 8 reales):**
+migración renumerada a **0019** (0018 ya existía); `entitlement_started` registrado en `database.types.ts` (si no, rompe `tsc`); **A4 nueva** entrega la ventana 7d server-side de verdad (antes ninguna task tocaba `sessions.ts`); plomería real de pasos/barrio hasta `PlayerChat` (B3); condición de captura unificada (`ownsIt`); detección de `resumeExpired` con código en el initializer; `purchaseExpired` agregado al tipo `Data`; aviso de autoguardado permanente.
+
+**Orden recomendado de ejecución:** A → B → C → D → E → (F opcional). A es base (datos/ventanas); B, C, D son independientes entre sí; E cierra copy/empty states; F es diferible.
