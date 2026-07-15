@@ -593,13 +593,13 @@ export default function PlayerChat({
               onClick={() => setAskEmailPaywall(true)}
               className="mt-3 block w-full text-center text-[12px] font-medium text-ink/50 underline underline-offset-2"
             >
-              ¿Todavía no? Déjame tu correo y te aviso de nuevos recorridos y descuentos
+              ¿Todavía no? Déjame tu correo y te aviso cuando sume recorridos nuevos
             </button>
           )}
           {!getCapturedEmail() && askEmailPaywall && (
             <div className="mt-3">
               <EmailCaptureCard
-                title="Te aviso de nuevos recorridos y descuentos, ¿va?"
+                title="Te aviso cuando sume recorridos nuevos, ¿va?"
                 source="paywall"
                 slug={slug}
                 onDone={() => setAskEmailPaywall(false)}
