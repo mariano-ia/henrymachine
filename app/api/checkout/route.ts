@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
     anonId?: string;
     utm?: Record<string, string>;
     promo?: string | null;
+    email?: string;
     gift?: boolean;
     recipientEmail?: string;
     giftMessage?: string;
@@ -144,12 +145,18 @@ export async function POST(req: NextRequest) {
   }
 
   const origin = originEarly || "https://caminaconhenry.com";
+  // prefill del email en Stripe si ya lo capturamos (menos fricción al pagar)
+  const prefillEmail =
+    typeof body.email === "string" && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email)
+      ? body.email.toLowerCase()
+      : undefined;
 
   try {
     const session = await getStripe().checkout.sessions.create({
       mode: "payment",
       line_items: [{ price: exp.stripe_price_id, quantity: 1 }],
       client_reference_id: anonId,
+      ...(prefillEmail ? { customer_email: prefillEmail } : {}),
       // con descuento auto-aplicado no se puede además ofrecer el campo de promo manual.
       // (consent_collection.promotions se descartó: exige aceptar ToS en el dashboard
       // y rompía el checkout; el opt-in de marketing se retoma con la cuenta definitiva.)

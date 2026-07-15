@@ -423,7 +423,7 @@ export default function PlayerChat({
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, anonId, utm: getUtm(), promo }),
+        body: JSON.stringify({ slug, anonId, utm: getUtm(), promo, email: getCapturedEmail() ?? undefined }),
       });
       const data = await res.json();
       if (data.url) {

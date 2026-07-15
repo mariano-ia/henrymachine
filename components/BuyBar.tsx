@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track, getUtm } from "@/lib/track";
 import { fmtUsd } from "@/lib/price";
+import { getCapturedEmail } from "@/lib/email-capture";
 
 export default function BuyBar({
   slug,
@@ -68,7 +69,7 @@ export default function BuyBar({
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, anonId, utm: getUtm(), promo }),
+        body: JSON.stringify({ slug, anonId, utm: getUtm(), promo, email: getCapturedEmail() ?? undefined }),
       });
       const d = await res.json();
       if (d.url) window.location.href = d.url;
