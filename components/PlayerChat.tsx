@@ -45,7 +45,7 @@ const NUDGE_AFTER_MS = 100_000;
 
 // ---- reanudar: el progreso sobrevive a cerrar la pestaña (mismo navegador) ----
 const SAVE_VERSION = 2; // v2: State.totalTurns
-const RESUME_WINDOW_MS = 48 * 3600 * 1000; // 48 h para retomar
+const RESUME_WINDOW_MS = 7 * 24 * 3600 * 1000; // 7 días para retomar
 const saveKey = (slug: string) => `henry_play_${slug}`;
 
 type SavedPlay = { v: number; savedAt: number; tour: State; messages: Message[] };
@@ -178,7 +178,7 @@ export default function PlayerChat({
   const [serverResume] = useState<State | null>(() => {
     if (saved || !serverProgress) return null;
     const { stopIndex, phase, totalTurns } = serverProgress;
-    if (stopIndex <= 0 || stopIndex >= stops.length) return null;
+    if (stopIndex < 0 || stopIndex >= stops.length) return null;
     const ph: TourPhase = (["CAMINANDO", "EN_PARADA", "EN_PAUSA"] as const).includes(
       phase as TourPhase
     )
