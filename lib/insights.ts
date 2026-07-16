@@ -3,6 +3,13 @@ import { GoogleGenAI } from "@google/genai";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /** Un insight accionable del análisis. `target` define a dónde linkea el admin. */
+export type InsightUtilitySuggestion = {
+  category: string;
+  name: string;
+  neighborhood?: string;
+  henry_note?: string;
+};
+
 export type InsightItem = {
   tipo: string; // fricción | abandono | pregunta_recurrente | conversión | producto
   hallazgo: string; // 1 frase
@@ -10,6 +17,9 @@ export type InsightItem = {
   accionable: string; // qué hacer
   target: "guia_util" | "experiencia" | "general";
   slug?: string; // slug real de la experiencia si target = experiencia
+  step?: number; // parada a la que se refiere (métrica estructural)
+  keywords?: string[]; // palabras del tema recurrente (métrica de volumen)
+  utility?: InsightUtilitySuggestion; // pre-carga de la Guía útil (solo guia_util)
 };
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
@@ -134,8 +144,13 @@ Reglas:
   - "general": todo lo demás.
 - Español, directo, para el dueño (Mariano). El "accionable" tiene que ser una acción concreta.
 
+Campos extra por insight (para poder aplicar y medir después):
+- "step": si el insight se refiere a una parada puntual, su número (para medir el abandono en ese paso).
+- "keywords": 2 a 5 palabras del tema recurrente (para medir si baja el volumen de esa pregunta). Ej: ["baño","servicios","toilet"].
+- "utility": SOLO en insights target="guia_util", una entrada sugerida para la Guía útil, con { "category": uno de [Baños, Agua, Transporte, WiFi y carga, Plata, Emergencias, Consejos], "name": "nombre corto del lugar/dato", "neighborhood": "barrio o null", "henry_note": "el dato en la voz de Henry (peruano, cálido)" }.
+
 Devolvé SOLO JSON con esta forma:
-{ "summary": "1-2 frases con lo más importante", "items": [ { "tipo": "...", "hallazgo": "...", "evidencia": "...", "accionable": "...", "target": "guia_util|experiencia|general", "slug": "opcional" } ] }`;
+{ "summary": "1-2 frases con lo más importante", "items": [ { "tipo": "...", "hallazgo": "...", "evidencia": "...", "accionable": "...", "target": "guia_util|experiencia|general", "slug": "opcional", "step": 3, "keywords": ["..."], "utility": { "category": "Baños", "name": "...", "neighborhood": "...", "henry_note": "..." } } ] }`;
 
 async function analyze(data: Awaited<ReturnType<typeof gather>>): Promise<{ summary: string; items: InsightItem[] }> {
   const prompt = `SLUGS REALES DE EXPERIENCIAS: ${JSON.stringify(data.slugs)}
@@ -173,17 +188,30 @@ ${data.messages.join("\n")}`;
     }
   }
   const validTargets = new Set(["guia_util", "experiencia", "general"]);
-  const items = (parsed.items ?? [])
+  const items: InsightItem[] = (parsed.items ?? [])
     .filter((it) => it && it.hallazgo && it.accionable)
-    .map((it) => ({
-      tipo: String(it.tipo ?? "general"),
-      hallazgo: String(it.hallazgo),
-      evidencia: String(it.evidencia ?? ""),
-      accionable: String(it.accionable),
-      target: (validTargets.has(it.target) ? it.target : "general") as InsightItem["target"],
-      // slug solo si es real
-      slug: it.slug && data.slugs.includes(it.slug) ? it.slug : undefined,
-    }));
+    .map((it) => {
+      const target = (validTargets.has(it.target) ? it.target : "general") as InsightItem["target"];
+      return {
+        tipo: String(it.tipo ?? "general"),
+        hallazgo: String(it.hallazgo),
+        evidencia: String(it.evidencia ?? ""),
+        accionable: String(it.accionable),
+        target,
+        slug: it.slug && data.slugs.includes(it.slug) ? it.slug : undefined,
+        step: typeof it.step === "number" ? it.step : undefined,
+        keywords: Array.isArray(it.keywords) ? it.keywords.slice(0, 5).map(String) : undefined,
+        utility:
+          target === "guia_util" && it.utility && it.utility.name
+            ? {
+                category: String(it.utility.category ?? "Consejos"),
+                name: String(it.utility.name),
+                neighborhood: it.utility.neighborhood ? String(it.utility.neighborhood) : undefined,
+                henry_note: it.utility.henry_note ? String(it.utility.henry_note) : undefined,
+              }
+            : undefined,
+      };
+    });
   return { summary: String(parsed.summary ?? ""), items };
 }
 
