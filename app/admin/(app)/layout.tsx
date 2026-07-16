@@ -59,6 +59,9 @@ export default async function AdminAppLayout({
               <Link href="/admin/resenas" className="transition hover:text-white">
                 Reseñas
               </Link>
+              <Link href="/admin/insights" className="transition hover:text-white">
+                Insights
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-3">
