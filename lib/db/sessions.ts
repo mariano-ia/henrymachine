@@ -17,6 +17,7 @@ export async function recordTurn(opts: {
   intent: string;
   finished: boolean;
   replyText: string;
+  userMessage?: string | null; // texto del usuario (para insights); se guarda como role='user'
   country: string | null;
   promptTokens: number | null;
   outputTokens: number | null;
@@ -75,6 +76,17 @@ export async function recordTurn(opts: {
     }
 
     if (sessionId) {
+      // mensaje del usuario (para insights): fila role='user'
+      const userText = (opts.userMessage ?? "").trim();
+      if (userText) {
+        await sb.from("session_messages").insert({
+          session_id: sessionId,
+          role: "user",
+          text: userText.slice(0, 4000),
+          step_position: position,
+          phase: opts.phase as never,
+        });
+      }
       await sb.from("session_messages").insert({
         session_id: sessionId,
         role: "henry",

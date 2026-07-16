@@ -147,6 +147,7 @@ export async function POST(req: NextRequest) {
       intent: result.intent,
       finished: result.intent === "finish",
       replyText: result.reply,
+      userMessage: message,
       country: req.headers.get("x-vercel-ip-country"),
       promptTokens: result.usage.prompt,
       outputTokens: result.usage.output,
