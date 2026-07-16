@@ -12,7 +12,10 @@ export const maxDuration = 60;
  *     Authorization: Bearer <CRON_SECRET> cuando la env está seteada).
  */
 export async function GET(req: NextRequest) {
-  if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  // fail-CLOSED: si no hay CRON_SECRET configurada, rechaza TODO (si no, un
+  // "Bearer undefined" pasaría el guard y dispararía la purga/análisis).
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return new NextResponse("no", { status: 401 });
   }
   try {

@@ -51,7 +51,7 @@ export async function purgeOldUserMessages(days = 90): Promise<void> {
     .lt("created_at", cutoff);
 }
 
-async function gather(sinceTs: string) {
+async function gather(sinceTs: string, windowTo: string) {
   const sb = createAdminClient();
 
   const { data: exps } = await sb
@@ -60,22 +60,30 @@ async function gather(sinceTs: string) {
     .eq("status", "published");
   const expById = new Map((exps ?? []).map((e) => [e.id, e]));
 
-  // sesiones de la ventana
+  // sesiones de la ventana [sinceTs, windowTo). Orden asc + tope de 5000: si se
+  // trunca, el watermark avanza SOLO hasta la última sesión leída (no perder datos).
   const { data: sessions } = await sb
     .from("play_sessions")
-    .select("experience_id, status, current_step_position, total_turns")
+    .select("experience_id, status, current_step_position, total_turns, created_at")
     .gte("created_at", sinceTs)
+    .lt("created_at", windowTo)
+    .order("created_at", { ascending: true })
     .limit(5000);
+  const list = sessions ?? [];
+  const truncated = list.length >= 5000;
+  if (truncated) console.warn("[insights] ventana truncada a 5000 sesiones; el watermark avanza parcial");
+  const effectiveWindowTo = truncated && list.length ? list[list.length - 1].created_at : windowTo;
 
-  // agregado por experiencia: iniciadas / terminadas / abandono por paso
+  // agregado por experiencia: iniciadas / terminadas / abandono por paso.
+  // "abandono" = solo EXPIRADO (vencidas); EN_CURSO todavía está viva, no cuenta.
   const perExp: Record<string, { title: string; started: number; finished: number; dropSteps: Record<number, number> }> = {};
-  for (const s of sessions ?? []) {
+  for (const s of list) {
     const e = expById.get(s.experience_id);
     const key = e?.slug ?? s.experience_id;
     perExp[key] ??= { title: e?.title ?? key, started: 0, finished: 0, dropSteps: {} };
     perExp[key].started++;
     if (s.status === "TERMINADO") perExp[key].finished++;
-    else {
+    else if (s.status === "EXPIRADO") {
       const p = s.current_step_position ?? 1;
       perExp[key].dropSteps[p] = (perExp[key].dropSteps[p] ?? 0) + 1;
     }
@@ -89,7 +97,8 @@ async function gather(sinceTs: string) {
       .from("events")
       .select("*", { count: "exact", head: true })
       .eq("name", n)
-      .gte("created_at", sinceTs);
+      .gte("created_at", sinceTs)
+      .lt("created_at", windowTo);
     funnel[n] = count ?? 0;
   }
 
@@ -99,6 +108,7 @@ async function gather(sinceTs: string) {
     .select("text, step_position")
     .eq("role", "user")
     .gte("created_at", sinceTs)
+    .lt("created_at", windowTo)
     .order("created_at", { ascending: false })
     .limit(400);
 
@@ -107,14 +117,15 @@ async function gather(sinceTs: string) {
     perExp,
     funnel,
     messages: (msgs ?? []).map((m) => `(paso ${m.step_position ?? "?"}) ${m.text}`),
-    playsAnalyzed: (sessions ?? []).length,
+    playsAnalyzed: list.length,
+    effectiveWindowTo,
   };
 }
 
 const SYSTEM = `Sos un analista de producto para "La Nueva York de Henry" (micro-recorridos a pie por NYC guiados por chat). Te paso datos agregados de las jugadas y una muestra de mensajes reales de los usuarios. Tu trabajo: encontrar INSIGHTS accionables para mejorar el producto.
 
 Reglas:
-- Basate SOLO en los datos que te paso. Citá números y ejemplos reales en la evidencia. Nada inventado.
+- Basate SOLO en los datos que te paso. Citá números y patrones reales en la evidencia; parafraseá los ejemplos, NO copies el texto del usuario tal cual. Nada inventado.
 - Priorizá lo accionable: dónde se traban, dónde abandonan, qué preguntan seguido (baños, wifi, cómo llegar, confusión), qué convierte, qué piden que no existe.
 - Devolvé entre 3 y 8 insights, del más importante al menos. Si no hay datos suficientes para algo, no lo fuerces.
 - Para cada insight, "target" indica a dónde llevar al admin a arreglarlo:
@@ -151,10 +162,15 @@ ${data.messages.join("\n")}`;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    // rescate: recortar al primer { y último }
-    const s = raw.indexOf("{");
-    const e = raw.lastIndexOf("}");
-    parsed = s >= 0 && e > s ? JSON.parse(raw.slice(s, e + 1)) : { summary: "", items: [] };
+    // rescate: recortar al primer { y último } — y si eso también rompe (output
+    // truncado por maxOutputTokens), devolver vacío en vez de tirar la corrida.
+    try {
+      const s = raw.indexOf("{");
+      const e = raw.lastIndexOf("}");
+      parsed = s >= 0 && e > s ? JSON.parse(raw.slice(s, e + 1)) : { summary: "", items: [] };
+    } catch {
+      parsed = { summary: "", items: [] };
+    }
   }
   const validTargets = new Set(["guia_util", "experiencia", "general"]);
   const items = (parsed.items ?? [])
@@ -177,7 +193,7 @@ export async function runInsights(kind: "auto" | "manual"): Promise<string | nul
   const sinceTs = (await lastAnalysisTs()) ?? new Date(Date.now() - 30 * 86400000).toISOString();
   const windowTo = new Date().toISOString();
 
-  const data = await gather(sinceTs);
+  const data = await gather(sinceTs, windowTo);
   const { summary, items } = await analyze(data);
 
   const { data: row } = await sb
@@ -186,7 +202,7 @@ export async function runInsights(kind: "auto" | "manual"): Promise<string | nul
       kind,
       plays_analyzed: data.playsAnalyzed,
       window_from: sinceTs,
-      window_to: windowTo,
+      window_to: data.effectiveWindowTo,
       summary,
       items,
     })
