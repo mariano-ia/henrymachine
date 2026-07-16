@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { InsightItem } from "@/lib/insights";
+import { computeImpact, type Impact, type Baseline } from "@/lib/insight-metrics";
 import InsightsRunButton from "@/components/admin/InsightsRunButton";
+import InsightApplyButton from "@/components/admin/InsightApplyButton";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +26,30 @@ const TIPO_COLOR: Record<string, string> = {
   general: "bg-white/10 text-neutral-300",
 };
 
+const pct = (x: number) => `${Math.round(x * 100)}%`;
+const perWeek = (x: number) => `${x.toFixed(1)}/sem`;
+
+function ImpactBlock({ impact }: { impact: Impact }) {
+  if (!impact.enoughData) {
+    return <p className="mt-2 text-[13px] text-amber-300/80">✓ Aplicado · midiendo impacto… (faltan jugadas)</p>;
+  }
+  return (
+    <div className="mt-2 rounded-lg bg-emerald-500/10 p-2.5 text-[13px]">
+      <p className="font-semibold text-emerald-300">Impacto ✓</p>
+      {impact.structural && (
+        <p className="text-neutral-300">
+          {impact.structural.metric === "abandono" ? "Abandono" : "Conversión"}: {pct(impact.structural.before)} → {pct(impact.structural.after)}
+        </p>
+      )}
+      {impact.volume && (
+        <p className="text-neutral-300">
+          Volumen de la pregunta: {perWeek(impact.volume.before)} → {perWeek(impact.volume.after)}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default async function InsightsPage() {
   const sb = createAdminClient();
   const [{ data: rows }, { data: exps }] = await Promise.all([
@@ -34,6 +60,24 @@ export default async function InsightsPage() {
   const idBySlug = new Map((exps ?? []).map((e) => [e.slug, e.id]));
   const latest = list[0] ?? null;
   const history = list.slice(1);
+
+  // acciones ya aplicadas del último análisis + su impacto medido
+  const actions = latest
+    ? (await sb.from("insight_actions").select("*").eq("insight_id", latest.id)).data ?? []
+    : [];
+  const byItem = new Map<number, Impact>();
+  for (const a of actions) {
+    byItem.set(
+      a.item_index,
+      await computeImpact({
+        created_at: a.created_at,
+        metric_slug: a.metric_slug,
+        metric_step: a.metric_step,
+        keywords: (a.keywords as string[]) ?? [],
+        baseline: a.baseline as Baseline,
+      })
+    );
+  }
 
   function linkFor(it: InsightItem): { href: string; label: string } | null {
     if (it.target === "guia_util") return { href: "/admin/utilidades", label: "→ Guía útil" };
@@ -96,6 +140,18 @@ export default async function InsightsPage() {
                           {link.label}
                         </Link>
                       )}
+                      {byItem.has(i) ? (
+                        <ImpactBlock impact={byItem.get(i)!} />
+                      ) : it.target === "guia_util" && it.utility ? (
+                        <InsightApplyButton
+                          insightId={latest.id}
+                          itemIndex={i}
+                          utility={it.utility}
+                          metricSlug={it.slug ?? null}
+                          metricStep={it.step ?? null}
+                          keywords={it.keywords ?? []}
+                        />
+                      ) : null}
                     </div>
                   </div>
                 </li>
