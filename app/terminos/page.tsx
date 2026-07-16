@@ -58,7 +58,9 @@ export default function TerminosPage() {
           <p className="text-[15px] leading-relaxed text-ink/75">
             Usamos tu correo para darte acceso a lo que compraste y, si aceptas, para
             contarte cuando haya recorridos nuevos. Nada de spam y nunca vendemos tus datos.
-            El pago lo procesa Stripe; nosotros no guardamos los datos de tu tarjeta.
+            El pago lo procesa Stripe; nosotros no guardamos los datos de tu tarjeta. También
+            guardamos la conversación del recorrido para entender qué mejorar (dónde se traba la
+            gente, qué preguntan); la usamos solo para eso y la borramos a los 90 días.
           </p>
         </section>
 
