@@ -56,6 +56,12 @@ export type Database = {
         Update: { author_id?: string; created_at?: string; draft?: Json | null; error?: string | null; experience_id?: string | null; finished_at?: string | null; id?: string; status?: Database["public"]["Enums"]["generation_status"]; step_count?: number | null; story?: string }
         Relationships: []
       }
+      insights: {
+        Row: { id: string; created_at: string; kind: string; plays_analyzed: number; window_from: string | null; window_to: string | null; summary: string | null; items: Json }
+        Insert: { id?: string; created_at?: string; kind?: string; plays_analyzed?: number; window_from?: string | null; window_to?: string | null; summary?: string | null; items?: Json }
+        Update: { id?: string; created_at?: string; kind?: string; plays_analyzed?: number; window_from?: string | null; window_to?: string | null; summary?: string | null; items?: Json }
+        Relationships: []
+      }
       leads: {
         Row: { created_at: string; email: string; id: string; marketing_consent: boolean; slug: string | null; source: string | null }
         Insert: { created_at?: string; email: string; id?: string; marketing_consent?: boolean; slug?: string | null; source?: string | null }
