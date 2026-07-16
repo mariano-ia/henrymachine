@@ -13,6 +13,8 @@ create table if not exists insight_actions (
   baseline jsonb not null default '{}'         -- snapshot del "antes" al aplicar
 );
 create index if not exists insight_actions_insight_idx on insight_actions (insight_id);
+-- idempotencia: un insight+item se aplica una sola vez
+create unique index if not exists insight_actions_uq on insight_actions (insight_id, item_index);
 
 alter table insight_actions enable row level security;
 -- sin policies: lo lee/escribe solo el service_role (admin server-side).

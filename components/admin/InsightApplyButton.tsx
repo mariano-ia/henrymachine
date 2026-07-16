@@ -37,26 +37,31 @@ export default function InsightApplyButton({
   async function submit() {
     setBusy(true);
     setErr(null);
-    const r = await applyUtilityFromInsight({
-      insightId,
-      itemIndex,
-      utility: {
-        category: f.category,
-        name: f.name,
-        neighborhood: f.neighborhood || null,
-        henry_note: f.henry_note || null,
-      },
-      metricSlug: metricSlug ?? null,
-      metricStep: metricStep ?? null,
-      keywords: keywords ?? [],
-    });
-    setBusy(false);
-    if (!r.ok) {
-      setErr(r.error ?? "No se pudo aplicar.");
-      return;
+    try {
+      const r = await applyUtilityFromInsight({
+        insightId,
+        itemIndex,
+        utility: {
+          category: f.category,
+          name: f.name,
+          neighborhood: f.neighborhood || null,
+          henry_note: f.henry_note || null,
+        },
+        metricSlug: metricSlug ?? null,
+        metricStep: metricStep ?? null,
+        keywords: keywords ?? [],
+      });
+      if (!r.ok) {
+        setErr(r.error ?? "No se pudo aplicar.");
+        return;
+      }
+      setOpen(false);
+      router.refresh();
+    } catch {
+      setErr("No se pudo aplicar. Reintentá.");
+    } finally {
+      setBusy(false);
     }
-    setOpen(false);
-    router.refresh();
   }
 
   if (!open) {

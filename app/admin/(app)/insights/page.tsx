@@ -30,7 +30,7 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
 const perWeek = (x: number) => `${x.toFixed(1)}/sem`;
 
 function ImpactBlock({ impact }: { impact: Impact }) {
-  if (!impact.enoughData) {
+  if (impact.status === "midiendo") {
     return <p className="mt-2 text-[13px] text-amber-300/80">✓ Aplicado · midiendo impacto… (faltan jugadas)</p>;
   }
   return (
@@ -38,12 +38,14 @@ function ImpactBlock({ impact }: { impact: Impact }) {
       <p className="font-semibold text-emerald-300">Impacto ✓</p>
       {impact.structural && (
         <p className="text-neutral-300">
-          {impact.structural.metric === "abandono" ? "Abandono" : "Conversión"}: {pct(impact.structural.before)} → {pct(impact.structural.after)}
+          {impact.structural.metric === "abandono" ? "Abandono" : "Conversión"}:{" "}
+          {impact.structural.before == null ? "s/d" : pct(impact.structural.before)} → {pct(impact.structural.after)}
         </p>
       )}
       {impact.volume && (
         <p className="text-neutral-300">
-          Volumen de la pregunta: {perWeek(impact.volume.before)} → {perWeek(impact.volume.after)}
+          Volumen de la pregunta: {impact.volume.before == null ? "s/d" : perWeek(impact.volume.before)} →{" "}
+          {perWeek(impact.volume.after)}
         </p>
       )}
     </div>
@@ -65,19 +67,19 @@ export default async function InsightsPage() {
   const actions = latest
     ? (await sb.from("insight_actions").select("*").eq("insight_id", latest.id)).data ?? []
     : [];
-  const byItem = new Map<number, Impact>();
-  for (const a of actions) {
-    byItem.set(
-      a.item_index,
-      await computeImpact({
+  const impacts = await Promise.all(
+    actions.map((a) =>
+      computeImpact({
         created_at: a.created_at,
         metric_slug: a.metric_slug,
         metric_step: a.metric_step,
         keywords: (a.keywords as string[]) ?? [],
         baseline: a.baseline as Baseline,
       })
-    );
-  }
+    )
+  );
+  const byItem = new Map<number, Impact>();
+  actions.forEach((a, i) => byItem.set(a.item_index, impacts[i]));
 
   function linkFor(it: InsightItem): { href: string; label: string } | null {
     if (it.target === "guia_util") return { href: "/admin/utilidades", label: "→ Guía útil" };

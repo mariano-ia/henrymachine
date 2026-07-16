@@ -5,9 +5,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdmin } from "@/lib/auth/admin";
 import { captureBaseline } from "@/lib/insight-metrics";
 
+const CATS = new Set(["Baños", "Agua", "Transporte", "WiFi y carga", "Plata", "Emergencias", "Consejos"]);
+const clip = (s: string | null | undefined, n: number) => ((s ?? "").trim().slice(0, n) || null);
+
 /**
  * Aplica un insight de Guía útil: crea la entrada (utility) con lo confirmado en el
  * form, snapshotea las métricas "antes" y registra la acción para medir el impacto.
+ * Idempotente y con rollback: nunca deja una utility huérfana ni duplicada.
  */
 export async function applyUtilityFromInsight(input: {
   insightId: string;
@@ -26,35 +30,50 @@ export async function applyUtilityFromInsight(input: {
   keywords?: string[];
 }): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdmin())) return { ok: false, error: "No autorizado." };
-  if (!input.utility.category || !input.utility.name) {
-    return { ok: false, error: "Faltan categoría o nombre." };
-  }
+
+  const name = (input.utility.name ?? "").trim().slice(0, 120);
+  const category = input.utility.category;
+  if (!name || !CATS.has(category)) return { ok: false, error: "Categoría o nombre inválidos." };
+
   const sb = createAdminClient();
 
-  // 1. crear la entrada en la Guía útil
+  // idempotencia: no aplicar dos veces el mismo insight+item (el índice único de
+  // 0021 es el backstop; este pre-check da un mensaje claro)
+  const { data: existing } = await sb
+    .from("insight_actions")
+    .select("id")
+    .eq("insight_id", input.insightId)
+    .eq("item_index", input.itemIndex)
+    .maybeSingle();
+  if (existing) return { ok: false, error: "Este insight ya fue aplicado." };
+
+  // baseline PRIMERO (solo lectura): si falla, no dejamos una utility huérfana
+  const keywords = input.keywords ?? [];
+  let baseline;
+  try {
+    baseline = await captureBaseline({ slug: input.metricSlug ?? null, step: input.metricStep ?? null, keywords });
+  } catch {
+    return { ok: false, error: "No se pudo calcular la métrica base. Reintentá." };
+  }
+
+  // crear la entrada en la Guía útil
   const { data: util, error: uErr } = await sb
     .from("utilities")
     .insert({
-      category: input.utility.category,
-      name: input.utility.name,
-      neighborhood: input.utility.neighborhood ?? null,
-      address: input.utility.address ?? null,
-      place_query: input.utility.place_query ?? null,
-      hours: input.utility.hours ?? null,
-      henry_note: input.utility.henry_note ?? null,
+      category,
+      name,
+      neighborhood: clip(input.utility.neighborhood, 120),
+      address: clip(input.utility.address, 200),
+      place_query: clip(input.utility.place_query, 200),
+      hours: clip(input.utility.hours, 120),
+      henry_note: clip(input.utility.henry_note, 600),
     })
     .select("id")
     .single();
   if (uErr || !util) return { ok: false, error: "No se pudo crear la entrada de la Guía útil." };
 
-  // 2. snapshot del "antes" + registrar la acción (para verificar el impacto)
-  const keywords = input.keywords ?? [];
-  const baseline = await captureBaseline({
-    slug: input.metricSlug ?? null,
-    step: input.metricStep ?? null,
-    keywords,
-  });
-  await sb.from("insight_actions").insert({
+  // registrar la acción; si falla, REVERTIR la utility (nada huérfano ni duplicado)
+  const { error: aErr } = await sb.from("insight_actions").insert({
     insight_id: input.insightId,
     item_index: input.itemIndex,
     kind: "add_utility",
@@ -64,6 +83,10 @@ export async function applyUtilityFromInsight(input: {
     keywords,
     baseline,
   });
+  if (aErr) {
+    await sb.from("utilities").delete().eq("id", util.id);
+    return { ok: false, error: "No se pudo registrar la acción. Reintentá." };
+  }
 
   revalidatePath("/admin/insights");
   revalidatePath("/admin/utilidades");

@@ -74,7 +74,7 @@ async function gather(sinceTs: string, windowTo: string) {
   // trunca, el watermark avanza SOLO hasta la última sesión leída (no perder datos).
   const { data: sessions } = await sb
     .from("play_sessions")
-    .select("experience_id, status, current_step_position, total_turns, created_at")
+    .select("experience_id, status, current_step_position, total_turns, created_at, expires_at")
     .gte("created_at", sinceTs)
     .lt("created_at", windowTo)
     .order("created_at", { ascending: true })
@@ -87,13 +87,15 @@ async function gather(sinceTs: string, windowTo: string) {
   // agregado por experiencia: iniciadas / terminadas / abandono por paso.
   // "abandono" = solo EXPIRADO (vencidas); EN_CURSO todavía está viva, no cuenta.
   const perExp: Record<string, { title: string; started: number; finished: number; dropSteps: Record<number, number> }> = {};
+  const nowMs = Date.now();
   for (const s of list) {
     const e = expById.get(s.experience_id);
     const key = e?.slug ?? s.experience_id;
     perExp[key] ??= { title: e?.title ?? key, started: 0, finished: 0, dropSteps: {} };
     perExp[key].started++;
     if (s.status === "TERMINADO") perExp[key].finished++;
-    else if (s.status === "EXPIRADO") {
+    else if (s.expires_at && new Date(s.expires_at).getTime() < nowMs) {
+      // abandonada = no terminó y ya venció (nadie escribe el estado EXPIRADO)
       const p = s.current_step_position ?? 1;
       perExp[key].dropSteps[p] = (perExp[key].dropSteps[p] ?? 0) + 1;
     }
