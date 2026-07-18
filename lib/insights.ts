@@ -149,7 +149,7 @@ Reglas:
 Campos extra por insight (para poder aplicar y medir después):
 - "step": si el insight se refiere a una parada puntual, su número (para medir el abandono en ese paso).
 - "keywords": 2 a 5 palabras del tema recurrente (para medir si baja el volumen de esa pregunta). Ej: ["baño","servicios","toilet"].
-- "utility": SOLO en insights target="guia_util", una entrada sugerida para la Guía útil, con { "category": uno de [Baños, Agua, Transporte, WiFi y carga, Plata, Emergencias, Consejos], "name": "nombre corto del lugar/dato", "neighborhood": "barrio o null", "henry_note": "el dato en la voz de Henry (peruano, cálido)" }.
+- "utility": SOLO en insights target="guia_util", una entrada sugerida para la Guía útil, con { "category": uno de [Baños, Agua, Transporte, WiFi y carga, Plata, Emergencias, Consejos], "name": "nombre corto del lugar/dato", "neighborhood": "barrio o null", "henry_note": "el dato en la voz de Henry (peruano, cálido; sin signos de apertura ¡ ¿, solo cierra con ! o ?; nunca 'mi gente'/'bro'/'mi pana')" }.
 
 Devolvé SOLO JSON con esta forma:
 { "summary": "1-2 frases con lo más importante", "items": [ { "tipo": "...", "hallazgo": "...", "evidencia": "...", "accionable": "...", "target": "guia_util|experiencia|general", "slug": "opcional", "step": 3, "keywords": ["..."], "utility": { "category": "Baños", "name": "...", "neighborhood": "...", "henry_note": "..." } } ] }`;

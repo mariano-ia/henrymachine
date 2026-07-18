@@ -64,7 +64,7 @@ export async function GET() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ fontSize: 50, fontWeight: 800, lineHeight: 1.15 }}>{`Yo ya estoy en la tabla 🚶`}</div>
-            <div style={{ fontSize: 44, fontWeight: 600, color: "#FCCC0A" }}>{`¿Tu país va ganando?`}</div>
+            <div style={{ fontSize: 44, fontWeight: 600, color: "#FCCC0A" }}>{`Tu país va ganando?`}</div>
             <div style={{ fontSize: 32, fontWeight: 600, opacity: 0.75, marginTop: 12 }}>caminaconhenry.com</div>
           </div>
         </div>

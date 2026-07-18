@@ -66,7 +66,7 @@ export default function NationalityPicker({
 
   return (
     <div className="mt-3 rounded-2xl border border-ink/10 bg-white p-3">
-      <p className="text-center text-[13px] text-ink/70">¿A qué bandera sumamos tus pasos?</p>
+      <p className="text-center text-[13px] text-ink/70">A qué bandera sumamos tus pasos?</p>
       <div className="mt-2 flex gap-2">
         <select
           value={sel}

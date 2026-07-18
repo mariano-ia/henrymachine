@@ -84,11 +84,11 @@ function resumeGreeting(tour: State, stops: StopMeta[]): Message {
   const n = tour.stopIndex + 1;
   let text: string;
   if (tour.phase === "EN_PARADA") {
-    text = `¡Volviste, querubín! Quedamos en ${st?.title ?? "una parada"} (parada ${n} de ${stops.length}). ¿Sigues por ahí?`;
+    text = `Volviste, querubín! Quedamos en ${st?.title ?? "una parada"} (parada ${n} de ${stops.length}). Sigues por ahí?`;
   } else if (tour.phase === "EN_PAUSA") {
-    text = `¡Volviste! Estábamos en pausa cerca de ${st?.title ?? "la próxima parada"}. Cuando quieras, retomamos.`;
+    text = `Volviste! Estábamos en pausa cerca de ${st?.title ?? "la próxima parada"}. Cuando quieras, retomamos.`;
   } else {
-    text = `¡Volviste! Íbamos camino a ${st?.title ?? "la próxima parada"}. Avísame cuando llegues 🙌`;
+    text = `Volviste! Íbamos camino a ${st?.title ?? "la próxima parada"}. Avísame cuando llegues 🙌`;
   }
   return { role: "henry", text, time: now() };
 }
@@ -368,7 +368,7 @@ export default function PlayerChat({
             role: "henry",
             time: now(),
             kind: "review",
-            text: st.reviewMessage?.trim() || "¿Qué te está pareciendo hasta acá, querubín?",
+            text: st.reviewMessage?.trim() || "Qué te está pareciendo hasta acá, querubín?",
           });
         }
       }
@@ -496,12 +496,12 @@ export default function PlayerChat({
         </p>
         {resumeExpired && (
           <div className="rounded-xl border border-ink/10 bg-white px-3.5 py-2.5 text-[13px] leading-snug text-ink/70 shadow-bubble">
-            Pasó más de una semana y perdí el rastro de dónde quedamos 😅 pero tu recorrido sigue siendo tuyo — arrancamos de nuevo, ¿va?
+            Pasó más de una semana y perdí el rastro de dónde quedamos 😅 pero tu recorrido sigue siendo tuyo — arrancamos de nuevo, va?
           </div>
         )}
         {askEmail && tour.status === "EN_CURSO" && !getCapturedEmail() && (
           <EmailCaptureCard
-            title="¿Te guardo el link por si se te corta la señal? Te lo mando al correo y lo retomas cuando quieras."
+            title="Te guardo el link por si se te corta la señal? Te lo mando al correo y lo retomas cuando quieras."
             source="player_start"
             slug={slug}
             onDone={() => setAskEmail(false)}
@@ -596,13 +596,13 @@ export default function PlayerChat({
               onClick={() => setAskEmailPaywall(true)}
               className="mt-3 block w-full text-center text-[12px] font-medium text-ink/50 underline underline-offset-2"
             >
-              ¿Todavía no? Déjame tu correo y te aviso cuando sume recorridos nuevos
+              Todavía no? Déjame tu correo y te aviso cuando sume recorridos nuevos
             </button>
           )}
           {!getCapturedEmail() && askEmailPaywall && (
             <div className="mt-3">
               <EmailCaptureCard
-                title="Te aviso cuando sume recorridos nuevos, ¿va?"
+                title="Te aviso cuando sume recorridos nuevos, va?"
                 source="paywall"
                 slug={slug}
                 onDone={() => setAskEmailPaywall(false)}
@@ -626,7 +626,7 @@ export default function PlayerChat({
             onClick={() => setTour((t) => ({ ...t, status: "EN_CURSO" }))}
             className="mx-auto mt-2 block text-[12px] font-medium text-ink/45 underline underline-offset-2 transition hover:text-ink"
           >
-            ¿Terminó sin querer? Volver al recorrido
+            Terminó sin querer? Volver al recorrido
           </button>
 
           <ShareButton
@@ -859,7 +859,7 @@ function InlineReview({
       <div className="max-w-[86%] rounded-2xl rounded-tl-sm bg-white px-3.5 py-3 shadow-bubble">
         <p className="text-[16px] leading-snug text-ink">{message}</p>
         {sent || done ? (
-          <p className="mt-2 font-hand text-[18px] leading-tight text-brand">¡Gracias, querubín! 🙏</p>
+          <p className="mt-2 font-hand text-[18px] leading-tight text-brand">Gracias, querubín! 🙏</p>
         ) : (
           <>
             <div className="mt-2 flex gap-1.5">
@@ -883,7 +883,7 @@ function InlineReview({
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   rows={2}
-                  placeholder="¿Quieres agregar algo? (opcional)"
+                  placeholder="Quieres agregar algo? (opcional)"
                   className="mt-2 w-full rounded-lg border border-ink/15 bg-[#F4F2EC] px-3 py-2 text-[14px] text-ink outline-none focus:border-ink/40"
                 />
                 <button

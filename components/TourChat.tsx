@@ -226,7 +226,7 @@ export default function TourChat() {
           className="bg-[#f0f0f0] px-4 py-5 text-center text-sm text-neutral-500"
           style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
         >
-          Recorrido finalizado · ¡gracias por recorrer Nueva York con Henry! 🗽
+          Recorrido finalizado · gracias por recorrer Nueva York con Henry! 🗽
         </div>
       ) : (
         <div

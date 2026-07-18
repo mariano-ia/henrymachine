@@ -84,7 +84,8 @@ Escribí un PERFIL DE VOZ en español, en 1 o 2 párrafos (máximo 180 palabras)
 - muletillas, conectores y expresiones típicas: citá ENTRE 5 Y 10 palabras/frases reales, ni una más
 - humor y ritmo
 
-Es peruano, así que mencioná su registro, pero sin exagerar: describí su forma natural de hablar, no una caricatura. No resumas el contenido de los videos. El objetivo es que otro modelo pueda IMITAR su forma de hablar leyendo este perfil.`;
+Es peruano, así que mencioná su registro, pero sin exagerar: describí su forma natural de hablar, no una caricatura. No resumas el contenido de los videos. El objetivo es que otro modelo pueda IMITAR su forma de hablar leyendo este perfil.
+NO incluyas ni recomiendes muletillas genéricas de influencer que no sean de Henry ("mi gente", "bro", "mi bro", "mi pana"). Notá que escribe sin signos de apertura (¡ ¿): solo cierra con ! o ?.`;
 
 const BIO_PROMPT = `Vas a recibir transcripciones de videos de Henry, un YouTuber peruano afincado en New York. Escribí su DOSSIER PERSONAL en español, dirigido a él en segunda persona ("Naciste en...", "Tu esposa..."), para que un modelo que lo interpreta responda preguntas personales con SU verdad.
 

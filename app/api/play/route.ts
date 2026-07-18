@@ -21,10 +21,10 @@ const PHASES: TourPhase[] = ["CAMINANDO", "EN_PARADA", "EN_PAUSA"];
 const SOFT_TURN_LIMIT = 240;
 const HARD_TURN_LIMIT = 300;
 const FAREWELL_AT_LIMIT =
-  "Uff querubín, se nos fue el día entero charlando y yo todavía tengo que editar unos videos 😅 Lo caminado nadie te lo quita. Dejamos el recorrido acá por hoy — ¡un abrazo y nos vemos en el próximo! 🤙";
+  "Uff querubín, se nos fue el día entero charlando y yo todavía tengo que editar unos videos 😅 Lo caminado nadie te lo quita. Dejamos el recorrido acá por hoy — un abrazo y nos vemos en el próximo! 🤙";
 // kill-switch / presupuesto agotado: mensaje en personaje, sin llamar al LLM.
 const MAINT_MESSAGE =
-  "Uy, ahorita ando desconectado un ratito 😴 dame unos minutos y seguimos el recorrido, ¿ya? Un abrazo 🤙";
+  "Uy, ahorita ando desconectado un ratito 😴 dame unos minutos y seguimos el recorrido, ya? Un abrazo 🤙";
 
 export async function POST(req: NextRequest) {
   try {
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     const okIpMin = await rateLimit(req, "play-ip-m", null, 60, 300);
     if (!okMin || !okDay || !okIpMin) {
       return NextResponse.json(
-        { reply: "Uy, me están llegando mensajes muy rápido 😅 dame un minutito y seguimos, ¿ya?", intent: "none" },
+        { reply: "Uy, me están llegando mensajes muy rápido 😅 dame un minutito y seguimos, ya?", intent: "none" },
         { status: 429 }
       );
     }

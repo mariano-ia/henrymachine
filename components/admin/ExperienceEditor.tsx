@@ -471,7 +471,7 @@ export default function ExperienceEditor({
                 onChange={(e) => setUpsellMsg(e.target.value)}
                 disabled={ro}
                 rows={2}
-                placeholder="¿Te quedaste con ganas de más, querubín? Este te va a encantar…"
+                placeholder="Te quedaste con ganas de más, querubín? Este te va a encantar…"
                 className={`${ta} disabled:opacity-70`}
               />
             </div>
@@ -661,7 +661,7 @@ export default function ExperienceEditor({
                         value={s.review_message ?? ""}
                         onChange={(e) => patch(s.id, "review_message", e.target.value)}
                         disabled={ro}
-                        placeholder="Mensaje de Henry (ej. ¿Qué te está pareciendo hasta acá?)"
+                        placeholder="Mensaje de Henry (ej. Qué te está pareciendo hasta acá?)"
                         className={`${ta} mt-2 disabled:opacity-70`}
                       />
                       {arrivalOrdinal.get(s.id)! > freeStops && Number(priceDollars) > 0 && (

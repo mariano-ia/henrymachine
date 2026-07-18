@@ -39,7 +39,7 @@ export default function ReviewPrompt({
   if (done) {
     return (
       <p className="mt-4 text-center font-hand text-[20px] text-brand">
-        ¡Gracias, querubín! Tu reseña me ayuda un montón 🙏
+        Gracias, querubín! Tu reseña me ayuda un montón 🙏
       </p>
     );
   }
@@ -49,7 +49,7 @@ export default function ReviewPrompt({
       <p className="flex items-center justify-center gap-2 text-center text-[14px] font-semibold text-ink">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/henry.jpg" alt="" className="h-6 w-6 rounded-full object-cover" />
-        ¿Me dejas una reseña?
+        Me dejas una reseña?
       </p>
       <div className="mt-2 flex justify-center gap-1.5">
         {[1, 2, 3, 4, 5].map((i) => (

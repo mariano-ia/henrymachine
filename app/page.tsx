@@ -111,7 +111,7 @@ export default async function Home() {
         <div className="mx-auto flex max-w-editorial flex-col gap-4 px-5 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-10">
           <div className="max-w-md">
             <h2 className="text-[20px] font-semibold tracking-tight text-ink">
-              ¿Todavía no vienes a Nueva York?
+              Todavía no vienes a Nueva York?
             </h2>
             <p className="mt-1 text-[14px] leading-relaxed text-ink/55">
               Déjame tu mail y te aviso cuando sume un recorrido nuevo. Sin spam, palabra de Henry.

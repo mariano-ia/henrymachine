@@ -37,7 +37,7 @@ export default function LeadCapture({
   if (done) {
     return (
       <p className={"font-hand text-[20px] " + (dark ? "text-brand" : "text-brand")}>
-        ¡Listo! Te aviso cuando sume un recorrido nuevo, querubín 🤙
+        Listo! Te aviso cuando sume un recorrido nuevo, querubín 🤙
       </p>
     );
   }

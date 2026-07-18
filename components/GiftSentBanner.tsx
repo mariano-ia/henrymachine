@@ -17,7 +17,7 @@ export default function GiftSentBanner({ title }: { title: string }) {
     <div className="mb-6 rotate-[-0.6deg] bg-brand p-5 shadow-lg" style={{ color: "#1A1A1A" }}>
       <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Nota de Henry · listo</p>
       <p className="mt-2 font-hand text-[24px] leading-tight">
-        ¡Golazo! “{title}” quedó guardado para {to}.
+        Golazo! “{title}” quedó guardado para {to}.
         <br />
         Tiene 90 días para empezarlo; una vez que arranca, es suyo para siempre. Entra con ese
         email en “Mis recorridos”. — H.

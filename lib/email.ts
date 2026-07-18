@@ -44,8 +44,8 @@ export async function sendAccessEmail(opts: {
     const title = esc(opts.experienceTitle);
     const url = `${SITE}/cuenta`;
     const intro = opts.isGift
-      ? `¡Te regalaron un recorrido! <b>${title}</b> es tuyo.`
-      : `¡Golazo! Tu recorrido <b>${title}</b> quedó guardado.`;
+      ? `Te regalaron un recorrido! <b>${title}</b> es tuyo.`
+      : `Golazo! Tu recorrido <b>${title}</b> quedó guardado.`;
     const note =
       opts.isGift && opts.giftMessage
         ? `<p style="margin:16px 0;padding:12px 14px;background:#FCFBF9;border-left:3px solid #CC4E2A;font-style:italic;color:#444">"${esc(opts.giftMessage)}"</p>`
@@ -87,7 +87,7 @@ export async function sendTourLinkEmail(to: string, slug: string): Promise<void>
     const url = `${SITE}/e/${encodeURIComponent(slug)}/chat`;
     const html = `
 <div style="font-family:system-ui,-apple-system,sans-serif;max-width:480px;margin:0 auto;color:#1A1A1A">
-  <p style="font-size:16px;line-height:1.5">¡Aquí te dejo tu recorrido, querubín! Retómalo cuando quieras — se guarda donde lo dejaste.</p>
+  <p style="font-size:16px;line-height:1.5">Aquí te dejo tu recorrido, querubín! Retómalo cuando quieras — se guarda donde lo dejaste.</p>
   <p style="margin:22px 0"><a href="${url}" style="display:inline-block;background:#CC4E2A;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;font-size:15px">Seguir caminando</a></p>
   <p style="font-size:14px;color:#888;line-height:1.5">Nos vemos en la esquina.<br>— Henry</p>
 </div>`;
@@ -104,7 +104,7 @@ export async function sendLoginCode(to: string, code: string): Promise<boolean> 
   try {
     const html = `
 <div style="font-family:system-ui,-apple-system,sans-serif;max-width:440px;margin:0 auto;color:#1A1A1A">
-  <p style="font-size:16px;line-height:1.5">¡Hola, querubín! Tu código para entrar a tus recorridos:</p>
+  <p style="font-size:16px;line-height:1.5">Hola, querubín! Tu código para entrar a tus recorridos:</p>
   <p style="font-size:34px;font-weight:700;letter-spacing:8px;text-align:center;
      background:#FCFBF9;border:1px solid #eee;border-radius:12px;padding:16px 0;margin:18px 0">${esc(code)}</p>
   <p style="font-size:14px;color:#888;line-height:1.5">Vence en 10 minutos. Si no lo pediste, ignóralo.<br>— Henry</p>

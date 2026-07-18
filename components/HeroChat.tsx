@@ -7,10 +7,10 @@ type Msg = { from: "henry" | "user"; text: string };
 // Guion de apertura: Henry explica el producto en pocos mensajes y termina
 // invitando a preguntar. Después de esto aparece el input (charla real, con IA).
 const INTRO: string[] = [
-  "¡Hola, querubín! Soy Henry 🤙",
+  "Hola, querubín! Soy Henry 🤙",
   "Te llevo a caminar Nueva York por chat: eliges un recorrido y yo te guío parada por parada, a tu ritmo.",
   "La ciudad que no sale en las guías. Y me preguntas lo que quieras en el camino, como a un pata que conoce cada cuadra.",
-  "¿Y tú? Pregúntame algo antes de arrancar 👇",
+  "Y tú? Pregúntame algo antes de arrancar 👇",
 ];
 
 const MAX_USER_MSGS = 4; // teaser: solo unas preguntas
